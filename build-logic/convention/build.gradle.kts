@@ -16,10 +16,6 @@ gradlePlugin {
             id = "org.example.kmp.library"
             implementationClass = "KmpLibraryConventionPlugin"
         }
-        register("kmpFeatureBase") {
-            id = "org.example.kmp.feature.base"
-            implementationClass = "KmpFeatureBaseConventionPlugin"
-        }
         register("kmpFeaturePublic") {
             id = "org.example.kmp.feature.public"
             implementationClass = "KmpFeaturePublicConventionPlugin"
