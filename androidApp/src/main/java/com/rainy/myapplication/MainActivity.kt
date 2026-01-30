@@ -9,7 +9,6 @@ import com.arkivanov.decompose.retainedComponent
 import com.arkivanov.decompose.router.stack.active
 import org.example.project.App
 import org.example.project.RootComponent
-import org.example.project.RootScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,17 +20,14 @@ class MainActivity : ComponentActivity() {
         val appGraph = (applicationContext as MyApplication).appGraph
         val rootScreen = appGraph.rootScreen
 
-        val root =
-            retainedComponent { componentContext ->
-                appGraph.rootComponentFactory.create(componentContext)
-            }
+        val root = retainedComponent { componentContext ->
+            appGraph.rootComponentFactory.create(componentContext)
+        }
 
         splashScreen.setKeepOnScreenCondition {
             root.stack.value.active.instance is RootComponent.Child.Splash
         }
 
-        setContent {
-            App(root, rootScreen)
-        }
+        setContent { App(root, rootScreen) }
     }
 }

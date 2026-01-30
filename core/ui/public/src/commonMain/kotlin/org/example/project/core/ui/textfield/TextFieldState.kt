@@ -11,30 +11,24 @@ import androidx.compose.ui.text.TextRange
 fun rememberKmpTextFieldState(
     initialText: String = "",
     initialSelection: TextRange = TextRange(initialText.length),
-): TextFieldState = rememberSaveable(saver = KmpTextFieldStateSaver) {
-    TextFieldState(
-        initialText,
-        initialSelection
-    )
-}
+): TextFieldState =
+    rememberSaveable(saver = KmpTextFieldStateSaver) {
+        TextFieldState(initialText, initialSelection)
+    }
 
-// Default TextFieldSaver crashes when restoring TextUndoManager on iOS. Remove save/restore of TextUndoManager to avoid the issue
+// Default TextFieldSaver crashes when restoring TextUndoManager on iOS. Remove save/restore of
+// TextUndoManager to avoid the issue
 @Suppress("RedundantNullableReturnType")
 private object KmpTextFieldStateSaver : Saver<TextFieldState, Any> {
     override fun SaverScope.save(value: TextFieldState): Any? {
-        return listOf(
-            value.text.toString(),
-            value.selection.start,
-            value.selection.end
-        )
+        return listOf(value.text.toString(), value.selection.start, value.selection.end)
     }
 
     override fun restore(value: Any): TextFieldState? {
         val (text, selectionStart, selectionEnd) = value as List<*>
         return TextFieldState(
             initialText = text as String,
-            initialSelection =
-                TextRange(start = selectionStart as Int, end = selectionEnd as Int)
+            initialSelection = TextRange(start = selectionStart as Int, end = selectionEnd as Int),
         )
     }
 }

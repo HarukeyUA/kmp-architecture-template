@@ -26,24 +26,23 @@ interface DataStoreGraph {
     @SingleIn(AppScope::class)
     fun provideDataStore(): DataStore<SettingsLocalModel> {
         return DataStoreFactory.create(
-            storage = OkioStorage(
-                fileSystem = FileSystem.SYSTEM,
-                serializer = dataStoreJsonSerializer(SettingsLocalModel()),
-                producePath = {
-                    val documentDirectory: NSURL? =
-                        NSFileManager.defaultManager.URLForDirectory(
-                            directory = NSDocumentDirectory,
-                            inDomain = NSUserDomainMask,
-                            appropriateForURL = null,
-                            create = false,
-                            error = null,
-                        )
-                    requireNotNull(documentDirectory?.path).toPath().resolve(SETTINGS_FILE_NAME)
-                }
-            ),
-            corruptionHandler = ReplaceFileCorruptionHandler {
-                SettingsLocalModel()
-            }
+            storage =
+                OkioStorage(
+                    fileSystem = FileSystem.SYSTEM,
+                    serializer = dataStoreJsonSerializer(SettingsLocalModel()),
+                    producePath = {
+                        val documentDirectory: NSURL? =
+                            NSFileManager.defaultManager.URLForDirectory(
+                                directory = NSDocumentDirectory,
+                                inDomain = NSUserDomainMask,
+                                appropriateForURL = null,
+                                create = false,
+                                error = null,
+                            )
+                        requireNotNull(documentDirectory?.path).toPath().resolve(SETTINGS_FILE_NAME)
+                    },
+                ),
+            corruptionHandler = ReplaceFileCorruptionHandler { SettingsLocalModel() },
         )
     }
 }

@@ -8,7 +8,6 @@ import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.s
 import com.arkivanov.decompose.extensions.compose.stack.animation.predictiveback.androidPredictiveBackAnimatableV2
 import com.arkivanov.essenty.backhandler.BackHandler
 
-
 @OptIn(ExperimentalDecomposeApi::class)
 actual fun <C : Any, T : Any> backAnimation(
     backHandler: BackHandler,
@@ -20,7 +19,7 @@ actual fun <C : Any, T : Any> backAnimation(
             PredictiveBackParams(
                 backHandler = backHandler,
                 onBack = onBack,
-                animatable = ::androidPredictiveBackAnimatableV2
+                animatable = ::androidPredictiveBackAnimatableV2,
             )
-        }
+        },
     )

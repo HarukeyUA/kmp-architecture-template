@@ -13,14 +13,12 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.example.project.feature.auth.LoginComponent
 import org.example.project.feature.main.MainComponent
 import org.example.project.feature.user.data.UserRepository
-import kotlin.time.Duration.Companion.seconds
 
 interface RootComponent : BackHandlerOwner {
     val stack: Value<ChildStack<*, Child>>
@@ -29,7 +27,9 @@ interface RootComponent : BackHandlerOwner {
 
     sealed class Child {
         data object Splash : Child()
+
         data class Login(val component: LoginComponent) : Child()
+
         data class Main(val component: MainComponent) : Child()
     }
 
@@ -43,7 +43,7 @@ class DefaultRootComponent(
     @Assisted componentContext: ComponentContext,
     private val loginComponentFactory: LoginComponent.Factory,
     private val mainComponentFactory: MainComponent.Factory,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
 ) : RootComponent, ComponentContext by componentContext {
     private val coroutineScope = coroutineScope()
 
@@ -77,18 +77,20 @@ class DefaultRootComponent(
     private fun child(config: Config, componentContext: ComponentContext): RootComponent.Child =
         when (config) {
             Config.Splash -> RootComponent.Child.Splash
-            Config.Login -> RootComponent.Child.Login(
-                loginComponentFactory.create(
-                    componentContext = componentContext,
-                    onLoginSuccess = ::navigateToMain
+            Config.Login ->
+                RootComponent.Child.Login(
+                    loginComponentFactory.create(
+                        componentContext = componentContext,
+                        onLoginSuccess = ::navigateToMain,
+                    )
                 )
-            )
-            is Config.Main -> RootComponent.Child.Main(
-                mainComponentFactory.create(
-                    componentContext = componentContext,
-                    onLogout = ::navigateToLogin
+            is Config.Main ->
+                RootComponent.Child.Main(
+                    mainComponentFactory.create(
+                        componentContext = componentContext,
+                        onLogout = ::navigateToLogin,
+                    )
                 )
-            )
         }
 
     private fun navigateToMain() {
@@ -101,14 +103,11 @@ class DefaultRootComponent(
 
     @Serializable
     private sealed interface Config {
-        @Serializable
-        data object Splash : Config
+        @Serializable data object Splash : Config
 
-        @Serializable
-        data object Login : Config
+        @Serializable data object Login : Config
 
-        @Serializable
-        data object Main : Config
+        @Serializable data object Main : Config
     }
 
     @AssistedFactory

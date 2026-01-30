@@ -37,48 +37,39 @@ class DefaultSearchScreen : SearchScreen {
     override fun Content(component: SearchComponent) {
         val state by component.state.collectAsStateWithLifecycle()
 
-        SearchScreenContent(
-            state = state,
-            onEvent = component::onEvent
-        )
+        SearchScreenContent(state = state, onEvent = component::onEvent)
     }
 }
 
 @Composable
 private fun SearchScreenContent(
     state: SearchComponent.State,
-    onEvent: (SearchComponent.Event) -> Unit
+    onEvent: (SearchComponent.Event) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.background)
-            .systemBarsPadding()
-            .padding(16.dp)
+        modifier =
+            Modifier.fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.background)
+                .systemBarsPadding()
+                .padding(16.dp)
     ) {
-        Text(
-            text = "Search",
-            style = MaterialTheme.typography.headlineLarge
-        )
+        Text(text = "Search", style = MaterialTheme.typography.headlineLarge)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(
                 state = state.queryTextFieldState,
                 modifier = Modifier.weight(1f),
                 placeholder = { Text("Enter search query...") },
-                lineLimits = TextFieldLineLimits.SingleLine
+                lineLimits = TextFieldLineLimits.SingleLine,
             )
 
             Spacer(modifier = Modifier.width(8.dp))
 
             Button(
                 onClick = { onEvent(SearchComponent.Event.SearchClicked) },
-                enabled = !state.isSearching && state.queryTextFieldState.text.isNotBlank()
+                enabled = !state.isSearching && state.queryTextFieldState.text.isNotBlank(),
             ) {
                 Text("Search")
             }
@@ -89,24 +80,17 @@ private fun SearchScreenContent(
         if (state.isSearching) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("Searching...")
             }
         } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(state.results) { result ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            text = result,
-                            modifier = Modifier.padding(16.dp)
-                        )
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Text(text = result, modifier = Modifier.padding(16.dp))
                     }
                 }
             }

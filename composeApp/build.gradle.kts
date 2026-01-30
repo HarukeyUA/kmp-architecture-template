@@ -14,10 +14,7 @@ plugins {
 }
 
 kotlin {
-    listOf(
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
+    listOf(iosArm64(), iosSimulatorArm64()).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "ComposeApp"
             isStatic = true
@@ -57,15 +54,11 @@ kotlin {
             implementation(libs.essenty.lifecycle.coroutines)
         }
 
-        jvmMain.dependencies {
-            implementation(compose.desktop.currentOs)
-        }
+        jvmMain.dependencies { implementation(compose.desktop.currentOs) }
     }
 }
 
-dependencies {
-    "androidRuntimeClasspath"(libs.compose.ui.tooling)
-}
+dependencies { "androidRuntimeClasspath"(libs.compose.ui.tooling) }
 
 compose.desktop {
     application {

@@ -15,7 +15,7 @@ internal actual object PlatformSavedStateRegistryUtils {
         decoder: CompositeDecoder,
         descriptor: SerialDescriptor,
         index: Int,
-        type: Byte
+        type: Byte,
     ): Any? {
         return null
     }

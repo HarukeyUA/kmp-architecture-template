@@ -23,11 +23,7 @@ class KmpComposeFeatureImplConventionPlugin : Plugin<Project> {
             }
 
             extensions.configure<KotlinMultiplatformExtension> {
-                androidLibrary {
-                    androidResources {
-                        enable = true
-                    }
-                }
+                androidLibrary { androidResources { enable = true } }
             }
         }
     }

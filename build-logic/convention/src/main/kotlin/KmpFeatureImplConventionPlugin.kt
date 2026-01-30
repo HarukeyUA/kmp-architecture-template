@@ -16,11 +16,7 @@ class KmpFeatureImplConventionPlugin : Plugin<Project> {
             }
 
             extensions.configure<KotlinMultiplatformExtension> {
-                sourceSets {
-                    commonMain.dependencies {
-                        api(project(siblingPublicModule()))
-                    }
-                }
+                sourceSets { commonMain.dependencies { api(project(siblingPublicModule())) } }
             }
         }
     }

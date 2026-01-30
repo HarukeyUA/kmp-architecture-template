@@ -28,21 +28,18 @@ class DefaultMainComponent(
 
     private val navigation = PagesNavigation<PageConfig>()
 
-    override val pages: Value<ChildPages<Any, MainComponent.Child>> = childPages(
-        source = navigation,
-        serializer = PageConfig.serializer(),
-        initialPages = {
-            Pages(
-                items = listOf(
-                    PageConfig.Home,
-                    PageConfig.Search,
-                    PageConfig.Profile
-                ),
-                selectedIndex = 0
-            )
-        },
-        childFactory = ::createChild
-    )
+    override val pages: Value<ChildPages<Any, MainComponent.Child>> =
+        childPages(
+            source = navigation,
+            serializer = PageConfig.serializer(),
+            initialPages = {
+                Pages(
+                    items = listOf(PageConfig.Home, PageConfig.Search, PageConfig.Profile),
+                    selectedIndex = 0,
+                )
+            },
+            childFactory = ::createChild,
+        )
 
     override fun selectPage(index: Int) {
         navigation.select(index = index)
@@ -50,38 +47,35 @@ class DefaultMainComponent(
 
     private fun createChild(
         config: PageConfig,
-        componentContext: ComponentContext
-    ): MainComponent.Child = when (config) {
-        PageConfig.Home -> MainComponent.Child.Home(
-            homeComponentFactory.create(
-                componentContext = componentContext
-            )
-        )
+        componentContext: ComponentContext,
+    ): MainComponent.Child =
+        when (config) {
+            PageConfig.Home ->
+                MainComponent.Child.Home(
+                    homeComponentFactory.create(componentContext = componentContext)
+                )
 
-        PageConfig.Search -> MainComponent.Child.Search(
-            searchComponentFactory.create(
-                componentContext = componentContext
-            )
-        )
+            PageConfig.Search ->
+                MainComponent.Child.Search(
+                    searchComponentFactory.create(componentContext = componentContext)
+                )
 
-        PageConfig.Profile -> MainComponent.Child.Profile(
-            profileComponentFactory.create(
-                componentContext = componentContext,
-                onLogout = onLogout
-            )
-        )
-    }
+            PageConfig.Profile ->
+                MainComponent.Child.Profile(
+                    profileComponentFactory.create(
+                        componentContext = componentContext,
+                        onLogout = onLogout,
+                    )
+                )
+        }
 
     @Serializable
     private sealed interface PageConfig {
-        @Serializable
-        data object Home : PageConfig
+        @Serializable data object Home : PageConfig
 
-        @Serializable
-        data object Search : PageConfig
+        @Serializable data object Search : PageConfig
 
-        @Serializable
-        data object Profile : PageConfig
+        @Serializable data object Profile : PageConfig
     }
 
     @AssistedFactory
@@ -89,7 +83,7 @@ class DefaultMainComponent(
     fun interface Factory : MainComponent.Factory {
         override fun create(
             componentContext: ComponentContext,
-            onLogout: () -> Unit
+            onLogout: () -> Unit,
         ): DefaultMainComponent
     }
 }

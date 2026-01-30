@@ -1,6 +1,4 @@
-plugins {
-    alias(libs.plugins.example.kmp.library)
-}
+plugins { alias(libs.plugins.example.kmp.library) }
 
 kotlin {
     sourceSets {

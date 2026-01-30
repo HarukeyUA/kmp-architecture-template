@@ -1,11 +1,9 @@
 package org.example.project
 
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
-import org.gradle.api.Incubating
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
-import org.gradle.api.plugins.ExtensionAware
 import org.gradle.api.project.IsolatedProject
 import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -14,14 +12,11 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinDependencyHandler
 val Project.libs: VersionCatalog
     get() = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
-fun VersionCatalog.version(alias: String): String =
-    findVersion(alias).get().requiredVersion
+fun VersionCatalog.version(alias: String): String = findVersion(alias).get().requiredVersion
 
-fun VersionCatalog.library(alias: String): String =
-    findLibrary(alias).get().get().toString()
+fun VersionCatalog.library(alias: String): String = findLibrary(alias).get().get().toString()
 
-fun VersionCatalog.plugin(alias: String): String =
-    findPlugin(alias).get().get().pluginId
+fun VersionCatalog.plugin(alias: String): String = findPlugin(alias).get().get().pluginId
 
 fun KotlinMultiplatformExtension.androidLibrary(
     action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit
@@ -30,8 +25,8 @@ fun KotlinMultiplatformExtension.androidLibrary(
 }
 
 /**
- * Determines the sibling :public module path from an :impl module.
- * e.g., :feature:auth:impl -> :feature:auth:public
+ * Determines the sibling :public module path from an :impl module. e.g., :feature:auth:impl ->
+ * :feature:auth:public
  */
 fun Project.siblingPublicModule(): String {
     val path = project.path
@@ -53,13 +48,12 @@ fun Project.namespace(): String {
     return "$group${path.replace(':', '.').replace('-', '.')}"
 }
 
-private fun Project.requireParent(): IsolatedProject =
-    requireNotNull(parent).isolated
+private fun Project.requireParent(): IsolatedProject = requireNotNull(parent).isolated
 
 enum class ModuleType {
     PUBLIC,
     IMPL,
-    UNKNOWN
+    UNKNOWN,
 }
 
 val Project.moduleType: ModuleType
@@ -85,10 +79,6 @@ private fun Project.localImplModules(rootProject: Project = this.rootProject): L
         .sorted()
 }
 
-fun KotlinDependencyHandler.addLocalImplDependencies(
-    project: Project
-) {
-    project.localImplModules().forEach { implModulePath ->
-        api(project.project(implModulePath))
-    }
+fun KotlinDependencyHandler.addLocalImplDependencies(project: Project) {
+    project.localImplModules().forEach { implModulePath -> api(project.project(implModulePath)) }
 }

@@ -27,44 +27,28 @@ class DefaultHomeScreen : HomeScreen {
     override fun Content(component: HomeComponent) {
         val state by component.state.collectAsStateWithLifecycle()
 
-        HomeScreenContent(
-            state = state,
-            onEvent = component::onEvent
-        )
+        HomeScreenContent(state = state, onEvent = component::onEvent)
     }
 }
 
 @Composable
-private fun HomeScreenContent(
-    state: HomeComponent.State,
-    onEvent: (HomeComponent.Event) -> Unit
-) {
+private fun HomeScreenContent(state: HomeComponent.State, onEvent: (HomeComponent.Event) -> Unit) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.background)
-            .systemBarsPadding(),
+        modifier =
+            Modifier.fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.background)
+                .systemBarsPadding(),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "Home",
-            style = MaterialTheme.typography.headlineLarge
-        )
+        Text(text = "Home", style = MaterialTheme.typography.headlineLarge)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = "Counter: ${state.counter}",
-            style = MaterialTheme.typography.headlineMedium
-        )
+        Text(text = "Counter: ${state.counter}", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = { onEvent(HomeComponent.Event.IncrementClicked) }
-        ) {
-            Text(text = "+1")
-        }
+        Button(onClick = { onEvent(HomeComponent.Event.IncrementClicked) }) { Text(text = "+1") }
     }
 }

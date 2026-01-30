@@ -8,19 +8,14 @@ import org.example.project.core.component.UiState
 
 interface ProfileComponent : StatefulComponent<ProfileComponent.State, ProfileComponent.Event> {
     @Serializable
-    data class State(
-        val userName: String = "User",
-        val email: String = "user@example.com"
-    ) : UiState
+    data class State(val userName: String = "User", val email: String = "user@example.com") :
+        UiState
 
     sealed interface Event : UiEvent {
         data object LogoutClicked : Event
     }
 
     fun interface Factory {
-        fun create(
-            componentContext: ComponentContext,
-            onLogout: () -> Unit
-        ): ProfileComponent
+        fun create(componentContext: ComponentContext, onLogout: () -> Unit): ProfileComponent
     }
 }

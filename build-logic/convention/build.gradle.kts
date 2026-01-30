@@ -1,6 +1,4 @@
-plugins {
-    `kotlin-dsl`
-}
+plugins { `kotlin-dsl` }
 
 dependencies {
     compileOnly(libs.android.gradlePlugin)

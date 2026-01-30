@@ -27,6 +27,9 @@ molecule = "2.2.0"
 
 androidx-splash-splash-screen = "1.2.0"
 
+spotless = "8.2.0"
+ktfmt = "0.61"
+
 [libraries]
 # Gradle plugins for build-logic
 android-gradlePlugin = { module = "com.android.tools.build:gradle-api", version.ref = "agp" }
@@ -72,6 +75,8 @@ kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutine
 
 molecule = { module = "app.cash.molecule:molecule-runtime", version.ref = "molecule" }
 
+ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
@@ -84,6 +89,8 @@ android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 metro = { id = "dev.zacsweers.metro", version.ref = "metro" }
+
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 
 # Convention plugins
 example-kmp-library = { id = "org.example.kmp.library", version = "unspecified" }

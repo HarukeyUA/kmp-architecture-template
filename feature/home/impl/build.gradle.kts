@@ -1,3 +1,1 @@
-plugins {
-    alias(libs.plugins.example.kmp.compose.feature.impl)
-}
+plugins { alias(libs.plugins.example.kmp.compose.feature.impl) }

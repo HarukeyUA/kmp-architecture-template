@@ -27,37 +27,27 @@ class DefaultLoginScreen : LoginScreen {
     override fun Content(component: LoginComponent) {
         val state by component.state.collectAsStateWithLifecycle()
 
-        LoginScreenContent(
-            state = state,
-            onEvent = component::onEvent
-        )
+        LoginScreenContent(state = state, onEvent = component::onEvent)
     }
 }
 
 @Composable
 private fun LoginScreenContent(
     state: LoginComponent.State,
-    onEvent: (LoginComponent.Event) -> Unit
+    onEvent: (LoginComponent.Event) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.background)
-            .systemBarsPadding(),
+        modifier =
+            Modifier.fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.background)
+                .systemBarsPadding(),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "Counter: ${state.counter}",
-            style = MaterialTheme.typography.headlineMedium
-        )
+        Text(text = "Counter: ${state.counter}", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = { onEvent(LoginComponent.Event.LoginClicked) }
-        ) {
-            Text(text = "Login")
-        }
+        Button(onClick = { onEvent(LoginComponent.Event.LoginClicked) }) { Text(text = "Login") }
     }
 }

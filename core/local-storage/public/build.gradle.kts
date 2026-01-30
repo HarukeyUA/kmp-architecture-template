@@ -1,3 +1,1 @@
-plugins {
-    alias(libs.plugins.example.kmp.feature.public)
-}
+plugins { alias(libs.plugins.example.kmp.feature.public) }

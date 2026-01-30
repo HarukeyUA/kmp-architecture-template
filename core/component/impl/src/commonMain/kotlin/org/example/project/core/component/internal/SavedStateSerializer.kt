@@ -55,14 +55,15 @@ private enum class SerializableTypes(val code: Byte) {
     SNAPSHOT_MUTABLE_VALUE(10),
     LIST(11),
     MAP(12),
-    SAVED_STATE(13)
+    SAVED_STATE(13),
 }
 
 private object AnyValueSerializer : KSerializer<Any?> {
-    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("AnyValue") {
-        element("type", Byte.serializer().descriptor)
-        element("value", buildClassSerialDescriptor("Value"))
-    }
+    override val descriptor: SerialDescriptor =
+        buildClassSerialDescriptor("AnyValue") {
+            element("type", Byte.serializer().descriptor)
+            element("value", buildClassSerialDescriptor("Value"))
+        }
 
     override fun serialize(encoder: Encoder, value: Any?) {
         val composite = encoder.beginStructure(descriptor)
@@ -120,7 +121,7 @@ private object AnyValueSerializer : KSerializer<Any?> {
                 composite.encodeByteElement(
                     descriptor,
                     0,
-                    SerializableTypes.SNAPSHOT_MUTABLE_VALUE.code
+                    SerializableTypes.SNAPSHOT_MUTABLE_VALUE.code,
                 )
                 composite.encodeSerializableElement(descriptor, 1, AnyValueSerializer, value.value)
             }
@@ -131,7 +132,7 @@ private object AnyValueSerializer : KSerializer<Any?> {
                     descriptor,
                     1,
                     AnyListSerializer,
-                    value as List<Any?>
+                    value as List<Any?>,
                 )
             }
 
@@ -141,23 +142,20 @@ private object AnyValueSerializer : KSerializer<Any?> {
                     descriptor,
                     1,
                     AnyMapSerializer,
-                    value as Map<String, Any?>
+                    value as Map<String, Any?>,
                 )
             }
 
             is SavedState -> {
                 composite.encodeByteElement(descriptor, 0, SerializableTypes.SAVED_STATE.code)
-                composite.encodeSerializableElement(
-                    descriptor,
-                    1,
-                    AnyMapSerializer,
-                    value.toMap()
-                )
+                composite.encodeSerializableElement(descriptor, 1, AnyMapSerializer, value.toMap())
             }
 
             else -> {
                 if (!PlatformSavedStateRegistryUtils.write(composite, descriptor, value)) {
-                    throw SerializationException("Value of type ${value::class} is not supported by SavedStateSerializer")
+                    throw SerializationException(
+                        "Value of type ${value::class} is not supported by SavedStateSerializer"
+                    )
                 }
             }
         }
@@ -175,51 +173,43 @@ private object AnyValueSerializer : KSerializer<Any?> {
                 when (decodeElementIndex(descriptor)) {
                     0 -> type = decodeByteElement(descriptor, 0)
                     1 -> {
-                        value = when (SerializableTypes.entries.firstOrNull { it.code == type }) {
-                            SerializableTypes.NULL -> null
-                            SerializableTypes.INT -> decodeIntElement(descriptor, 1)
-                            SerializableTypes.STRING -> decodeStringElement(descriptor, 1)
-                            SerializableTypes.BOOLEAN -> decodeBooleanElement(descriptor, 1)
-                            SerializableTypes.FLOAT -> decodeFloatElement(descriptor, 1)
-                            SerializableTypes.LONG -> decodeLongElement(descriptor, 1)
-                            SerializableTypes.DOUBLE -> decodeDoubleElement(descriptor, 1)
-                            SerializableTypes.CHAR -> decodeCharElement(descriptor, 1)
-                            SerializableTypes.BYTE -> decodeByteElement(descriptor, 1)
-                            SerializableTypes.SHORT -> decodeShortElement(descriptor, 1)
-                            SerializableTypes.SNAPSHOT_MUTABLE_VALUE -> {
-                                val restoredValue =
-                                    decodeSerializableElement(descriptor, 1, AnyValueSerializer)
-                                mutableStateOf(restoredValue)
+                        value =
+                            when (SerializableTypes.entries.firstOrNull { it.code == type }) {
+                                SerializableTypes.NULL -> null
+                                SerializableTypes.INT -> decodeIntElement(descriptor, 1)
+                                SerializableTypes.STRING -> decodeStringElement(descriptor, 1)
+                                SerializableTypes.BOOLEAN -> decodeBooleanElement(descriptor, 1)
+                                SerializableTypes.FLOAT -> decodeFloatElement(descriptor, 1)
+                                SerializableTypes.LONG -> decodeLongElement(descriptor, 1)
+                                SerializableTypes.DOUBLE -> decodeDoubleElement(descriptor, 1)
+                                SerializableTypes.CHAR -> decodeCharElement(descriptor, 1)
+                                SerializableTypes.BYTE -> decodeByteElement(descriptor, 1)
+                                SerializableTypes.SHORT -> decodeShortElement(descriptor, 1)
+                                SerializableTypes.SNAPSHOT_MUTABLE_VALUE -> {
+                                    val restoredValue =
+                                        decodeSerializableElement(descriptor, 1, AnyValueSerializer)
+                                    mutableStateOf(restoredValue)
+                                }
+
+                                SerializableTypes.LIST ->
+                                    decodeSerializableElement(descriptor, 1, AnyListSerializer)
+
+                                SerializableTypes.MAP ->
+                                    decodeSerializableElement(descriptor, 1, AnyMapSerializer)
+
+                                SerializableTypes.SAVED_STATE ->
+                                    savedState(
+                                        decodeSerializableElement(descriptor, 1, AnyMapSerializer)
+                                    )
+
+                                null ->
+                                    PlatformSavedStateRegistryUtils.read(
+                                        this,
+                                        descriptor,
+                                        1,
+                                        type!!,
+                                    ) ?: throw SerializationException("Unknown type tag: $type")
                             }
-
-                            SerializableTypes.LIST ->
-                                decodeSerializableElement(
-                                    descriptor,
-                                    1,
-                                    AnyListSerializer
-                                )
-
-                            SerializableTypes.MAP -> decodeSerializableElement(
-                                descriptor,
-                                1,
-                                AnyMapSerializer
-                            )
-
-                            SerializableTypes.SAVED_STATE -> savedState(
-                                decodeSerializableElement(
-                                    descriptor,
-                                    1,
-                                    AnyMapSerializer
-                                )
-                            )
-
-                            null -> PlatformSavedStateRegistryUtils.read(
-                                this,
-                                descriptor,
-                                1,
-                                type!!
-                            ) ?: throw SerializationException("Unknown type tag: $type")
-                        }
                     }
 
                     else -> break

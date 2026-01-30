@@ -6,10 +6,7 @@ import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.S
 import com.arkivanov.essenty.backhandler.BackHandler
 
 @Composable
-fun App(
-    rootComponent: RootComponent,
-    rootScreen: RootScreen,
-) {
+fun App(rootComponent: RootComponent, rootScreen: RootScreen) {
     rootScreen.Content(rootComponent)
 }
 

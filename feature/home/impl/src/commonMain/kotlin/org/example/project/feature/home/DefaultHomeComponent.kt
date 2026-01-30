@@ -12,15 +12,14 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import org.example.project.core.component.MoleculeComponent
-import kotlin.time.Duration.Companion.seconds
 
 @AssistedInject
-class DefaultHomeComponent(
-    @Assisted componentContext: ComponentContext
-) : HomeComponent, MoleculeComponent<HomeComponent.State, HomeComponent.Event>(componentContext) {
+class DefaultHomeComponent(@Assisted componentContext: ComponentContext) :
+    HomeComponent, MoleculeComponent<HomeComponent.State, HomeComponent.Event>(componentContext) {
 
     @Composable
     override fun produceState(): HomeComponent.State {
@@ -47,8 +46,6 @@ class DefaultHomeComponent(
     @AssistedFactory
     @ContributesBinding(AppScope::class)
     fun interface Factory : HomeComponent.Factory {
-        override fun create(
-            componentContext: ComponentContext
-        ): DefaultHomeComponent
+        override fun create(componentContext: ComponentContext): DefaultHomeComponent
     }
 }

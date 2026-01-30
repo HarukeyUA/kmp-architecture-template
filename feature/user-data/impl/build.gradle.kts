@@ -1,11 +1,5 @@
-plugins {
-    alias(libs.plugins.example.kmp.feature.impl)
-}
+plugins { alias(libs.plugins.example.kmp.feature.impl) }
 
 kotlin {
-    sourceSets {
-        commonMain.dependencies {
-            implementation(project(":core:local-storage:public"))
-        }
-    }
+    sourceSets { commonMain.dependencies { implementation(project(":core:local-storage:public")) } }
 }

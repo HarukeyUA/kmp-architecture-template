@@ -38,17 +38,13 @@ class DefaultMainScreen(
                             selected = pagesState.selectedIndex == index,
                             onClick = { component.selectPage(index) },
                             icon = { Text(tab.icon) },
-                            label = { Text(tab.title) }
+                            label = { Text(tab.title) },
                         )
                     }
                 }
             }
         ) { paddingValues ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
                 val selectedPage = pagesState.items.getOrNull(pagesState.selectedIndex)?.instance
                 when (selectedPage) {
                     is MainComponent.Child.Home -> homeScreen.Content(selectedPage.component)
@@ -61,11 +57,8 @@ class DefaultMainScreen(
     }
 }
 
-private enum class TabItem(
-    val title: String,
-    val icon: String
-) {
+private enum class TabItem(val title: String, val icon: String) {
     Home("Home", "\uD83C\uDFE0"),
     Search("Search", "\uD83D\uDD0D"),
-    Profile("Profile", "\uD83D\uDC64")
+    Profile("Profile", "\uD83D\uDC64"),
 }

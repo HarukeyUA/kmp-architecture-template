@@ -17,8 +17,6 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.androidx.lifecycle.runtimeCompose)
         }
-        androidMain.dependencies {
-            implementation(libs.kotlinx.coroutines.android)
-        }
+        androidMain.dependencies { implementation(libs.kotlinx.coroutines.android) }
     }
 }

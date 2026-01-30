@@ -14,11 +14,7 @@ class ComposeResourcesConventionPlugin : Plugin<Project> {
                     implementation(libs.library("compose-resources"))
                 }
 
-                androidLibrary {
-                    androidResources {
-                        enable = true
-                    }
-                }
+                androidLibrary { androidResources { enable = true } }
             }
         }
     }

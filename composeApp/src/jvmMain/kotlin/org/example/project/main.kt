@@ -34,9 +34,7 @@ internal fun <T> runOnUiThread(block: () -> T): T {
 fun main() {
     val lifecycle = LifecycleRegistry()
 
-    val appGraph = runOnUiThread {
-        createGraph<JvmAppGraph>()
-    }
+    val appGraph = runOnUiThread { createGraph<JvmAppGraph>() }
 
     val root = runOnUiThread {
         appGraph.rootComponentFactory.create(DefaultComponentContext(lifecycle = lifecycle))
@@ -49,10 +47,7 @@ fun main() {
 
         LifecycleController(lifecycle, windowState)
 
-        Window(
-            onCloseRequest = ::exitApplication,
-            title = "KotlinProject",
-        ) {
+        Window(onCloseRequest = ::exitApplication, title = "KotlinProject") {
             App(root, rootScreen)
         }
     }

@@ -3,10 +3,4 @@ plugins {
     alias(libs.plugins.example.compose)
 }
 
-kotlin {
-    sourceSets {
-        commonMain.dependencies {
-            api(libs.compose.material3)
-        }
-    }
-}
+kotlin { sourceSets { commonMain.dependencies { api(libs.compose.material3) } } }

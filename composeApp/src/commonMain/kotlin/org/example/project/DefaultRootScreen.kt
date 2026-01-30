@@ -27,14 +27,15 @@ class DefaultRootScreen(
         MaterialTheme {
             ChildStack(
                 stack = component.stack,
-                animation = backAnimation(
-                    backHandler = component.backHandler,
-                    onBack = component::onBackClick
-                ),
+                animation =
+                    backAnimation(
+                        backHandler = component.backHandler,
+                        onBack = component::onBackClick,
+                    ),
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background,
                 ) {
                     when (val child = it.instance) {
                         is RootComponent.Child.Splash -> splashScreen.Content()

@@ -12,19 +12,20 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.example.project.core.component.MoleculeComponent
 import org.example.project.feature.user.data.UserRepository
-import kotlin.time.Duration.Companion.seconds
 
 @AssistedInject
 class DefaultLoginComponent(
     @Assisted componentContext: ComponentContext,
     @Assisted private val onLoginSuccess: () -> Unit,
-    private val userRepository: UserRepository
-) : LoginComponent,
+    private val userRepository: UserRepository,
+) :
+    LoginComponent,
     MoleculeComponent<LoginComponent.State, LoginComponent.Event>(componentContext) {
 
     @Composable
@@ -61,7 +62,7 @@ class DefaultLoginComponent(
     fun interface Factory : LoginComponent.Factory {
         override fun create(
             componentContext: ComponentContext,
-            onLoginSuccess: () -> Unit
+            onLoginSuccess: () -> Unit,
         ): DefaultLoginComponent
     }
 }

@@ -5,15 +5,15 @@ import android.os.Parcelable
 import android.util.Size
 import android.util.SizeF
 import android.util.SparseArray
-import kotlinx.serialization.builtins.ByteArraySerializer
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.CompositeDecoder
-import kotlinx.serialization.encoding.CompositeEncoder
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.io.Serializable
+import kotlinx.serialization.builtins.ByteArraySerializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.CompositeEncoder
 
 internal actual object PlatformSavedStateRegistryUtils {
     private const val TYPE_PARCELABLE: Byte = 100
@@ -21,10 +21,10 @@ internal actual object PlatformSavedStateRegistryUtils {
 
     actual fun canBeSaved(value: Any): Boolean {
         return value is Parcelable ||
-                value is Serializable ||
-                value is Size ||
-                value is SizeF ||
-                value is SparseArray<*>
+            value is Serializable ||
+            value is Size ||
+            value is SizeF ||
+            value is SparseArray<*>
     }
 
     actual fun write(encoder: CompositeEncoder, descriptor: SerialDescriptor, value: Any): Boolean =
@@ -44,12 +44,11 @@ internal actual object PlatformSavedStateRegistryUtils {
             }
 
             is Serializable -> {
-                val bytes = ByteArrayOutputStream().use { bos ->
-                    ObjectOutputStream(bos).use { oos ->
-                        oos.writeObject(value)
+                val bytes =
+                    ByteArrayOutputStream().use { bos ->
+                        ObjectOutputStream(bos).use { oos -> oos.writeObject(value) }
+                        bos.toByteArray()
                     }
-                    bos.toByteArray()
-                }
 
                 encoder.encodeByteElement(descriptor, 0, TYPE_SERIALIZABLE)
                 encoder.encodeSerializableElement(descriptor, 1, ByteArraySerializer(), bytes)
@@ -63,31 +62,30 @@ internal actual object PlatformSavedStateRegistryUtils {
         decoder: CompositeDecoder,
         descriptor: SerialDescriptor,
         index: Int,
-        type: Byte
-    ): Any? = when (type) {
-        TYPE_PARCELABLE -> {
-            val bytes =
-                decoder.decodeSerializableElement(descriptor, index, ByteArraySerializer())
-            val parcel = Parcel.obtain()
-            try {
-                parcel.unmarshall(bytes, 0, bytes.size)
-                parcel.setDataPosition(0)
-                parcel.readValue(PlatformSavedStateRegistryUtils::class.java.classLoader)
-            } finally {
-                parcel.recycle()
-            }
-        }
-
-        TYPE_SERIALIZABLE -> {
-            val bytes =
-                decoder.decodeSerializableElement(descriptor, index, ByteArraySerializer())
-            ByteArrayInputStream(bytes).use { bis ->
-                ObjectInputStream(bis).use { ois ->
-                    ois.readObject()
+        type: Byte,
+    ): Any? =
+        when (type) {
+            TYPE_PARCELABLE -> {
+                val bytes =
+                    decoder.decodeSerializableElement(descriptor, index, ByteArraySerializer())
+                val parcel = Parcel.obtain()
+                try {
+                    parcel.unmarshall(bytes, 0, bytes.size)
+                    parcel.setDataPosition(0)
+                    parcel.readValue(PlatformSavedStateRegistryUtils::class.java.classLoader)
+                } finally {
+                    parcel.recycle()
                 }
             }
-        }
 
-        else -> null
-    }
+            TYPE_SERIALIZABLE -> {
+                val bytes =
+                    decoder.decodeSerializableElement(descriptor, index, ByteArraySerializer())
+                ByteArrayInputStream(bytes).use { bis ->
+                    ObjectInputStream(bis).use { ois -> ois.readObject() }
+                }
+            }
+
+            else -> null
+        }
 }

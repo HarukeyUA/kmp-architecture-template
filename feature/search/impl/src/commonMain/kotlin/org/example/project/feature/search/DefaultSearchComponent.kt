@@ -16,9 +16,8 @@ import org.example.project.core.component.MoleculeComponent
 import org.example.project.core.ui.textfield.rememberKmpTextFieldState
 
 @AssistedInject
-class DefaultSearchComponent(
-    @Assisted componentContext: ComponentContext,
-) : SearchComponent,
+class DefaultSearchComponent(@Assisted componentContext: ComponentContext) :
+    SearchComponent,
     MoleculeComponent<SearchComponent.State, SearchComponent.Event>(componentContext) {
 
     @Composable
@@ -34,13 +33,14 @@ class DefaultSearchComponent(
                         isSearching = true
                         // Simulate search delay
                         delay(500)
-                        results = listOf(
-                            "Result 1 for '$query'",
-                            "Result 2 for '$query'",
-                            "Result 3 for '$query'",
-                            "Result 4 for '$query'",
-                            "Result 5 for '$query'"
-                        )
+                        results =
+                            listOf(
+                                "Result 1 for '$query'",
+                                "Result 2 for '$query'",
+                                "Result 3 for '$query'",
+                                "Result 4 for '$query'",
+                                "Result 5 for '$query'",
+                            )
                         isSearching = false
                     }
                 }
@@ -50,7 +50,7 @@ class DefaultSearchComponent(
         return SearchComponent.State(
             queryTextFieldState = query,
             results = results,
-            isSearching = isSearching
+            isSearching = isSearching,
         )
     }
 

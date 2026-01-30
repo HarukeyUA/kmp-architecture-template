@@ -30,13 +30,11 @@ import org.example.project.core.component.internal.returningCompositionLocalProv
  * - Event channel for UI -> Component communication
  * - Essenty Lifecycle -> AndroidX LifecycleOwner bridge
  */
-abstract class MoleculeComponent<S : UiState, E : UiEvent>(
-    componentContext: ComponentContext,
-) : StatefulComponent<S, E>, ComponentContext by componentContext {
+abstract class MoleculeComponent<S : UiState, E : UiEvent>(componentContext: ComponentContext) :
+    StatefulComponent<S, E>, ComponentContext by componentContext {
 
     /**
-     * Lifecycle-aware coroutine scope.
-     * Uses platform-specific dispatcher via moleculeContext().
+     * Lifecycle-aware coroutine scope. Uses platform-specific dispatcher via moleculeContext().
      * Automatically cancelled when component is destroyed.
      */
     protected val scope: CoroutineScope = coroutineScope(moleculeContext() + SupervisorJob())
@@ -44,41 +42,29 @@ abstract class MoleculeComponent<S : UiState, E : UiEvent>(
     /** Event channel with buffer to prevent event loss */
     private val events = MutableSharedFlow<E>(extraBufferCapacity = 64)
 
-    override val state: StateFlow<S> = scope.launchMolecule(mode = RecompositionMode.Immediate) {
-        val lifecycleOwner = remember { EssentyLifecycleOwner(lifecycle) }
+    override val state: StateFlow<S> =
+        scope.launchMolecule(mode = RecompositionMode.Immediate) {
+            val lifecycleOwner = remember { EssentyLifecycleOwner(lifecycle) }
 
-        returningCompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
-            ProvideStateKeeperSaveableStateRegistry {
-                produceState()
+            returningCompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
+                ProvideStateKeeperSaveableStateRegistry { produceState() }
             }
         }
-    }
 
     override fun onEvent(event: E) {
-        scope.launch {
-            events.emit(event)
-        }
+        scope.launch { events.emit(event) }
     }
 
     /**
-     * Collect events within the Molecule composition.
-     * Use this in produceState() to handle UI events.
+     * Collect events within the Molecule composition. Use this in produceState() to handle UI
+     * events.
      */
     @Composable
     protected fun CollectEvents(onEvent: suspend (E) -> Unit) {
         val coroutineScope = rememberCoroutineScope()
-        LaunchedEffect(Unit) {
-            events.collectLatest {
-                coroutineScope.launch {
-                    onEvent(it)
-                }
-            }
-        }
+        LaunchedEffect(Unit) { events.collectLatest { coroutineScope.launch { onEvent(it) } } }
     }
 
-    /**
-     * Implement this to produce your component's state.
-     */
-    @Composable
-    protected abstract fun produceState(): S
+    /** Implement this to produce your component's state. */
+    @Composable protected abstract fun produceState(): S
 }

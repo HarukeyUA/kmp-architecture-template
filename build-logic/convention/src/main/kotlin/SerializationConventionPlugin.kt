@@ -9,9 +9,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 class SerializationConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
-            with(pluginManager) {
-                apply("org.jetbrains.kotlin.plugin.serialization")
-            }
+            with(pluginManager) { apply("org.jetbrains.kotlin.plugin.serialization") }
 
             extensions.configure<KotlinMultiplatformExtension> {
                 sourceSets {

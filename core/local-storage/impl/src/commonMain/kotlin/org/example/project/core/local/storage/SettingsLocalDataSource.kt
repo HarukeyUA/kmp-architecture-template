@@ -8,12 +8,13 @@ import org.example.project.core.local.storage.model.SettingsLocalModel
 
 @ContributesBinding(AppScope::class)
 @Inject
-class SettingsLocalDataSourceImpl(
-    private val dataStore: DataStore<SettingsLocalModel>
-) : SettingsLocalDataSource {
+class SettingsLocalDataSourceImpl(private val dataStore: DataStore<SettingsLocalModel>) :
+    SettingsLocalDataSource {
     override val settingsFlow = dataStore.data
 
-    override suspend fun updateSettings(block: suspend (settings: SettingsLocalModel) -> SettingsLocalModel) {
+    override suspend fun updateSettings(
+        block: suspend (settings: SettingsLocalModel) -> SettingsLocalModel
+    ) {
         dataStore.updateData(block)
     }
 
@@ -25,4 +26,3 @@ class SettingsLocalDataSourceImpl(
         const val SETTINGS_FILE_NAME = "settings.json"
     }
 }
-

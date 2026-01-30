@@ -17,15 +17,8 @@ import dev.zacsweers.metro.Inject
 class DefaultSplashScreen : SplashScreen {
     @Composable
     override fun Content() {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                modifier = Modifier.fillMaxWidth(),
-                text = "Splash",
-                textAlign = TextAlign.Center,
-            )
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(modifier = Modifier.fillMaxWidth(), text = "Splash", textAlign = TextAlign.Center)
         }
     }
 }

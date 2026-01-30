@@ -16,11 +16,12 @@ internal inline fun <reified T> dataStoreJsonSerializer(defaultValue: T): OkioSe
     return object : OkioSerializer<T> {
         override val defaultValue: T = defaultValue
 
-        override suspend fun readFrom(source: BufferedSource): T = try {
-            json.decodeFromBufferedSource<T>(source)
-        } catch (_: SerializationException) {
-            defaultValue
-        }
+        override suspend fun readFrom(source: BufferedSource): T =
+            try {
+                json.decodeFromBufferedSource<T>(source)
+            } catch (_: SerializationException) {
+                defaultValue
+            }
 
         override suspend fun writeTo(t: T, sink: BufferedSink) {
             json.encodeToBufferedSink(t, sink)

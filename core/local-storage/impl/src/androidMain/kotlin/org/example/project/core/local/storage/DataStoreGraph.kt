@@ -22,16 +22,13 @@ interface DataStoreGraph {
     @SingleIn(AppScope::class)
     fun provideDataStore(context: Context): DataStore<SettingsLocalModel> {
         return DataStoreFactory.create(
-            storage = OkioStorage(
-                fileSystem = FileSystem.Companion.SYSTEM,
-                serializer = dataStoreJsonSerializer(SettingsLocalModel()),
-                producePath = {
-                    context.filesDir.resolve(SETTINGS_FILE_NAME).toOkioPath()
-                }
-            ),
-            corruptionHandler = ReplaceFileCorruptionHandler {
-                SettingsLocalModel()
-            }
+            storage =
+                OkioStorage(
+                    fileSystem = FileSystem.Companion.SYSTEM,
+                    serializer = dataStoreJsonSerializer(SettingsLocalModel()),
+                    producePath = { context.filesDir.resolve(SETTINGS_FILE_NAME).toOkioPath() },
+                ),
+            corruptionHandler = ReplaceFileCorruptionHandler { SettingsLocalModel() },
         )
     }
 }

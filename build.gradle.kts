@@ -8,4 +8,20 @@ plugins {
     alias(libs.plugins.android.kotlin.multiplatform.library) apply false
     alias(libs.plugins.serialization) apply false
     alias(libs.plugins.metro) apply false
+    alias(libs.plugins.spotless) apply false
+}
+
+allprojects {
+    apply(plugin = rootProject.libs.plugins.spotless.get().pluginId)
+    extensions.configure<com.diffplug.gradle.spotless.SpotlessExtension> {
+        kotlin {
+            ktfmt(libs.ktfmt.get().version).kotlinlangStyle()
+            target("src/**/*.kt", "build-logic/**/*.kt")
+        }
+        kotlinGradle {
+            ktfmt(libs.ktfmt.get().version).kotlinlangStyle()
+            target("*.kts")
+        }
+        format("xml") { target("src/**/*.xml") }
+    }
 }

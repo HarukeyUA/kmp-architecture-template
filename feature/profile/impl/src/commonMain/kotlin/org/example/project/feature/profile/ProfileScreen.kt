@@ -32,74 +32,63 @@ class DefaultProfileScreen : ProfileScreen {
     override fun Content(component: ProfileComponent) {
         val state by component.state.collectAsStateWithLifecycle()
 
-        ProfileScreenContent(
-            state = state,
-            onEvent = component::onEvent
-        )
+        ProfileScreenContent(state = state, onEvent = component::onEvent)
     }
 }
 
 @Composable
 private fun ProfileScreenContent(
     state: ProfileComponent.State,
-    onEvent: (ProfileComponent.Event) -> Unit
+    onEvent: (ProfileComponent.Event) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.background)
-            .systemBarsPadding()
-            .padding(16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.background)
+                .systemBarsPadding()
+                .padding(16.dp),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = "Profile",
-            style = MaterialTheme.typography.headlineLarge
-        )
+        Text(text = "Profile", style = MaterialTheme.typography.headlineLarge)
 
         Spacer(modifier = Modifier.height(32.dp))
 
         Surface(
             modifier = Modifier.size(100.dp),
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer
+            color = MaterialTheme.colorScheme.primaryContainer,
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     text = state.userName.take(1).uppercase(),
                     style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Text(
-            text = state.userName,
-            style = MaterialTheme.typography.headlineSmall
-        )
+        Text(text = state.userName, style = MaterialTheme.typography.headlineSmall)
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = state.email,
             style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
         Spacer(modifier = Modifier.height(48.dp))
 
         Button(
             onClick = { onEvent(ProfileComponent.Event.LogoutClicked) },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.error
-            )
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
         ) {
             Text("Logout")
         }

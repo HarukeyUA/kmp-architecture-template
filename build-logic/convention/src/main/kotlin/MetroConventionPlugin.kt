@@ -3,10 +3,6 @@ import org.gradle.api.Project
 
 class MetroConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
-        with(target) {
-            with(pluginManager) {
-                apply("dev.zacsweers.metro")
-            }
-        }
+        with(target) { with(pluginManager) { apply("dev.zacsweers.metro") } }
     }
 }

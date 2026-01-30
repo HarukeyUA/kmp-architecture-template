@@ -18,8 +18,10 @@ import org.example.project.feature.user.data.UserRepository
 class DefaultProfileComponent(
     @Assisted componentContext: ComponentContext,
     @Assisted private val onLogout: () -> Unit,
-    private val userRepository: UserRepository
-) : ProfileComponent, MoleculeComponent<ProfileComponent.State, ProfileComponent.Event>(componentContext) {
+    private val userRepository: UserRepository,
+) :
+    ProfileComponent,
+    MoleculeComponent<ProfileComponent.State, ProfileComponent.Event>(componentContext) {
 
     @Composable
     override fun produceState(): ProfileComponent.State {
@@ -34,10 +36,7 @@ class DefaultProfileComponent(
             }
         }
 
-        return ProfileComponent.State(
-            userName = userName,
-            email = email
-        )
+        return ProfileComponent.State(userName = userName, email = email)
     }
 
     private fun logout() {
@@ -52,7 +51,7 @@ class DefaultProfileComponent(
     fun interface Factory : ProfileComponent.Factory {
         override fun create(
             componentContext: ComponentContext,
-            onLogout: () -> Unit
+            onLogout: () -> Unit,
         ): DefaultProfileComponent
     }
 }
