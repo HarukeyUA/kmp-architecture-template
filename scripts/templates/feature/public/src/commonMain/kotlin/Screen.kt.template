@@ -1,0 +1,8 @@
+package {{PACKAGE_PATH}}
+
+import androidx.compose.runtime.Composable
+
+interface {{FEATURE_NAME}}Screen {
+    @Composable
+    fun Content(component: {{FEATURE_NAME}}Component)
+}

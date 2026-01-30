@@ -1,0 +1,24 @@
+package {{PACKAGE_PATH}}
+
+import com.arkivanov.decompose.ComponentContext
+import kotlinx.serialization.Serializable
+import org.example.project.core.component.StatefulComponent
+import org.example.project.core.component.UiEvent
+import org.example.project.core.component.UiState
+
+interface {{FEATURE_NAME}}Component : StatefulComponent<{{FEATURE_NAME}}Component.State, {{FEATURE_NAME}}Component.Event> {
+    @Serializable
+    data class State(
+        val placeholder: String = ""
+    ) : UiState
+
+    sealed interface Event : UiEvent {
+        data object PlaceholderClicked : Event
+    }
+
+    fun interface Factory {
+        fun create(
+            componentContext: ComponentContext,
+        ): {{FEATURE_NAME}}Component
+    }
+}

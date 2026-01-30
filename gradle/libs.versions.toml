@@ -1,0 +1,98 @@
+[versions]
+agp = "9.0.0"
+coreKtx = "1.17.0"
+datastore = "1.3.0-alpha04"
+datastorePreferences = "1.3.0-alpha04"
+lifecycleRuntimeKtx = "2.10.0"
+activityCompose = "1.12.2"
+kotlin = "2.3.20-Beta1"
+
+android-compileSdk = "36"
+android-minSdk = "24"
+android-targetSdk = "36"
+androidx-lifecycle = "2.9.6"
+composeHotReload = "1.0.0"
+composeMultiplatform = "1.10.0-rc02"
+material3 = "1.10.0-alpha05"
+kotlinx-coroutines = "1.10.2"
+
+decompose = "3.4.0"
+essenty = "2.5.0"
+
+kotlinx-serialization-json = "1.9.0"
+
+metro = "0.10.2"
+
+molecule = "2.2.0"
+
+[libraries]
+# Gradle plugins for build-logic
+android-gradlePlugin = { module = "com.android.tools.build:gradle-api", version.ref = "agp" }
+androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
+datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
+kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+compose-gradlePlugin = { group = "org.jetbrains.compose", name = "compose-gradle-plugin", version.ref = "composeMultiplatform" }
+composeCompiler-gradlePlugin = { group = "org.jetbrains.kotlin", name = "compose-compiler-gradle-plugin", version.ref = "kotlin" }
+serialization-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-serialization", version.ref = "kotlin" }
+metro-gradlePlugin = { group = "dev.zacsweers.metro", name = "metro-gradle-plugin", version.ref = "metro" }
+
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+androidx-lifecycle-viewmodelCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidx-lifecycle" }
+androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
+kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
+
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+compose-ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
+compose-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "composeMultiplatform" }
+compose-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+
+decompose = { module = "com.arkivanov.decompose:decompose", version.ref = "decompose" }
+decompose-compose = { module = "com.arkivanov.decompose:extensions-compose", version.ref = "decompose" }
+decompose-compose-experimental = { module = "com.arkivanov.decompose:extensions-compose-experimental", version.ref = "decompose" }
+
+
+essenty-lifecycle = { module = "com.arkivanov.essenty:lifecycle", version.ref = "essenty" }
+essenty-statekeeper = { module = "com.arkivanov.essenty:state-keeper", version.ref = "essenty" }
+essenty-backhandler = { module = "com.arkivanov.essenty:back-handler", version.ref = "essenty" }
+essenty-lifecycle-coroutines = { module = "com.arkivanov.essenty:lifecycle-coroutines", version.ref = "essenty" }
+
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-json" }
+kotlinx-serialization-json-okio = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json-okio", version.ref = "kotlinx-serialization-json" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines"}
+kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines"}
+
+molecule = { module = "app.cash.molecule:molecule-runtime", version.ref = "molecule" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+
+composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+
+serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+metro = { id = "dev.zacsweers.metro", version.ref = "metro" }
+
+# Convention plugins
+example-kmp-library = { id = "org.example.kmp.library", version = "unspecified" }
+example-serialization = { id = "org.example.serialization", version = "unspecified" }
+example-kmp-feature-public = { id = "org.example.kmp.feature.public", version = "unspecified" }
+example-kmp-compose-feature-public = { id = "org.example.kmp.compose.feature.public", version = "unspecified" }
+example-kmp-feature-impl = { id = "org.example.kmp.feature.impl", version = "unspecified" }
+example-kmp-compose-feature-impl = { id = "org.example.kmp.compose.feature.impl", version = "unspecified" }
+example-metro = { id = "org.example.metro", version = "unspecified" }
+example-molecule = { id = "org.example.molecule", version = "unspecified" }
+example-compose = { id = "org.example.compose", version = "unspecified" }
+example-compose-resources = { id = "org.example.compose.resources", version = "unspecified" }
+example-coroutines = { id = "org.example.coroutines", version = "unspecified" }
+example-decompose = { id = "org.example.decompose", version = "unspecified" }
