@@ -67,7 +67,11 @@ abstract class MoleculeComponent<S : UiState, E : UiEvent>(
     @Composable
     protected fun CollectEvents(onEvent: suspend (E) -> Unit) {
         LaunchedEffect(Unit) {
-            events.collectLatest { onEvent(it) }
+            events.collectLatest {
+                scope.launch {
+                    onEvent(it)
+                }
+            }
         }
     }
 
