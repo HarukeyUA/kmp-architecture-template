@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.cash.molecule.RecompositionMode
 import app.cash.molecule.launchMolecule
@@ -66,9 +67,10 @@ abstract class MoleculeComponent<S : UiState, E : UiEvent>(
      */
     @Composable
     protected fun CollectEvents(onEvent: suspend (E) -> Unit) {
+        val coroutineScope = rememberCoroutineScope()
         LaunchedEffect(Unit) {
             events.collectLatest {
-                scope.launch {
+                coroutineScope.launch {
                     onEvent(it)
                 }
             }

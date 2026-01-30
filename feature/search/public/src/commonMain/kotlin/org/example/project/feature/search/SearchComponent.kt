@@ -1,5 +1,6 @@
 package org.example.project.feature.search
 
+import androidx.compose.foundation.text.input.TextFieldState
 import com.arkivanov.decompose.ComponentContext
 import kotlinx.serialization.Serializable
 import org.example.project.core.component.StatefulComponent
@@ -7,15 +8,13 @@ import org.example.project.core.component.UiEvent
 import org.example.project.core.component.UiState
 
 interface SearchComponent : StatefulComponent<SearchComponent.State, SearchComponent.Event> {
-    @Serializable
     data class State(
-        val query: String = "",
+        val queryTextFieldState: TextFieldState = TextFieldState(),
         val results: List<String> = emptyList(),
         val isSearching: Boolean = false
     ) : UiState
 
     sealed interface Event : UiEvent {
-        data class QueryChanged(val query: String) : Event
         data object SearchClicked : Event
     }
 

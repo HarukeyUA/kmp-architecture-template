@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -67,18 +68,17 @@ private fun SearchScreenContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
-                value = state.query,
-                onValueChange = { onEvent(SearchComponent.Event.QueryChanged(it)) },
+                state = state.queryTextFieldState,
                 modifier = Modifier.weight(1f),
                 placeholder = { Text("Enter search query...") },
-                singleLine = true
+                lineLimits = TextFieldLineLimits.SingleLine
             )
 
             Spacer(modifier = Modifier.width(8.dp))
 
             Button(
                 onClick = { onEvent(SearchComponent.Event.SearchClicked) },
-                enabled = !state.isSearching && state.query.isNotBlank()
+                enabled = !state.isSearching && state.queryTextFieldState.text.isNotBlank()
             ) {
                 Text("Search")
             }

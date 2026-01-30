@@ -1,5 +1,6 @@
 package org.example.project.feature.search
 
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,21 +18,19 @@ import org.example.project.core.component.MoleculeComponent
 @AssistedInject
 class DefaultSearchComponent(
     @Assisted componentContext: ComponentContext,
-) : SearchComponent, MoleculeComponent<SearchComponent.State, SearchComponent.Event>(componentContext) {
+) : SearchComponent,
+    MoleculeComponent<SearchComponent.State, SearchComponent.Event>(componentContext) {
 
     @Composable
     override fun produceState(): SearchComponent.State {
-        var query by rememberSaveable { mutableStateOf("") }
+        val query = rememberTextFieldState()
         var results by rememberSaveable { mutableStateOf(emptyList<String>()) }
         var isSearching by rememberSaveable { mutableStateOf(false) }
 
         CollectEvents { event ->
             when (event) {
-                is SearchComponent.Event.QueryChanged -> {
-                    query = event.query
-                }
                 SearchComponent.Event.SearchClicked -> {
-                    if (query.isNotBlank()) {
+                    if (query.text.isNotBlank()) {
                         isSearching = true
                         // Simulate search delay
                         delay(500)
@@ -49,7 +48,7 @@ class DefaultSearchComponent(
         }
 
         return SearchComponent.State(
-            query = query,
+            queryTextFieldState = query,
             results = results,
             isSearching = isSearching
         )
