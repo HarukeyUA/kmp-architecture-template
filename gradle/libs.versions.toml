@@ -27,7 +27,7 @@ molecule = "2.2.0"
 
 androidx-splash-splash-screen = "1.2.0"
 
-spotless = "8.2.0"
+spotless = "8.2.1"
 ktfmt = "0.61"
 
 [libraries]
