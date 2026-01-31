@@ -52,8 +52,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
 
     func application(_ application: UIApplication, shouldRestoreSecureApplicationState coder: NSCoder) -> Bool {
-        let savedVersion = coder.decodeObject(forKey: Self.savedVersionKey) as? String
-        let savedBuild = coder.decodeObject(forKey: Self.savedBuildKey) as? String
+        let savedVersion = coder.decodeObject(of: NSString.self, forKey: Self.savedVersionKey) as? String
+        let savedBuild = coder.decodeObject(of: NSString.self, forKey: Self.savedBuildKey) as? String
         
         guard savedVersion == currentAppVersion && savedBuild == currentAppBuild else {
             return false
