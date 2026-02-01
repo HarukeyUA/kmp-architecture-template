@@ -7,12 +7,12 @@ import com.arkivanov.decompose.router.pages.PagesNavigation
 import com.arkivanov.decompose.router.pages.childPages
 import com.arkivanov.decompose.router.pages.select
 import com.arkivanov.decompose.value.Value
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
 import kotlinx.serialization.Serializable
+import org.example.project.core.component.LoggedInScope
 import org.example.project.feature.home.HomeComponent
 import org.example.project.feature.profile.ProfileComponent
 import org.example.project.feature.search.SearchComponent
@@ -79,7 +79,7 @@ class DefaultMainComponent(
     }
 
     @AssistedFactory
-    @ContributesBinding(AppScope::class)
+    @ContributesBinding(LoggedInScope::class)
     fun interface Factory : MainComponent.Factory {
         override fun create(
             componentContext: ComponentContext,

@@ -5,12 +5,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.arkivanov.decompose.ComponentContext
-import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
 import kotlinx.coroutines.launch
+import org.example.project.core.component.LoggedInScope
 import org.example.project.core.component.MoleculeComponent
 import org.example.project.feature.user.data.UserRepository
 
@@ -47,7 +47,7 @@ class DefaultProfileComponent(
     }
 
     @AssistedFactory
-    @ContributesBinding(AppScope::class)
+    @ContributesBinding(LoggedInScope::class)
     fun interface Factory : ProfileComponent.Factory {
         override fun create(
             componentContext: ComponentContext,

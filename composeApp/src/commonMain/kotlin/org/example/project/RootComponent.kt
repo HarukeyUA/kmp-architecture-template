@@ -42,12 +42,14 @@ interface RootComponent : BackHandlerOwner {
 class DefaultRootComponent(
     @Assisted componentContext: ComponentContext,
     private val loginComponentFactory: LoginComponent.Factory,
-    private val mainComponentFactory: MainComponent.Factory,
+    private val loggedInGraphFactory: LoggedInGraph.Factory,
     private val userRepository: UserRepository,
 ) : RootComponent, ComponentContext by componentContext {
     private val coroutineScope = coroutineScope()
 
     private val navigation = StackNavigation<Config>()
+
+    private var loggedInGraph: LoggedInGraph? = null
 
     private val _stack =
         childStack(
@@ -74,6 +76,9 @@ class DefaultRootComponent(
         // Back is handled by childPages in MainComponent
     }
 
+    private fun requireLoggedInGraph(): LoggedInGraph =
+        loggedInGraph ?: loggedInGraphFactory.create().also { loggedInGraph = it }
+
     private fun child(config: Config, componentContext: ComponentContext): RootComponent.Child =
         when (config) {
             Config.Splash -> RootComponent.Child.Splash
@@ -86,18 +91,19 @@ class DefaultRootComponent(
                 )
             is Config.Main ->
                 RootComponent.Child.Main(
-                    mainComponentFactory.create(
-                        componentContext = componentContext,
-                        onLogout = ::navigateToLogin,
-                    )
+                    requireLoggedInGraph()
+                        .mainComponentFactory
+                        .create(componentContext = componentContext, onLogout = ::navigateToLogin)
                 )
         }
 
     private fun navigateToMain() {
+        loggedInGraph = loggedInGraphFactory.create()
         navigation.replaceAll(Config.Main)
     }
 
     private fun navigateToLogin() {
+        loggedInGraph = null
         navigation.replaceAll(Config.Login)
     }
 
