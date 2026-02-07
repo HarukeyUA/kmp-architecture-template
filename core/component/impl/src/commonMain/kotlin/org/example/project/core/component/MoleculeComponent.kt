@@ -42,7 +42,7 @@ abstract class MoleculeComponent<S : UiState, E : UiEvent>(componentContext: Com
     /** Event channel with buffer to prevent event loss */
     private val events = MutableSharedFlow<E>(extraBufferCapacity = 64)
 
-    override val state: StateFlow<S> =
+    override val state: StateFlow<S> by lazy {
         scope.launchMolecule(mode = RecompositionMode.Immediate) {
             val lifecycleOwner = remember { EssentyLifecycleOwner(lifecycle) }
 
@@ -50,6 +50,7 @@ abstract class MoleculeComponent<S : UiState, E : UiEvent>(componentContext: Com
                 ProvideStateKeeperSaveableStateRegistry { produceState() }
             }
         }
+    }
 
     override fun onEvent(event: E) {
         scope.launch { events.emit(event) }
