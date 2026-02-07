@@ -1,46 +1,71 @@
 package org.example.project.feature.home
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import com.arkivanov.decompose.ComponentContext
+import com.arkivanov.decompose.router.stack.ChildStack
+import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.pop
+import com.arkivanov.decompose.router.stack.pushNew
+import com.arkivanov.decompose.value.Value
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import org.example.project.core.component.MoleculeComponent
+import kotlinx.serialization.Serializable
 
 @AssistedInject
-class DefaultHomeComponent(@Assisted componentContext: ComponentContext) :
-    HomeComponent, MoleculeComponent<HomeComponent.State, HomeComponent.Event>(componentContext) {
+class DefaultHomeComponent(
+    @Assisted componentContext: ComponentContext,
+    private val homeListComponentFactory: HomeListComponent.Factory,
+    private val homeDetailComponentFactory: HomeDetailComponent.Factory,
+) : HomeComponent, ComponentContext by componentContext {
 
-    @Composable
-    override fun produceState(): HomeComponent.State {
-        var counter by rememberSaveable { mutableStateOf(0) }
+    private val navigation = StackNavigation<Config>()
 
-        LaunchedEffect(Unit) {
-            while (isActive) {
-                delay(1.seconds)
-                counter++
-            }
+    private val _stack: Value<ChildStack<Config, HomeComponent.Child>> =
+        childStack(
+            source = navigation,
+            serializer = Config.serializer(),
+            initialConfiguration = Config.List,
+            handleBackButton = true,
+            childFactory = ::createChild,
+        )
+
+    override val stack: Value<ChildStack<Any, HomeComponent.Child>> = _stack
+
+    override fun onBackClick() {
+        navigation.pop()
+    }
+
+    private fun createChild(
+        config: Config,
+        componentContext: ComponentContext,
+    ): HomeComponent.Child =
+        when (config) {
+            Config.List ->
+                HomeComponent.Child.List(
+                    homeListComponentFactory.create(
+                        componentContext = componentContext,
+                        onItemSelected = { id -> navigation.pushNew(Config.Detail(id)) },
+                    )
+                )
+
+            is Config.Detail ->
+                HomeComponent.Child.Detail(
+                    homeDetailComponentFactory.create(
+                        componentContext = componentContext,
+                        itemId = config.itemId,
+                        onBack = { navigation.pop() },
+                    )
+                )
         }
 
-        CollectEvents { event ->
-            when (event) {
-                HomeComponent.Event.IncrementClicked -> {
-                    counter++
-                }
-            }
-        }
+    @Serializable
+    private sealed interface Config {
+        @Serializable data object List : Config
 
-        return HomeComponent.State(counter = counter)
+        @Serializable data class Detail(val itemId: Int) : Config
     }
 
     @AssistedFactory

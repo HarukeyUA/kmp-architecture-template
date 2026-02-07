@@ -1,16 +1,14 @@
 package org.example.project.feature.home
 
 import com.arkivanov.decompose.ComponentContext
-import kotlinx.serialization.Serializable
-import org.example.project.core.component.StatefulComponent
-import org.example.project.core.component.UiEvent
-import org.example.project.core.component.UiState
+import org.example.project.core.navigation.StackComponent
 
-interface HomeComponent : StatefulComponent<HomeComponent.State, HomeComponent.Event> {
-    @Serializable data class State(val counter: Int = 0) : UiState
+interface HomeComponent : StackComponent<Any, HomeComponent.Child> {
 
-    sealed interface Event : UiEvent {
-        data object IncrementClicked : Event
+    sealed interface Child {
+        data class List(val component: HomeListComponent) : Child
+
+        data class Detail(val component: HomeDetailComponent) : Child
     }
 
     fun interface Factory {

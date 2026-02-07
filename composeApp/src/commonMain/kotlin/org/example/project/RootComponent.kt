@@ -4,9 +4,9 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
+import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.replaceAll
 import com.arkivanov.decompose.value.Value
-import com.arkivanov.essenty.backhandler.BackHandlerOwner
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
@@ -16,15 +16,12 @@ import dev.zacsweers.metro.ContributesBinding
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import org.example.project.core.navigation.StackComponent
 import org.example.project.feature.auth.LoginComponent
 import org.example.project.feature.main.MainComponent
 import org.example.project.feature.user.data.UserRepository
 
-interface RootComponent : BackHandlerOwner {
-    val stack: Value<ChildStack<*, Child>>
-
-    fun onBackClick()
-
+interface RootComponent : StackComponent<Any, RootComponent.Child> {
     sealed class Child {
         data object Splash : Child()
 
@@ -71,7 +68,7 @@ class DefaultRootComponent(
     }
 
     override fun onBackClick() {
-        // Back is handled by childPages in MainComponent
+        navigation.pop()
     }
 
     private fun child(config: Config, componentContext: ComponentContext): RootComponent.Child =
@@ -84,6 +81,7 @@ class DefaultRootComponent(
                         onLoginSuccess = ::navigateToMain,
                     )
                 )
+
             is Config.Main ->
                 RootComponent.Child.Main(
                     mainComponentFactory.create(

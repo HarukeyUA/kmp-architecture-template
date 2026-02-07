@@ -1,4 +1,4 @@
-package org.example.project
+package org.example.project.core.ui.navigation
 
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.tween
@@ -18,11 +18,13 @@ import com.arkivanov.essenty.backhandler.BackHandler
 @OptIn(ExperimentalDecomposeApi::class)
 actual fun <C : Any, T : Any> backAnimation(
     backHandler: BackHandler,
-    onBack: () -> Unit,
+    onBackClick: () -> Unit,
 ): StackAnimation<C, T> =
     stackAnimation(
         animator = iosLikeSlide(),
-        predictiveBackParams = { PredictiveBackParams(backHandler = backHandler, onBack = onBack) },
+        predictiveBackParams = {
+            PredictiveBackParams(backHandler = backHandler, onBack = onBackClick)
+        },
     )
 
 @OptIn(ExperimentalDecomposeApi::class)

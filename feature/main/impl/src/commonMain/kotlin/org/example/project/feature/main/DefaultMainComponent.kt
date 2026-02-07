@@ -1,11 +1,10 @@
 package org.example.project.feature.main
 
 import com.arkivanov.decompose.ComponentContext
-import com.arkivanov.decompose.router.pages.ChildPages
-import com.arkivanov.decompose.router.pages.Pages
-import com.arkivanov.decompose.router.pages.PagesNavigation
-import com.arkivanov.decompose.router.pages.childPages
-import com.arkivanov.decompose.router.pages.select
+import com.arkivanov.decompose.router.stack.ChildStack
+import com.arkivanov.decompose.router.stack.StackNavigation
+import com.arkivanov.decompose.router.stack.bringToFront
+import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.value.Value
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
@@ -26,41 +25,42 @@ class DefaultMainComponent(
     private val profileComponentFactory: ProfileComponent.Factory,
 ) : MainComponent, ComponentContext by componentContext {
 
-    private val navigation = PagesNavigation<PageConfig>()
+    private val navigation = StackNavigation<Config>()
 
-    override val pages: Value<ChildPages<Any, MainComponent.Child>> =
-        childPages(
+    private val _stack: Value<ChildStack<Config, MainComponent.Child>> =
+        childStack(
             source = navigation,
-            serializer = PageConfig.serializer(),
-            initialPages = {
-                Pages(
-                    items = listOf(PageConfig.Home, PageConfig.Search, PageConfig.Profile),
-                    selectedIndex = 0,
-                )
-            },
+            serializer = Config.serializer(),
+            initialConfiguration = Config.Home,
             childFactory = ::createChild,
         )
 
-    override fun selectPage(index: Int) {
-        navigation.select(index = index)
+    override val stack: Value<ChildStack<*, MainComponent.Child>> = _stack
+
+    override fun onEvent(event: MainComponent.Event) {
+        when (event) {
+            MainComponent.Event.HomeTabClick -> navigation.bringToFront(Config.Home)
+            MainComponent.Event.ProfileTabClick -> navigation.bringToFront(Config.Profile)
+            MainComponent.Event.SearchTabClick -> navigation.bringToFront(Config.Search)
+        }
     }
 
     private fun createChild(
-        config: PageConfig,
+        config: Config,
         componentContext: ComponentContext,
     ): MainComponent.Child =
         when (config) {
-            PageConfig.Home ->
+            Config.Home ->
                 MainComponent.Child.Home(
                     homeComponentFactory.create(componentContext = componentContext)
                 )
 
-            PageConfig.Search ->
+            Config.Search ->
                 MainComponent.Child.Search(
                     searchComponentFactory.create(componentContext = componentContext)
                 )
 
-            PageConfig.Profile ->
+            Config.Profile ->
                 MainComponent.Child.Profile(
                     profileComponentFactory.create(
                         componentContext = componentContext,
@@ -70,12 +70,12 @@ class DefaultMainComponent(
         }
 
     @Serializable
-    private sealed interface PageConfig {
-        @Serializable data object Home : PageConfig
+    private sealed interface Config {
+        @Serializable data object Home : Config
 
-        @Serializable data object Search : PageConfig
+        @Serializable data object Search : Config
 
-        @Serializable data object Profile : PageConfig
+        @Serializable data object Profile : Config
     }
 
     @AssistedFactory

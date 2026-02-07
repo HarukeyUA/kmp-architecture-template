@@ -12,6 +12,7 @@ class DecomposeConventionPlugin : Plugin<Project> {
                 sourceSets.commonMain.dependencies {
                     implementation(libs.library("decompose"))
                     implementation(libs.library("decompose-compose"))
+                    implementation(libs.library("decompose-compose-experimental"))
                     implementation(libs.library("essenty-lifecycle"))
                     implementation(libs.library("essenty-statekeeper"))
                     implementation(libs.library("essenty-lifecycle-coroutines"))
