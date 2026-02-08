@@ -72,3 +72,7 @@ include(":feature:profile:impl")
 include(":feature:user-data:public")
 
 include(":feature:user-data:impl")
+
+include(":feature:user-data:testing")
+
+include(":core:testing:public")

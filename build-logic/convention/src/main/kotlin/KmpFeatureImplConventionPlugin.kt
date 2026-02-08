@@ -1,3 +1,5 @@
+import org.example.project.library
+import org.example.project.libs
 import org.example.project.siblingPublicModule
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -16,7 +18,16 @@ class KmpFeatureImplConventionPlugin : Plugin<Project> {
             }
 
             extensions.configure<KotlinMultiplatformExtension> {
-                sourceSets { commonMain.dependencies { api(project(siblingPublicModule())) } }
+                sourceSets {
+                    commonMain.dependencies { api(project(siblingPublicModule())) }
+                    commonTest.dependencies {
+                        implementation(libs.library("kotlin-test"))
+                        implementation(libs.library("assertk"))
+                        implementation(libs.library("turbine"))
+                        implementation(libs.library("kotlinx-coroutines-test"))
+                        implementation(project(":core:testing:public"))
+                    }
+                }
             }
         }
     }
