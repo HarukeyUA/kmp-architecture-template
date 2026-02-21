@@ -38,8 +38,6 @@ include(":composeApp")
 // Core modules
 include(":core:component:public")
 
-include(":core:component:impl")
-
 include(":core:navigation:public")
 
 include(":core:ui:public")

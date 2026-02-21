@@ -12,7 +12,7 @@ import com.arkivanov.essenty.lifecycle.subscribe
  * Bridges Essenty's Lifecycle to AndroidX LifecycleOwner. This allows Compose lifecycle-aware APIs
  * to work with Decompose components.
  */
-class EssentyLifecycleOwner(private val essentyLifecycle: Lifecycle) : LifecycleOwner {
+internal class EssentyLifecycleOwner(private val essentyLifecycle: Lifecycle) : LifecycleOwner {
     override val lifecycle: AndroidLifecycle =
         object : AndroidLifecycle() {
             private val observers = mutableMapOf<LifecycleObserver, Lifecycle.Callbacks>()
