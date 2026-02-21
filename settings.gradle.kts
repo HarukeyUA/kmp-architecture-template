@@ -76,3 +76,5 @@ include(":feature:user-data:impl")
 include(":feature:user-data:testing")
 
 include(":core:testing:public")
+
+include(":core:screenshot-testing:public")

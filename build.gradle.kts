@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.serialization) apply false
     alias(libs.plugins.metro) apply false
     alias(libs.plugins.spotless) apply false
+    alias(libs.plugins.roborazzi) apply false
 }
 
 allprojects {

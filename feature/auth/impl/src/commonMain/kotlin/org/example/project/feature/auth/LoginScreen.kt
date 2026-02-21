@@ -32,7 +32,7 @@ class DefaultLoginScreen : LoginScreen {
 }
 
 @Composable
-private fun LoginScreenContent(
+internal fun LoginScreenContent(
     state: LoginComponent.State,
     onEvent: (LoginComponent.Event) -> Unit,
 ) {

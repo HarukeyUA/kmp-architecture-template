@@ -7,6 +7,7 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.essenty.lifecycle)
         }
+        androidMain.dependencies { implementation(kotlin("test-junit")) }
         jvmMain.dependencies { implementation(kotlin("test-junit")) }
     }
 }

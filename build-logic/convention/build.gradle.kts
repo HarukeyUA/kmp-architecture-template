@@ -58,5 +58,9 @@ gradlePlugin {
             id = "org.example.serialization"
             implementationClass = "SerializationConventionPlugin"
         }
+        register("screenshotTesting") {
+            id = "org.example.screenshot.testing"
+            implementationClass = "ScreenshotTestingConventionPlugin"
+        }
     }
 }
