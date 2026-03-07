@@ -35,8 +35,9 @@ Architecture of the sample project — a Kotlin Multiplatform (KMP) application 
 Modules are split into `:public` and `:impl` submodules:
 
 ```
-:core:component:public       # Component primitives (StatefulComponent, EventComponent,
-                             #   MoleculeComponent, platform bridges)
+:core:component:public       # Component primitives (AppComponentContext, StatefulComponent,
+                             #   EventComponent, MoleculeComponent, snackbar system,
+                             #   platform bridges)
 :core:navigation:public      # Navigation primitives (StackComponent)
 :core:ui:public              # UI helpers (ChildStack composable), theme, design system
 :core:local-storage:public   # Local storage interface (SettingsLocalDataSource)
@@ -80,10 +81,13 @@ Modules are split into `:public` and `:impl` submodules:
 
 ### Component Hierarchy
 
-All components extend Decompose's `ComponentContext`, which provides lifecycle, state keeper, instance keeper, and back handler.
+All components extend `AppComponentContext`, a custom interface that extends Decompose's `GenericComponentContext<AppComponentContext>` with app-specific capabilities (e.g., `snackbarHandler`). This means child contexts created by Decompose automatically carry app-level services.
+
+`DefaultAppComponentContext` is the concrete implementation. It accepts a `Lifecycle` (and optional `StateKeeper`, `InstanceKeeper`, `BackHandler`, `SnackbarHandler`) and can also wrap a plain Decompose `ComponentContext`. Its `componentContextFactory` creates child contexts with `ChildSnackbarHandler` to form the hierarchical snackbar chain.
 
 ```
-ComponentContext (Decompose)
+AppComponentContext (extends GenericComponentContext<AppComponentContext>)
+│   snackbarHandler: SnackbarHandler
 │
 ├── StatefulComponent<S, E>      # Produces state, handles events
 │       │                          state: StateFlow<S>, onEvent(E)
@@ -111,7 +115,7 @@ These can be combined — e.g., a component could implement both `EventComponent
 
 ### MoleculeComponent
 
-`MoleculeComponent<S, E>` (in `:core:component:public`) is the default implementation of `StatefulComponent`. It provides:
+`MoleculeComponent<S, E>` (in `:core:component:public`) is the default implementation of `StatefulComponent`. It takes an `AppComponentContext` and delegates to it via `AppComponentContext by componentContext`. It provides:
 
 - **Lifecycle-aware coroutine scope** — cancels on destroy
 - **Molecule-powered state production** — state is produced via a `@Composable produceState()` function
@@ -135,11 +139,11 @@ In `:public`, define the interface with nested `State`, `Event`, and `Factory`:
 interface LoginComponent : StatefulComponent<LoginComponent.State, LoginComponent.Event> {
     data class State(val counter: Int = 0) : UiState
     sealed interface Event : UiEvent { ... }
-    fun interface Factory { fun create(componentContext: ComponentContext, ...): LoginComponent }
+    fun interface Factory { fun create(componentContext: AppComponentContext, ...): LoginComponent }
 }
 ```
 
-In `:impl`, extend `MoleculeComponent`, override `produceState()`, and use `CollectEvents {}` to handle events. The Metro `@AssistedFactory` / `@ContributesBinding` annotations wire the factory into DI.
+In `:impl`, extend `MoleculeComponent` (passing `AppComponentContext`), override `produceState()`, and use `CollectEvents {}` to handle events. The Metro `@AssistedFactory` / `@ContributesBinding` annotations wire the factory into DI.
 
 ### Defining a StackComponent
 
@@ -151,7 +155,7 @@ interface HomeComponent : StackComponent<Any, HomeComponent.Child> {
         data class List(val component: HomeListComponent) : Child
         data class Detail(val component: HomeDetailComponent) : Child
     }
-    fun interface Factory { fun create(componentContext: ComponentContext): HomeComponent }
+    fun interface Factory { fun create(componentContext: AppComponentContext): HomeComponent }
 }
 ```
 
@@ -263,6 +267,31 @@ Features that use `StackComponent` need to add `api(project(":core:navigation:pu
 
 ---
 
+## Snackbar System
+
+The snackbar system (in `:core:component:public`) enables any component to display snackbar messages that bubble up through the component hierarchy to the nearest host.
+
+### Architecture
+
+| Class | Role |
+|-------|------|
+| `SnackbarHandler` | Interface with `showSnackbar(message)`, `registerHost(callback)`, `unregisterHost(callback)` |
+| `SnackbarDispatcher` | Root implementation — forwards messages to the registered host (or drops them) |
+| `ChildSnackbarHandler` | Child implementation — forwards to local host if registered, otherwise bubbles up to parent |
+| `SnackbarHostState` | `SnackbarHostCallback` that exposes received messages as a `SharedFlow` |
+| `SnackbarMessage` | Data class with `text` and `duration` |
+| `snackbarHost()` | `AppComponentContext` extension that creates and registers a `SnackbarHostState`, auto-unregisters on destroy |
+| `rememberDispatchedSnackbarHostState()` | Composable that bridges `SnackbarHostState` → Compose `SnackbarHostState` |
+
+### Flow
+
+1. `DefaultAppComponentContext` is created with a `SnackbarDispatcher` at the root
+2. Child contexts automatically get a `ChildSnackbarHandler(parent = ...)` via `componentContextFactory`
+3. A host component (e.g., `MainComponent`) calls `snackbarHost()` to register as the display point
+4. Any descendant component calls `snackbarHandler.showSnackbar(SnackbarMessage(...))` — the message bubbles up to the nearest registered host
+
+---
+
 ## Component Platform Bridges
 
 All component platform bridges live in `:core:component:public`:
@@ -336,7 +365,7 @@ Tests extend `CoroutineTest()` and use `runLifecycleTest` to get a managed lifec
 **Key patterns:**
 - `CoroutineTest()` — base class that sets up `UnconfinedTestDispatcher` as `Dispatchers.Main`
 - `runLifecycleTest { lifecycle -> ... }` — manages `LifecycleRegistry` creation, `resume()`, and `destroy()`
-- `createComponent(lifecycle, ...)` — builds `DefaultComponentContext(lifecycle)` and the component under test
+- `createComponent(lifecycle, ...)` — builds `DefaultAppComponentContext(lifecycle)` and the component under test
 - `component.state.test { ... }` — Turbine collects the `StateFlow` and provides `awaitItem()` for assertions
 - `component.onEvent(...)` — simulates UI interactions
 

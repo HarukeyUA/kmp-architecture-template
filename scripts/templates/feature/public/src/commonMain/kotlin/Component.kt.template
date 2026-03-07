@@ -1,6 +1,6 @@
 package {{PACKAGE_PATH}}
 
-import com.arkivanov.decompose.ComponentContext
+import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.StatefulComponent
 import org.example.project.core.component.UiEvent
 import org.example.project.core.component.UiState
@@ -16,7 +16,7 @@ interface {{FEATURE_NAME}}Component : StatefulComponent<{{FEATURE_NAME}}Componen
 
     fun interface Factory {
         fun create(
-            componentContext: ComponentContext,
+            componentContext: AppComponentContext,
         ): {{FEATURE_NAME}}Component
     }
 }
