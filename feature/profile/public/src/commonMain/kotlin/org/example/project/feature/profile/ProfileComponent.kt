@@ -1,7 +1,7 @@
 package org.example.project.feature.profile
 
-import com.arkivanov.decompose.ComponentContext
 import kotlinx.serialization.Serializable
+import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.StatefulComponent
 import org.example.project.core.component.UiEvent
 import org.example.project.core.component.UiState
@@ -16,6 +16,6 @@ interface ProfileComponent : StatefulComponent<ProfileComponent.State, ProfileCo
     }
 
     fun interface Factory {
-        fun create(componentContext: ComponentContext, onLogout: () -> Unit): ProfileComponent
+        fun create(componentContext: AppComponentContext, onLogout: () -> Unit): ProfileComponent
     }
 }

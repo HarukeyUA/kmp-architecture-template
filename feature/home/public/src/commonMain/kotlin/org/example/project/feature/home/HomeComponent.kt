@@ -1,6 +1,6 @@
 package org.example.project.feature.home
 
-import com.arkivanov.decompose.ComponentContext
+import org.example.project.core.component.AppComponentContext
 import org.example.project.core.navigation.StackComponent
 
 interface HomeComponent : StackComponent<Any, HomeComponent.Child> {
@@ -12,6 +12,6 @@ interface HomeComponent : StackComponent<Any, HomeComponent.Child> {
     }
 
     fun interface Factory {
-        fun create(componentContext: ComponentContext): HomeComponent
+        fun create(componentContext: AppComponentContext): HomeComponent
     }
 }

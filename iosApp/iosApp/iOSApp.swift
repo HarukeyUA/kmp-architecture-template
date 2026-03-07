@@ -26,11 +26,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     private lazy var appGraph = IosAppGraphKt.createAppGraph()
 
     lazy var root: RootComponent = appGraph.rootComponentFactory.create(
-        componentContext: DefaultComponentContext(
+        componentContext: DefaultAppComponentContext(
             lifecycle: ApplicationLifecycle(),
             stateKeeper: stateKeeper,
             instanceKeeper: nil,
-            backHandler: backDispatcher
+            backHandler: backDispatcher,
+            snackbarHandler: SnackbarDispatcher()
         )
     )
 

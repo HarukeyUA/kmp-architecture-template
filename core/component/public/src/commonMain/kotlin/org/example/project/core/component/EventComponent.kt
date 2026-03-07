@@ -1,7 +1,5 @@
 package org.example.project.core.component
 
-import com.arkivanov.decompose.ComponentContext
-
 /**
  * Component that handles events but does not produce reactive UI state.
  *
@@ -12,6 +10,6 @@ import com.arkivanov.decompose.ComponentContext
  *
  * Example: A flow coordinator that handles "next/back" events but shows child screens.
  */
-interface EventComponent<E : UiEvent> : ComponentContext {
+interface EventComponent<E : UiEvent> : AppComponentContext {
     fun onEvent(event: E)
 }

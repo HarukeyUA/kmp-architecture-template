@@ -7,7 +7,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.cash.molecule.RecompositionMode
 import app.cash.molecule.launchMolecule
-import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -30,8 +29,8 @@ import org.example.project.core.component.internal.returningCompositionLocalProv
  * - Event channel for UI -> Component communication
  * - Essenty Lifecycle -> AndroidX LifecycleOwner bridge
  */
-abstract class MoleculeComponent<S : UiState, E : UiEvent>(componentContext: ComponentContext) :
-    StatefulComponent<S, E>, ComponentContext by componentContext {
+abstract class MoleculeComponent<S : UiState, E : UiEvent>(componentContext: AppComponentContext) :
+    StatefulComponent<S, E>, AppComponentContext by componentContext {
 
     /**
      * Lifecycle-aware coroutine scope. Uses platform-specific dispatcher via moleculeContext().

@@ -4,10 +4,10 @@ import app.cash.turbine.test
 import assertk.assertThat
 import assertk.assertions.hasSize
 import assertk.assertions.isEqualTo
-import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlin.test.Test
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.example.project.core.component.DefaultAppComponentContext
 import org.example.project.core.testing.CoroutineTest
 import org.example.project.core.testing.runLifecycleTest
 
@@ -44,7 +44,7 @@ class DefaultHomeListComponentTest : CoroutineTest() {
         lifecycle: LifecycleRegistry,
         onItemSelected: (Int) -> Unit = {},
     ): HomeListComponent {
-        val context = DefaultComponentContext(lifecycle = lifecycle)
+        val context = DefaultAppComponentContext(lifecycle = lifecycle)
 
         return DefaultHomeListComponent(componentContext = context, onItemSelected = onItemSelected)
     }

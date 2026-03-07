@@ -1,8 +1,8 @@
 package org.example.project.core.navigation
 
-import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
+import org.example.project.core.component.AppComponentContext
 
 /**
  * Component that manages a stack of child components.
@@ -17,7 +17,7 @@ import com.arkivanov.decompose.value.Value
  * @param C Configuration type for child components
  * @param T Child component type
  */
-interface StackComponent<out C : Any, out T : Any> : ComponentContext {
+interface StackComponent<out C : Any, out T : Any> : AppComponentContext {
     /** The current stack state with the active child on top. */
     val stack: Value<ChildStack<C, T>>
 

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -17,6 +18,7 @@ import com.arkivanov.decompose.extensions.compose.subscribeAsState
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
+import org.example.project.core.component.snackbar.rememberDispatchedSnackbarHostState
 import org.example.project.feature.home.HomeScreen
 import org.example.project.feature.profile.ProfileScreen
 import org.example.project.feature.search.SearchScreen
@@ -33,8 +35,11 @@ class DefaultMainScreen(
     override fun Content(component: MainComponent) {
         val stack by component.stack.subscribeAsState()
         val activeChild = stack.active.instance
+        val composeSnackbarHostState =
+            rememberDispatchedSnackbarHostState(component.snackbarHostState)
 
         Scaffold(
+            snackbarHost = { SnackbarHost(composeSnackbarHostState) },
             bottomBar = {
                 NavigationBar(modifier = Modifier.fillMaxWidth()) {
                     NavigationBarItem(

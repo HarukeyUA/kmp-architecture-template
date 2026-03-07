@@ -1,7 +1,7 @@
 package org.example.project.feature.auth
 
-import com.arkivanov.decompose.ComponentContext
 import kotlinx.serialization.Serializable
+import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.StatefulComponent
 import org.example.project.core.component.UiEvent
 import org.example.project.core.component.UiState
@@ -14,6 +14,9 @@ interface LoginComponent : StatefulComponent<LoginComponent.State, LoginComponen
     }
 
     fun interface Factory {
-        fun create(componentContext: ComponentContext, onLoginSuccess: () -> Unit): LoginComponent
+        fun create(
+            componentContext: AppComponentContext,
+            onLoginSuccess: () -> Unit,
+        ): LoginComponent
     }
 }

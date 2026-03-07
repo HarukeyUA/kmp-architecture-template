@@ -1,6 +1,5 @@
 package org.example.project.feature.main
 
-import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.bringToFront
@@ -12,18 +11,22 @@ import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
 import kotlinx.serialization.Serializable
+import org.example.project.core.component.AppComponentContext
+import org.example.project.core.component.snackbar.snackbarHost
 import org.example.project.feature.home.HomeComponent
 import org.example.project.feature.profile.ProfileComponent
 import org.example.project.feature.search.SearchComponent
 
 @AssistedInject
 class DefaultMainComponent(
-    @Assisted componentContext: ComponentContext,
+    @Assisted componentContext: AppComponentContext,
     @Assisted private val onLogout: () -> Unit,
     private val homeComponentFactory: HomeComponent.Factory,
     private val searchComponentFactory: SearchComponent.Factory,
     private val profileComponentFactory: ProfileComponent.Factory,
-) : MainComponent, ComponentContext by componentContext {
+) : MainComponent, AppComponentContext by componentContext {
+
+    override val snackbarHostState = snackbarHost()
 
     private val navigation = StackNavigation<Config>()
 
@@ -47,7 +50,7 @@ class DefaultMainComponent(
 
     private fun createChild(
         config: Config,
-        componentContext: ComponentContext,
+        componentContext: AppComponentContext,
     ): MainComponent.Child =
         when (config) {
             Config.Home ->
@@ -82,7 +85,7 @@ class DefaultMainComponent(
     @ContributesBinding(AppScope::class)
     fun interface Factory : MainComponent.Factory {
         override fun create(
-            componentContext: ComponentContext,
+            componentContext: AppComponentContext,
             onLogout: () -> Unit,
         ): DefaultMainComponent
     }

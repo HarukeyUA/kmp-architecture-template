@@ -1,7 +1,7 @@
 package org.example.project.feature.search
 
 import androidx.compose.foundation.text.input.TextFieldState
-import com.arkivanov.decompose.ComponentContext
+import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.StatefulComponent
 import org.example.project.core.component.UiEvent
 import org.example.project.core.component.UiState
@@ -18,6 +18,6 @@ interface SearchComponent : StatefulComponent<SearchComponent.State, SearchCompo
     }
 
     fun interface Factory {
-        fun create(componentContext: ComponentContext): SearchComponent
+        fun create(componentContext: AppComponentContext): SearchComponent
     }
 }

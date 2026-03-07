@@ -6,9 +6,9 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.arkivanov.decompose.retainedComponent
-import com.arkivanov.decompose.router.stack.active
 import org.example.project.App
 import org.example.project.RootComponent
+import org.example.project.core.component.DefaultAppComponentContext
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         val rootScreen = appGraph.rootScreen
 
         val root = retainedComponent { componentContext ->
-            appGraph.rootComponentFactory.create(componentContext)
+            appGraph.rootComponentFactory.create(DefaultAppComponentContext(componentContext))
         }
 
         splashScreen.setKeepOnScreenCondition {

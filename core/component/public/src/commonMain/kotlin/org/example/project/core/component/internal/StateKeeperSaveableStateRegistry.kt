@@ -9,8 +9,8 @@ import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.runtime.snapshots.SnapshotMutableState
 import androidx.compose.runtime.structuralEqualityPolicy
-import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.essenty.statekeeper.StateKeeper
+import org.example.project.core.component.AppComponentContext
 
 internal class StateKeeperSaveableStateRegistry(
     private val stateKeeper: StateKeeper,
@@ -85,8 +85,9 @@ internal class StateKeeperSaveableStateRegistry(
     }
 }
 
+@Suppress("ComposableNaming")
 @Composable
-internal fun <T> ComponentContext.ProvideStateKeeperSaveableStateRegistry(
+internal fun <T> AppComponentContext.ProvideStateKeeperSaveableStateRegistry(
     key: String = "state-keeper-state-registry",
     content: @Composable () -> T,
 ): T {

@@ -1,17 +1,17 @@
 package org.example.project.feature.home
 
 import androidx.compose.runtime.Composable
-import com.arkivanov.decompose.ComponentContext
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
+import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.MoleculeComponent
 
 @AssistedInject
 class DefaultHomeListComponent(
-    @Assisted componentContext: ComponentContext,
+    @Assisted componentContext: AppComponentContext,
     @Assisted private val onItemSelected: (id: Int) -> Unit,
 ) :
     HomeListComponent,
@@ -39,7 +39,7 @@ class DefaultHomeListComponent(
     @ContributesBinding(AppScope::class)
     fun interface Factory : HomeListComponent.Factory {
         override fun create(
-            componentContext: ComponentContext,
+            componentContext: AppComponentContext,
             onItemSelected: (id: Int) -> Unit,
         ): DefaultHomeListComponent
     }

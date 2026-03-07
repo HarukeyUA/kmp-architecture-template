@@ -1,6 +1,6 @@
 package org.example.project.feature.home
 
-import com.arkivanov.decompose.ComponentContext
+import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.StatefulComponent
 import org.example.project.core.component.UiEvent
 import org.example.project.core.component.UiState
@@ -16,7 +16,7 @@ interface HomeDetailComponent :
 
     fun interface Factory {
         fun create(
-            componentContext: ComponentContext,
+            componentContext: AppComponentContext,
             itemId: Int,
             onBack: () -> Unit,
         ): HomeDetailComponent

@@ -1,7 +1,8 @@
 plugins {
     alias(libs.plugins.example.kmp.library)
     alias(libs.plugins.example.compose)
-    alias(libs.plugins.serialization)
+    alias(libs.plugins.example.serialization)
+    alias(libs.plugins.example.coroutines)
 }
 
 kotlin {
@@ -13,10 +14,7 @@ kotlin {
             api(libs.essenty.backhandler)
             implementation(libs.molecule)
             implementation(libs.essenty.lifecycle.coroutines)
-            implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.kotlinx.serialization.json)
             implementation(libs.androidx.lifecycle.runtimeCompose)
         }
-        androidMain.dependencies { implementation(libs.kotlinx.coroutines.android) }
     }
 }

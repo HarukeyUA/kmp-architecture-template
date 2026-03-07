@@ -3,11 +3,11 @@ package org.example.project
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.extensions.compose.lifecycle.LifecycleController
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import dev.zacsweers.metro.createGraph
 import javax.swing.SwingUtilities
+import org.example.project.core.component.DefaultAppComponentContext
 
 internal fun <T> runOnUiThread(block: () -> T): T {
     if (SwingUtilities.isEventDispatchThread()) {
@@ -37,7 +37,7 @@ fun main() {
     val appGraph = runOnUiThread { createGraph<JvmAppGraph>() }
 
     val root = runOnUiThread {
-        appGraph.rootComponentFactory.create(DefaultComponentContext(lifecycle = lifecycle))
+        appGraph.rootComponentFactory.create(DefaultAppComponentContext(lifecycle = lifecycle))
     }
 
     val rootScreen = appGraph.rootScreen

@@ -6,7 +6,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import com.arkivanov.decompose.ComponentContext
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
@@ -16,12 +15,13 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.MoleculeComponent
 import org.example.project.feature.user.data.UserRepository
 
 @AssistedInject
 class DefaultLoginComponent(
-    @Assisted componentContext: ComponentContext,
+    @Assisted componentContext: AppComponentContext,
     @Assisted private val onLoginSuccess: () -> Unit,
     private val userRepository: UserRepository,
 ) :
@@ -61,7 +61,7 @@ class DefaultLoginComponent(
     @ContributesBinding(AppScope::class)
     fun interface Factory : LoginComponent.Factory {
         override fun create(
-            componentContext: ComponentContext,
+            componentContext: AppComponentContext,
             onLoginSuccess: () -> Unit,
         ): DefaultLoginComponent
     }

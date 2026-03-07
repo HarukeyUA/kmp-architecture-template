@@ -1,15 +1,18 @@
 package org.example.project.feature.main
 
-import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.value.Value
+import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.EventComponent
 import org.example.project.core.component.UiEvent
+import org.example.project.core.component.snackbar.SnackbarHostState
 import org.example.project.feature.home.HomeComponent
 import org.example.project.feature.profile.ProfileComponent
 import org.example.project.feature.search.SearchComponent
 
 interface MainComponent : EventComponent<MainComponent.Event> {
+
+    val snackbarHostState: SnackbarHostState
 
     val stack: Value<ChildStack<*, Child>>
 
@@ -30,6 +33,6 @@ interface MainComponent : EventComponent<MainComponent.Event> {
     }
 
     fun interface Factory {
-        fun create(componentContext: ComponentContext, onLogout: () -> Unit): MainComponent
+        fun create(componentContext: AppComponentContext, onLogout: () -> Unit): MainComponent
     }
 }

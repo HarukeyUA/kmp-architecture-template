@@ -22,6 +22,7 @@ kotlin {
             export(libs.essenty.lifecycle)
             export(libs.essenty.backhandler)
             export(libs.essenty.statekeeper)
+            export(project(":core:component:public"))
         }
     }
 

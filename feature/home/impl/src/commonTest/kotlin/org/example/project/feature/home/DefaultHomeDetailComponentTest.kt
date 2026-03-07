@@ -4,10 +4,10 @@ import app.cash.turbine.test
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
-import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlin.test.Test
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.example.project.core.component.DefaultAppComponentContext
 import org.example.project.core.testing.CoroutineTest
 import org.example.project.core.testing.runLifecycleTest
 
@@ -45,7 +45,7 @@ class DefaultHomeDetailComponentTest : CoroutineTest() {
         itemId: Int = 1,
         onBack: () -> Unit = {},
     ): HomeDetailComponent {
-        val context = DefaultComponentContext(lifecycle = lifecycle)
+        val context = DefaultAppComponentContext(lifecycle = lifecycle)
 
         return DefaultHomeDetailComponent(
             componentContext = context,

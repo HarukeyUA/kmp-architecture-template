@@ -1,6 +1,5 @@
 package org.example.project
 
-import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
@@ -16,6 +15,7 @@ import dev.zacsweers.metro.ContributesBinding
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import org.example.project.core.component.AppComponentContext
 import org.example.project.core.navigation.StackComponent
 import org.example.project.feature.auth.LoginComponent
 import org.example.project.feature.main.MainComponent
@@ -31,17 +31,17 @@ interface RootComponent : StackComponent<Any, RootComponent.Child> {
     }
 
     fun interface Factory {
-        fun create(componentContext: ComponentContext): RootComponent
+        fun create(componentContext: AppComponentContext): RootComponent
     }
 }
 
 @AssistedInject
 class DefaultRootComponent(
-    @Assisted componentContext: ComponentContext,
+    @Assisted componentContext: AppComponentContext,
     private val loginComponentFactory: LoginComponent.Factory,
     private val mainComponentFactory: MainComponent.Factory,
     private val userRepository: UserRepository,
-) : RootComponent, ComponentContext by componentContext {
+) : RootComponent, AppComponentContext by componentContext {
     private val coroutineScope = coroutineScope()
 
     private val navigation = StackNavigation<Config>()
@@ -71,7 +71,7 @@ class DefaultRootComponent(
         navigation.pop()
     }
 
-    private fun child(config: Config, componentContext: ComponentContext): RootComponent.Child =
+    private fun child(config: Config, componentContext: AppComponentContext): RootComponent.Child =
         when (config) {
             Config.Splash -> RootComponent.Child.Splash
             Config.Login ->
@@ -111,6 +111,6 @@ class DefaultRootComponent(
     @AssistedFactory
     @ContributesBinding(AppScope::class)
     fun interface Factory : RootComponent.Factory {
-        override fun create(componentContext: ComponentContext): DefaultRootComponent
+        override fun create(componentContext: AppComponentContext): DefaultRootComponent
     }
 }

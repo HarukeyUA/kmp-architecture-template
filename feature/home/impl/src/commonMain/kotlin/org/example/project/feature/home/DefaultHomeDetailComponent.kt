@@ -1,17 +1,19 @@
 package org.example.project.feature.home
 
 import androidx.compose.runtime.Composable
-import com.arkivanov.decompose.ComponentContext
+import androidx.compose.runtime.LaunchedEffect
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
+import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.MoleculeComponent
+import org.example.project.core.component.snackbar.SnackbarMessage
 
 @AssistedInject
 class DefaultHomeDetailComponent(
-    @Assisted componentContext: ComponentContext,
+    @Assisted componentContext: AppComponentContext,
     @Assisted private val itemId: Int,
     @Assisted private val onBack: () -> Unit,
 ) :
@@ -26,6 +28,12 @@ class DefaultHomeDetailComponent(
             }
         }
 
+        LaunchedEffect(Unit) {
+            this@DefaultHomeDetailComponent.snackbarHandler.showSnackbar(
+                SnackbarMessage(text = "Message")
+            )
+        }
+
         return HomeDetailComponent.State(
             id = itemId,
             title = "Item $itemId",
@@ -37,7 +45,7 @@ class DefaultHomeDetailComponent(
     @ContributesBinding(AppScope::class)
     fun interface Factory : HomeDetailComponent.Factory {
         override fun create(
-            componentContext: ComponentContext,
+            componentContext: AppComponentContext,
             itemId: Int,
             onBack: () -> Unit,
         ): DefaultHomeDetailComponent
