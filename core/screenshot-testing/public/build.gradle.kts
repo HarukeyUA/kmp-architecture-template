@@ -1,5 +1,6 @@
 plugins {
-    alias(libs.plugins.example.kmp.compose.feature.public)
+    alias(libs.plugins.example.kmp.library)
+    alias(libs.plugins.example.compose)
     alias(libs.plugins.roborazzi)
 }
 
