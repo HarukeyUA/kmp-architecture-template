@@ -39,13 +39,13 @@ jobs:
       - run: ./gradlew testAndroidHostTest
       - name: Upload test reports
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-reports
           path: '**/build/reports/tests/testAndroidHostTest/'
       - name: Upload Roborazzi reports
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: roborazzi-reports
           path: '**/build/outputs/roborazzi/'
