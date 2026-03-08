@@ -37,6 +37,18 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
       - run: ./gradlew testAndroidHostTest
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: '**/build/reports/tests/testAndroidHostTest/'
+      - name: Upload Roborazzi reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: roborazzi-reports
+          path: '**/build/outputs/roborazzi/'
 
   build-android:
     name: Build Android
