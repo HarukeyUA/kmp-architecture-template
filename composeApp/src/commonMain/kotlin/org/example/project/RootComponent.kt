@@ -6,24 +6,21 @@ import com.arkivanov.decompose.router.stack.childStack
 import com.arkivanov.decompose.router.stack.pop
 import com.arkivanov.decompose.router.stack.replaceAll
 import com.arkivanov.decompose.value.Value
-import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.example.project.core.component.AppComponentContext
 import org.example.project.core.navigation.StackComponent
 import org.example.project.feature.auth.LoginComponent
 import org.example.project.feature.main.MainComponent
-import org.example.project.feature.user.data.UserRepository
+import org.example.project.feature.splash.SplashComponent
 
 interface RootComponent : StackComponent<Any, RootComponent.Child> {
     sealed class Child {
-        data object Splash : Child()
+        data class Splash(val component: SplashComponent) : Child()
 
         data class Login(val component: LoginComponent) : Child()
 
@@ -38,12 +35,10 @@ interface RootComponent : StackComponent<Any, RootComponent.Child> {
 @AssistedInject
 class DefaultRootComponent(
     @Assisted componentContext: AppComponentContext,
+    private val splashComponentFactory: SplashComponent.Factory,
     private val loginComponentFactory: LoginComponent.Factory,
     private val mainComponentFactory: MainComponent.Factory,
-    private val userRepository: UserRepository,
 ) : RootComponent, AppComponentContext by componentContext {
-    private val coroutineScope = coroutineScope()
-
     private val navigation = StackNavigation<Config>()
 
     private val _stack =
@@ -56,24 +51,21 @@ class DefaultRootComponent(
         )
     override val stack: Value<ChildStack<*, RootComponent.Child>> = _stack
 
-    init {
-        determineStartDestination()
-    }
-
-    private fun determineStartDestination() {
-        coroutineScope.launch {
-            val isLoggedIn = userRepository.isLoggedIn.first()
-            navigation.replaceAll(if (isLoggedIn) Config.Main else Config.Login)
-        }
-    }
-
     override fun onBackClick() {
         navigation.pop()
     }
 
     private fun child(config: Config, componentContext: AppComponentContext): RootComponent.Child =
         when (config) {
-            Config.Splash -> RootComponent.Child.Splash
+            Config.Splash ->
+                RootComponent.Child.Splash(
+                    splashComponentFactory.create(
+                        componentContext = componentContext,
+                        onNavigateToMain = ::navigateToMain,
+                        onNavigateToLogin = ::navigateToLogin,
+                    )
+                )
+
             Config.Login ->
                 RootComponent.Child.Login(
                     loginComponentFactory.create(

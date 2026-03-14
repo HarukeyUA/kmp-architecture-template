@@ -12,6 +12,7 @@ import dev.zacsweers.metro.Inject
 import org.example.project.core.ui.navigation.ChildStack
 import org.example.project.feature.auth.LoginScreen
 import org.example.project.feature.main.MainScreen
+import org.example.project.feature.splash.SplashScreen
 
 @ContributesBinding(AppScope::class)
 @Inject

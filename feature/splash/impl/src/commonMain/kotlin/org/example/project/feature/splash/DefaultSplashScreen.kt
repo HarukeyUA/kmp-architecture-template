@@ -1,4 +1,4 @@
-package org.example.project
+package org.example.project.feature.splash
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

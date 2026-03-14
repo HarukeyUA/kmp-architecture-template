@@ -63,6 +63,10 @@ include(":feature:search:public")
 
 include(":feature:search:impl")
 
+include(":feature:splash:public")
+
+include(":feature:splash:impl")
+
 include(":feature:profile:public")
 
 include(":feature:profile:impl")
