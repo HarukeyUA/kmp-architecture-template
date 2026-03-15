@@ -17,6 +17,7 @@ T_DISPLAY_NAME="My Application"     # Human-readable display name in strings.xml
 T_BASE_PKG="org.example.project"    # Shared Kotlin base package
 T_ANDROID_PKG="com.rainy.myapplication"  # Android application ID / namespace
 T_IOS_PRODUCT="KotlinProject"       # iOS product name in Config.xcconfig / pbxproj
+T_IOS_BUNDLE_ID="org.rainy.project.KotlinProject"  # iOS bundle ID in pbxproj
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 usage() {
@@ -93,7 +94,8 @@ printf "│  %-20s  %-22s → %s\n" "Display name:"  "$T_DISPLAY_NAME"  "$NEW_DI
 printf "│  %-20s  %-22s → %s\n" "Base package:"  "$T_BASE_PKG"      "$NEW_PACKAGE"
 printf "│  %-20s  %-22s → %s\n" "Android ID:"    "$T_ANDROID_PKG"   "$NEW_PACKAGE"
 printf "│  %-20s  %-22s → %s\n" "iOS product:"   "$T_IOS_PRODUCT"   "$NEW_APP_NAME"
-printf "│  %-20s  %-22s → %s\n" "iOS bundle ID:" "$T_BASE_PKG.$T_IOS_PRODUCT" "$NEW_PACKAGE"
+printf "│  %-20s  %-22s → %s\n" "iOS bundle ID:" "$T_IOS_BUNDLE_ID" "$NEW_PACKAGE"
+printf "│  %-20s  %-22s → %s\n" "xcconfig ID:"  "$T_BASE_PKG.$T_IOS_PRODUCT" "$NEW_PACKAGE"
 echo "└─────────────────────────────────────────────────────────────┘"
 $DRY_RUN && echo "(dry-run mode — no files will be modified)"
 
@@ -184,7 +186,15 @@ move_dir() {
   done
 }
 
-# ── Step 1: Replace package identifiers ───────────────────────────────────────
+# ── Step 1: Replace iOS bundle identifiers (full match before component parts) ─
+step "Replacing iOS bundle identifiers"
+info "$T_IOS_BUNDLE_ID → $NEW_PACKAGE"
+replace_in_sources "$T_IOS_BUNDLE_ID" "$NEW_PACKAGE"
+
+info "$T_BASE_PKG.$T_IOS_PRODUCT → $NEW_PACKAGE"
+replace_in_sources "$T_BASE_PKG.$T_IOS_PRODUCT" "$NEW_PACKAGE"
+
+# ── Step 2: Replace package identifiers ───────────────────────────────────────
 step "Replacing package identifiers"
 info "org.example.project → $NEW_PACKAGE"
 replace_in_sources "$T_BASE_PKG" "$NEW_PACKAGE"
@@ -192,22 +202,22 @@ replace_in_sources "$T_BASE_PKG" "$NEW_PACKAGE"
 info "com.rainy.myapplication → $NEW_PACKAGE"
 replace_in_sources "$T_ANDROID_PKG" "$NEW_PACKAGE"
 
-# ── Step 2: Replace iOS product name ──────────────────────────────────────────
+# ── Step 3: Replace iOS product name ──────────────────────────────────────────
 step "Replacing iOS product name ($T_IOS_PRODUCT → $NEW_APP_NAME)"
 replace_in_sources "$T_IOS_PRODUCT" "$NEW_APP_NAME"
 
-# ── Step 3: Replace app name references ───────────────────────────────────────
+# ── Step 4: Replace app name references ───────────────────────────────────────
 # "MyApplication" appears in: class declarations, theme names, manifest, root project name
 step "Replacing app name references (MyApplication → $NEW_APP_NAME)"
 replace_in_sources "$T_APP_NAME" "$NEW_APP_NAME"
 
-# ── Step 4: Replace display name in strings.xml ───────────────────────────────
+# ── Step 5: Replace display name in strings.xml ───────────────────────────────
 step "Updating display name in strings.xml"
 do_replace \
   "$ROOT_DIR/androidApp/src/main/res/values/strings.xml" \
   "$T_DISPLAY_NAME" "$NEW_DISPLAY_NAME"
 
-# ── Step 5: Rename MyApplication.kt → <NewAppName>.kt ─────────────────────────
+# ── Step 6: Rename MyApplication.kt → <NewAppName>.kt ─────────────────────────
 step "Renaming Application class file"
 OLD_APP_KT="$ROOT_DIR/androidApp/src/main/java/$OLD_ANDROID_PATH/${T_APP_NAME}.kt"
 NEW_APP_KT="$ROOT_DIR/androidApp/src/main/java/$OLD_ANDROID_PATH/${NEW_APP_NAME}.kt"
@@ -219,7 +229,7 @@ if [[ "$OLD_APP_KT" != "$NEW_APP_KT" ]]; then
   fi
 fi
 
-# ── Step 6: Relocate Android source directories ────────────────────────────────
+# ── Step 7: Relocate Android source directories ────────────────────────────────
 step "Relocating Android source directories ($OLD_ANDROID_PATH → $NEW_PKG_PATH)"
 for src_set in main test androidTest; do
   move_dir \
@@ -227,7 +237,7 @@ for src_set in main test androidTest; do
     "$ROOT_DIR/androidApp/src/$src_set/java/$NEW_PKG_PATH"
 done
 
-# ── Step 7: Relocate shared Kotlin source directories ─────────────────────────
+# ── Step 8: Relocate shared Kotlin source directories ─────────────────────────
 step "Relocating shared Kotlin source directories ($OLD_BASE_PATH → $NEW_PKG_PATH)"
 
 # build-logic convention plugin
