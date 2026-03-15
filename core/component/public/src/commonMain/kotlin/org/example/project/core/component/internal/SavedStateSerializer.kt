@@ -128,16 +128,12 @@ private object AnyValueSerializer : KSerializer<Any?> {
 
             is List<*> -> {
                 composite.encodeByteElement(descriptor, 0, SerializableTypes.LIST.code)
-                composite.encodeSerializableElement(
-                    descriptor,
-                    1,
-                    AnyListSerializer,
-                    value as List<Any?>,
-                )
+                composite.encodeSerializableElement(descriptor, 1, AnyListSerializer, value)
             }
 
             is Map<*, *> -> {
                 composite.encodeByteElement(descriptor, 0, SerializableTypes.MAP.code)
+                @Suppress("UNCHECKED_CAST")
                 composite.encodeSerializableElement(
                     descriptor,
                     1,
