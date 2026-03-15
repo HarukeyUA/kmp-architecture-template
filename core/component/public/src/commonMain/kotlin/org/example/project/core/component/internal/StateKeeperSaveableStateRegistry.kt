@@ -1,16 +1,11 @@
 package org.example.project.core.component.internal
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.referentialEqualityPolicy
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.LocalSaveableStateRegistry
 import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.runtime.snapshots.SnapshotMutableState
 import androidx.compose.runtime.structuralEqualityPolicy
 import com.arkivanov.essenty.statekeeper.StateKeeper
-import org.example.project.core.component.AppComponentContext
 
 internal class StateKeeperSaveableStateRegistry(
     private val stateKeeper: StateKeeper,
@@ -82,21 +77,5 @@ internal class StateKeeperSaveableStateRegistry(
 
     fun unregister() {
         stateKeeper.unregister(key)
-    }
-}
-
-@Suppress("ComposableNaming")
-@Composable
-internal fun <T> AppComponentContext.ProvideStateKeeperSaveableStateRegistry(
-    key: String = "state-keeper-state-registry",
-    content: @Composable () -> T,
-): T {
-    val registry =
-        remember(stateKeeper, key) { StateKeeperSaveableStateRegistry(stateKeeper, key = key) }
-
-    DisposableEffect(registry) { onDispose { registry.unregister() } }
-
-    return returningCompositionLocalProvider(LocalSaveableStateRegistry provides registry) {
-        content()
     }
 }
