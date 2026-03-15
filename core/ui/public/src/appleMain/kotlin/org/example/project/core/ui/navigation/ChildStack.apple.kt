@@ -44,6 +44,9 @@ actual fun <C : Any, T : Any> backAnimation(
     )
 
 @OptIn(ExperimentalDecomposeApi::class)
+actual fun defaultStackAnimator(): StackAnimator = iosSlide()
+
+@OptIn(ExperimentalDecomposeApi::class)
 private fun iosSlide(): StackAnimator =
     stackAnimator(animationSpec = tween(durationMillis = DurationMs, easing = IOSEasing)) {
         factor,

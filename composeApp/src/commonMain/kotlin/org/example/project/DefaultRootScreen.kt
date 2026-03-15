@@ -6,10 +6,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.ExperimentalDecomposeApi
+import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.fade
+import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.stackAnimation
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import org.example.project.core.ui.navigation.ChildStack
+import org.example.project.core.ui.navigation.defaultStackAnimator
 import org.example.project.core.ui.theme.AppTheme
 import org.example.project.feature.auth.LoginScreen
 import org.example.project.feature.main.MainScreen
@@ -27,7 +30,16 @@ class DefaultRootScreen(
     @Composable
     override fun Content(component: RootComponent) {
         AppTheme {
-            ChildStack(component = component) {
+            ChildStack(
+                component = component,
+                animation =
+                    stackAnimation { child, otherChild, _, _ ->
+                        val isSplash =
+                            child.instance is RootComponent.Child.Splash ||
+                                otherChild.instance is RootComponent.Child.Splash
+                        if (isSplash) fade() else defaultStackAnimator()
+                    },
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,

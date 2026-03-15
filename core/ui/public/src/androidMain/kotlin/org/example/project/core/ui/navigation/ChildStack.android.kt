@@ -54,6 +54,9 @@ actual fun <C : Any, T : Any> backAnimation(
     )
 
 @OptIn(ExperimentalDecomposeApi::class)
+actual fun defaultStackAnimator(): StackAnimator = materialSharedAxisX()
+
+@OptIn(ExperimentalDecomposeApi::class)
 private fun materialSharedAxisX(): StackAnimator =
     stackAnimator(animationSpec = tween(durationMillis = DurationMs, easing = EmphasizedEasing)) {
         factor,

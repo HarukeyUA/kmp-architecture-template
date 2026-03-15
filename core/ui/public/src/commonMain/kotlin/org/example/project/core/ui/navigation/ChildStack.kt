@@ -7,6 +7,7 @@ import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.StackAnimation
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.StackAnimationScope
+import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.StackAnimator
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.essenty.backhandler.BackHandler
 import org.example.project.core.navigation.StackComponent
@@ -54,3 +55,5 @@ expect fun <C : Any, T : Any> backAnimation(
     backHandler: BackHandler,
     onBackClick: () -> Unit,
 ): StackAnimation<C, T>
+
+@ExperimentalDecomposeApi expect fun defaultStackAnimator(): StackAnimator
