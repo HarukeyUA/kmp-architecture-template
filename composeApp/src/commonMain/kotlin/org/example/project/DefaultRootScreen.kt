@@ -10,6 +10,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import org.example.project.core.ui.navigation.ChildStack
+import org.example.project.core.ui.theme.AppTheme
 import org.example.project.feature.auth.LoginScreen
 import org.example.project.feature.main.MainScreen
 import org.example.project.feature.splash.SplashScreen
@@ -25,7 +26,7 @@ class DefaultRootScreen(
     @OptIn(ExperimentalDecomposeApi::class)
     @Composable
     override fun Content(component: RootComponent) {
-        MaterialTheme {
+        AppTheme {
             ChildStack(component = component) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
