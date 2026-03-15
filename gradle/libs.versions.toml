@@ -110,16 +110,16 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 
 # Convention plugins
-example-kmp-library = { id = "org.example.kmp.library", version = "unspecified" }
-example-serialization = { id = "org.example.serialization", version = "unspecified" }
-example-kmp-feature-public = { id = "org.example.kmp.feature.public", version = "unspecified" }
-example-kmp-compose-feature-public = { id = "org.example.kmp.compose.feature.public", version = "unspecified" }
-example-kmp-feature-impl = { id = "org.example.kmp.feature.impl", version = "unspecified" }
-example-kmp-compose-feature-impl = { id = "org.example.kmp.compose.feature.impl", version = "unspecified" }
-example-metro = { id = "org.example.metro", version = "unspecified" }
-example-molecule = { id = "org.example.molecule", version = "unspecified" }
-example-compose = { id = "org.example.compose", version = "unspecified" }
-example-compose-resources = { id = "org.example.compose.resources", version = "unspecified" }
-example-coroutines = { id = "org.example.coroutines", version = "unspecified" }
-example-decompose = { id = "org.example.decompose", version = "unspecified" }
-example-screenshot-testing = { id = "org.example.screenshot.testing", version = "unspecified" }
+convention-kmp-library = { id = "convention.kmp.library", version = "unspecified" }
+convention-serialization = { id = "convention.serialization", version = "unspecified" }
+convention-kmp-feature-public = { id = "convention.kmp.feature.public", version = "unspecified" }
+convention-kmp-compose-feature-public = { id = "convention.kmp.compose.feature.public", version = "unspecified" }
+convention-kmp-feature-impl = { id = "convention.kmp.feature.impl", version = "unspecified" }
+convention-kmp-compose-feature-impl = { id = "convention.kmp.compose.feature.impl", version = "unspecified" }
+convention-metro = { id = "convention.metro", version = "unspecified" }
+convention-molecule = { id = "convention.molecule", version = "unspecified" }
+convention-compose = { id = "convention.compose", version = "unspecified" }
+convention-compose-resources = { id = "convention.compose.resources", version = "unspecified" }
+convention-coroutines = { id = "convention.coroutines", version = "unspecified" }
+convention-decompose = { id = "convention.decompose", version = "unspecified" }
+convention-screenshot-testing = { id = "convention.screenshot.testing", version = "unspecified" }

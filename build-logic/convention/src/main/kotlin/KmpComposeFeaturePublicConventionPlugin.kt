@@ -7,8 +7,8 @@ class KmpComposeFeaturePublicConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             with(pluginManager) {
-                apply("org.example.kmp.feature.public")
-                apply("org.example.compose")
+                apply("convention.kmp.feature.public")
+                apply("convention.compose")
             }
 
             extensions.configure<KotlinMultiplatformExtension> {

@@ -1,6 +1,6 @@
 plugins {
-    alias(libs.plugins.example.kmp.library)
-    alias(libs.plugins.example.compose)
+    alias(libs.plugins.convention.kmp.library)
+    alias(libs.plugins.convention.compose)
 }
 
 kotlin {

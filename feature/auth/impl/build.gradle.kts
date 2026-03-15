@@ -1,6 +1,6 @@
 plugins {
-    alias(libs.plugins.example.kmp.compose.feature.impl)
-    alias(libs.plugins.example.screenshot.testing)
+    alias(libs.plugins.convention.kmp.compose.feature.impl)
+    alias(libs.plugins.convention.screenshot.testing)
 }
 
 kotlin {

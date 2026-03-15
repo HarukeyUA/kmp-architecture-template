@@ -2,12 +2,12 @@ import org.example.project.addLocalImplDependencies
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
-    alias(libs.plugins.example.kmp.library)
-    alias(libs.plugins.example.serialization)
-    alias(libs.plugins.example.compose)
-    alias(libs.plugins.example.compose.resources)
-    alias(libs.plugins.example.molecule)
-    alias(libs.plugins.example.coroutines)
+    alias(libs.plugins.convention.kmp.library)
+    alias(libs.plugins.convention.serialization)
+    alias(libs.plugins.convention.compose)
+    alias(libs.plugins.convention.compose.resources)
+    alias(libs.plugins.convention.molecule)
+    alias(libs.plugins.convention.coroutines)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.serialization)
     alias(libs.plugins.metro)

@@ -5,9 +5,9 @@ class KmpFeaturePublicConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             with(pluginManager) {
-                apply("org.example.kmp.library")
-                apply("org.example.coroutines")
-                apply("org.example.serialization")
+                apply("convention.kmp.library")
+                apply("convention.coroutines")
+                apply("convention.serialization")
             }
         }
     }

@@ -5,7 +5,7 @@
   ],
   "packageRules": [
     {
-      "matchPackageNames": ["org.example**"],
+      "matchPackageNames": ["convention**"],
       "enabled": false
     }
   ]

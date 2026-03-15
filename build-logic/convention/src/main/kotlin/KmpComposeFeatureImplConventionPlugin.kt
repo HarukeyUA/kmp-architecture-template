@@ -8,11 +8,11 @@ class KmpComposeFeatureImplConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {
             with(pluginManager) {
-                apply("org.example.kmp.feature.impl")
-                apply("org.example.compose")
-                apply("org.example.metro")
-                apply("org.example.molecule")
-                apply("org.example.decompose")
+                apply("convention.kmp.feature.impl")
+                apply("convention.compose")
+                apply("convention.metro")
+                apply("convention.molecule")
+                apply("convention.decompose")
             }
 
             extensions.configure<KotlinMultiplatformExtension> {
