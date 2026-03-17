@@ -77,20 +77,19 @@ private class MaterialSharedAxisXAnimatable(initialEvent: BackEvent) : Predictiv
     private val finishAnimatable = Animatable(0f)
     private val progressAnimatable = Animatable(initialEvent.progress)
 
-    override val exitModifier: Modifier =
-        Modifier.graphicsLayer {
-            val progress = progressAnimatable.value
-            val finishProgress = finishAnimatable.value
+    override val exitModifier: Modifier = Modifier.graphicsLayer {
+        val progress = progressAnimatable.value
+        val finishProgress = finishAnimatable.value
 
-            translationX =
-                lerp(
-                    start = size.width * MoveFactor * progress,
-                    stop = size.width,
-                    fraction = finishProgress,
-                )
-            alpha = 1f - finishProgress
-            compositingStrategy = CompositingStrategy.Offscreen
-        }
+        translationX =
+            lerp(
+                start = size.width * MoveFactor * progress,
+                stop = size.width,
+                fraction = finishProgress,
+            )
+        alpha = 1f - finishProgress
+        compositingStrategy = CompositingStrategy.Offscreen
+    }
 
     override val enterModifier: Modifier =
         Modifier.drawWithContent {
