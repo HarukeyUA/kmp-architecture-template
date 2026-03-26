@@ -42,6 +42,10 @@ include(":core:navigation:public")
 
 include(":core:ui:public")
 
+include(":core:dispatchers:public")
+
+include(":core:dispatchers:impl")
+
 include(":core:local-storage:public")
 
 include(":core:local-storage:impl")
