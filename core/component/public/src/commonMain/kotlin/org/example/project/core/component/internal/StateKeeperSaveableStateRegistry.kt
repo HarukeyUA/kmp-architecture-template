@@ -5,6 +5,7 @@ import androidx.compose.runtime.referentialEqualityPolicy
 import androidx.compose.runtime.saveable.SaveableStateRegistry
 import androidx.compose.runtime.snapshots.SnapshotMutableState
 import androidx.compose.runtime.structuralEqualityPolicy
+import androidx.savedstate.SavedState
 import com.arkivanov.essenty.statekeeper.StateKeeper
 
 internal class StateKeeperSaveableStateRegistry(
@@ -55,6 +56,8 @@ internal class StateKeeperSaveableStateRegistry(
             is Map<*, *> -> {
                 value.none { (key, item) -> key !is String || (item != null && !canBeSaved(item)) }
             }
+
+            is SavedState -> true
 
             else -> PlatformSavedStateRegistryUtils.canBeSaved(value)
         }
