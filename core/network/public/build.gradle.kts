@@ -1,0 +1,11 @@
+plugins {
+    alias(libs.plugins.convention.kmp.feature.public)
+    alias(libs.plugins.convention.ktor)
+    alias(libs.plugins.convention.arrow)
+}
+
+kotlin {
+    sourceSets {
+        commonMain.dependencies { api(project(":core:error:public")) }
+    }
+}

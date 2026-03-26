@@ -62,6 +62,10 @@ gradlePlugin {
             id = "convention.arrow"
             implementationClass = "ArrowConventionPlugin"
         }
+        register("ktor") {
+            id = "convention.ktor"
+            implementationClass = "KtorConventionPlugin"
+        }
         register("screenshotTesting") {
             id = "convention.screenshot.testing"
             implementationClass = "ScreenshotTestingConventionPlugin"
