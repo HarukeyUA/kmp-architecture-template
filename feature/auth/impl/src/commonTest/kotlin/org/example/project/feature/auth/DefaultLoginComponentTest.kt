@@ -6,9 +6,9 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlin.test.Test
-import org.example.project.core.component.DefaultAppComponentContext
 import org.example.project.core.testing.CoroutineTest
 import org.example.project.core.testing.runLifecycleTest
+import org.example.project.core.testing.testComponentContext
 import org.example.project.feature.user.data.FakeUserRepository
 import org.example.project.feature.user.data.UserRepository
 
@@ -48,7 +48,7 @@ class DefaultLoginComponentTest : CoroutineTest() {
         lifecycle: LifecycleRegistry = LifecycleRegistry(),
         onLoginSuccess: () -> Unit = {},
     ): LoginComponent {
-        val context = DefaultAppComponentContext(lifecycle = lifecycle)
+        val context = testComponentContext(lifecycle = lifecycle)
 
         return DefaultLoginComponent(
             componentContext = context,

@@ -7,9 +7,9 @@ import assertk.assertions.isTrue
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlin.test.Test
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.example.project.core.component.DefaultAppComponentContext
 import org.example.project.core.testing.CoroutineTest
 import org.example.project.core.testing.runLifecycleTest
+import org.example.project.core.testing.testComponentContext
 
 class DefaultHomeDetailComponentTest : CoroutineTest() {
     @Test
@@ -45,7 +45,7 @@ class DefaultHomeDetailComponentTest : CoroutineTest() {
         itemId: Int = 1,
         onBack: () -> Unit = {},
     ): HomeDetailComponent {
-        val context = DefaultAppComponentContext(lifecycle = lifecycle)
+        val context = testComponentContext(lifecycle = lifecycle)
 
         return DefaultHomeDetailComponent(
             componentContext = context,
