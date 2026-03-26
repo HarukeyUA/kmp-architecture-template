@@ -40,6 +40,8 @@ include(":core:component:public")
 
 include(":core:navigation:public")
 
+include(":core:error:public")
+
 include(":core:ui:public")
 
 include(":core:dispatchers:public")

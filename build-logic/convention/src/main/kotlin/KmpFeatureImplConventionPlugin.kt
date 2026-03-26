@@ -15,6 +15,7 @@ class KmpFeatureImplConventionPlugin : Plugin<Project> {
                 apply("convention.coroutines")
                 apply("convention.serialization")
                 apply("convention.metro")
+                apply("convention.arrow")
             }
 
             extensions.configure<KotlinMultiplatformExtension> {
