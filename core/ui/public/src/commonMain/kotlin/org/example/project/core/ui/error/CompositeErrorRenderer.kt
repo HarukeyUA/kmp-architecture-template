@@ -24,14 +24,13 @@ class CompositeErrorRenderer(private val renderers: Set<ErrorRenderer<AppError>>
      * [DelegatingError] recursion.
      */
     override fun resolveResource(error: AppError): ErrorRenderer.ResourceResult? {
-        val result =
-            renderers.firstNotNullOfOrNull { renderer ->
-                try {
-                    renderer.resolveResource(error)
-                } catch (_: ClassCastException) {
-                    null
-                }
+        val result = renderers.firstNotNullOfOrNull { renderer ->
+            try {
+                renderer.resolveResource(error)
+            } catch (_: ClassCastException) {
+                null
             }
+        }
 
         if (result != null) return result
 
