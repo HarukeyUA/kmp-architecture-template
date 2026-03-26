@@ -13,6 +13,7 @@ class KmpComposeFeatureImplConventionPlugin : Plugin<Project> {
                 apply("convention.metro")
                 apply("convention.molecule")
                 apply("convention.decompose")
+                apply("convention.compose.resources")
             }
 
             extensions.configure<KotlinMultiplatformExtension> {
