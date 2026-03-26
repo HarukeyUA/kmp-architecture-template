@@ -5,8 +5,4 @@ plugins {
     alias(libs.plugins.convention.ktor)
 }
 
-kotlin {
-    sourceSets {
-        commonMain.dependencies { api(project(siblingPublicModule())) }
-    }
-}
+kotlin { sourceSets { commonMain.dependencies { api(project(siblingPublicModule())) } } }
