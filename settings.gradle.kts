@@ -42,6 +42,10 @@ include(":core:navigation:public")
 
 include(":core:error:public")
 
+include(":core:network:public")
+
+include(":core:network:impl")
+
 include(":core:ui:public")
 
 include(":core:dispatchers:public")

@@ -26,6 +26,8 @@ molecule = "2.2.0"
 
 arrow = "2.2.2"
 
+ktor = "3.4.1"
+
 androidx-splash-splash-screen = "1.2.0"
 
 roborazzi = "1.59.0"
@@ -89,6 +91,15 @@ molecule = { module = "app.cash.molecule:molecule-runtime", version.ref = "molec
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 arrow-fx-coroutines = { module = "io.arrow-kt:arrow-fx-coroutines", version.ref = "arrow" }
 
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+
 ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
 
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
@@ -128,4 +139,5 @@ convention-compose-resources = { id = "convention.compose.resources", version = 
 convention-coroutines = { id = "convention.coroutines", version = "unspecified" }
 convention-decompose = { id = "convention.decompose", version = "unspecified" }
 convention-arrow = { id = "convention.arrow", version = "unspecified" }
+convention-ktor = { id = "convention.ktor", version = "unspecified" }
 convention-screenshot-testing = { id = "convention.screenshot.testing", version = "unspecified" }
