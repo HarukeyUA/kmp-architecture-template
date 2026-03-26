@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.fade
@@ -11,6 +12,8 @@ import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.s
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
+import org.example.project.core.ui.error.CompositeErrorRenderer
+import org.example.project.core.ui.error.LocalErrorRenderer
 import org.example.project.core.ui.navigation.ChildStack
 import org.example.project.core.ui.navigation.defaultStackAnimator
 import org.example.project.core.ui.theme.AppTheme
@@ -24,30 +27,33 @@ class DefaultRootScreen(
     private val splashScreen: SplashScreen,
     private val loginScreen: LoginScreen,
     private val mainScreen: MainScreen,
+    private val errorRenderer: CompositeErrorRenderer,
 ) : RootScreen {
 
     @OptIn(ExperimentalDecomposeApi::class)
     @Composable
     override fun Content(component: RootComponent) {
         AppTheme {
-            ChildStack(
-                component = component,
-                animation =
-                    stackAnimation { child, otherChild, _, _ ->
-                        val isSplash =
-                            child.instance is RootComponent.Child.Splash ||
-                                otherChild.instance is RootComponent.Child.Splash
-                        if (isSplash) fade() else defaultStackAnimator()
-                    },
-            ) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background,
+            CompositionLocalProvider(LocalErrorRenderer provides errorRenderer) {
+                ChildStack(
+                    component = component,
+                    animation =
+                        stackAnimation { child, otherChild, _, _ ->
+                            val isSplash =
+                                child.instance is RootComponent.Child.Splash ||
+                                    otherChild.instance is RootComponent.Child.Splash
+                            if (isSplash) fade() else defaultStackAnimator()
+                        },
                 ) {
-                    when (val child = it.instance) {
-                        is RootComponent.Child.Splash -> splashScreen.Content()
-                        is RootComponent.Child.Login -> loginScreen.Content(child.component)
-                        is RootComponent.Child.Main -> mainScreen.Content(child.component)
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background,
+                    ) {
+                        when (val child = it.instance) {
+                            is RootComponent.Child.Splash -> splashScreen.Content()
+                            is RootComponent.Child.Login -> loginScreen.Content(child.component)
+                            is RootComponent.Child.Main -> mainScreen.Content(child.component)
+                        }
                     }
                 }
             }
