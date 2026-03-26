@@ -10,9 +10,9 @@ import app.cash.molecule.launchMolecule
 import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 import org.example.project.core.component.internal.EssentyLifecycleOwner
 import org.example.project.core.component.internal.moleculeContext
@@ -37,11 +37,14 @@ abstract class MoleculeComponent<S : UiState, E : UiEvent>(componentContext: App
      */
     protected val scope: CoroutineScope = coroutineScope(moleculeContext() + SupervisorJob())
 
-    /** Event channel with buffer to prevent event loss */
-    private val events = MutableSharedFlow<E>(extraBufferCapacity = 64)
+    /** Event channel with buffer to guarantee delivery even before collection starts */
+    private val events = Channel<E>(capacity = 64)
 
     override val state: StateFlow<S> by lazy {
-        scope.launchMolecule(mode = RecompositionMode.Immediate) {
+        scope.launchMolecule(
+            mode = RecompositionMode.Immediate,
+            snapshotNotifier = snapshotNotifier,
+        ) {
             val lifecycleOwner = remember { EssentyLifecycleOwner(lifecycle) }
 
             returningCompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
@@ -51,7 +54,7 @@ abstract class MoleculeComponent<S : UiState, E : UiEvent>(componentContext: App
     }
 
     override fun onEvent(event: E) {
-        scope.launch { events.emit(event) }
+        events.trySend(event)
     }
 
     /**
@@ -61,7 +64,9 @@ abstract class MoleculeComponent<S : UiState, E : UiEvent>(componentContext: App
     @Composable
     protected fun CollectEvents(onEvent: suspend (E) -> Unit) {
         val coroutineScope = rememberCoroutineScope()
-        LaunchedEffect(Unit) { events.collectLatest { coroutineScope.launch { onEvent(it) } } }
+        LaunchedEffect(Unit) {
+            events.consumeAsFlow().collect { coroutineScope.launch { onEvent(it) } }
+        }
     }
 
     /** Implement this to produce your component's state. */

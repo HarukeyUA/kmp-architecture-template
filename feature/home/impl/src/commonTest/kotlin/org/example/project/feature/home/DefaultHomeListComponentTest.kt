@@ -7,9 +7,9 @@ import assertk.assertions.isEqualTo
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlin.test.Test
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.example.project.core.component.DefaultAppComponentContext
 import org.example.project.core.testing.CoroutineTest
 import org.example.project.core.testing.runLifecycleTest
+import org.example.project.core.testing.testComponentContext
 
 class DefaultHomeListComponentTest : CoroutineTest() {
     @Test
@@ -44,7 +44,7 @@ class DefaultHomeListComponentTest : CoroutineTest() {
         lifecycle: LifecycleRegistry,
         onItemSelected: (Int) -> Unit = {},
     ): HomeListComponent {
-        val context = DefaultAppComponentContext(lifecycle = lifecycle)
+        val context = testComponentContext(lifecycle = lifecycle)
 
         return DefaultHomeListComponent(componentContext = context, onItemSelected = onItemSelected)
     }

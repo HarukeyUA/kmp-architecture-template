@@ -1,5 +1,6 @@
 package org.example.project.core.component
 
+import app.cash.molecule.SnapshotNotifier
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.ComponentContextFactory
 import com.arkivanov.essenty.backhandler.BackDispatcher
@@ -20,6 +21,7 @@ class DefaultAppComponentContext(
     instanceKeeper: InstanceKeeper? = null,
     backHandler: BackHandler? = null,
     override val snackbarHandler: SnackbarHandler = SnackbarDispatcher(),
+    override val snapshotNotifier: SnapshotNotifier = SnapshotNotifier.External,
 ) : AppComponentContext {
 
     override val stateKeeper: StateKeeper = stateKeeper ?: StateKeeperDispatcher()
@@ -42,6 +44,7 @@ class DefaultAppComponentContext(
                 instanceKeeper = childInstanceKeeper,
                 backHandler = childBackHandler,
                 snackbarHandler = ChildSnackbarHandler(parent = snackbarHandler),
+                snapshotNotifier = snapshotNotifier,
             )
         }
 
