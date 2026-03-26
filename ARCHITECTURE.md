@@ -6,16 +6,17 @@ Architecture of the sample project — a Kotlin Multiplatform (KMP) application 
 
 ### Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| UI | Compose Multiplatform |
-| Navigation & Lifecycle | Decompose + Essenty |
-| State Production | Molecule |
-| Dependency Injection | Metro |
-| Serialization | kotlinx.serialization |
-| Local Storage | AndroidX DataStore |
-| Testing | kotlin-test, AssertK, Turbine, kotlinx.coroutines.test |
-| Screenshot Testing | Roborazzi |
+| Layer                  | Technology                                             |
+|------------------------|--------------------------------------------------------|
+| UI                     | Compose Multiplatform                                  |
+| Navigation & Lifecycle | Decompose + Essenty                                    |
+| State Production       | Molecule                                               |
+| Error Handling         | Arrow (`Either`)                                       |
+| Dependency Injection   | Metro                                                  |
+| Serialization          | kotlinx.serialization                                  |
+| Local Storage          | AndroidX DataStore                                     |
+| Testing                | kotlin-test, AssertK, Turbine, kotlinx.coroutines.test |
+| Screenshot Testing     | Roborazzi                                              |
 
 ### Design Principles
 
@@ -32,48 +33,106 @@ Architecture of the sample project — a Kotlin Multiplatform (KMP) application 
 
 ### Public/Impl Pattern
 
-Modules are split into `:public` and `:impl` submodules:
-
-```
-:core:component:public       # Component primitives (AppComponentContext, StatefulComponent,
-                             #   EventComponent, MoleculeComponent, snackbar system,
-                             #   platform bridges)
-:core:navigation:public      # Navigation primitives (StackComponent)
-:core:ui:public              # UI helpers (ChildStack composable), theme, design system
-:core:local-storage:public   # Local storage interface (SettingsLocalDataSource)
-:core:local-storage:impl     # DataStore-based implementation
-:core:testing:public         # Test utilities (CoroutineTest, runLifecycleTest)
-:core:screenshot-testing:public  # Screenshot test infrastructure (ScreenshotTest via Roborazzi)
-
-:feature:auth:public         # LoginComponent, LoginScreen interfaces
-:feature:auth:impl           # Default implementations
-:feature:main:public         # MainComponent, MainScreen interfaces
-:feature:main:impl           # Default implementations
-:feature:home:public         # HomeComponent (StackComponent), child interfaces, screens
-:feature:home:impl           # Default implementations
-:feature:search:public       # SearchComponent, SearchScreen interfaces
-:feature:search:impl         # Default implementations
-:feature:profile:public      # ProfileComponent, ProfileScreen interfaces
-:feature:profile:impl        # Default implementations
-:feature:user-data:public    # UserRepository interface
-:feature:user-data:impl      # Default UserRepository implementation
-:feature:user-data:testing   # Shared fakes (FakeUserRepository)
-
-:composeApp                  # Wires :impl modules together, RootComponent
-:androidApp                  # Android app entry point
-:iosApp                      # iOS app entry point (Xcode project)
-```
+Modules are split into `:public` and `:impl` submodules
 
 ### Module Dependency Rules
 
-| Module Type | Can Depend On |
-|-------------|---------------|
-| `:public` | Other `:public` modules only |
-| `:impl` | Any `:public` module, sibling `:public` via `api` |
-| `:testing` | Sibling `:public` module (exposes fakes of the public API) |
-| `:composeApp` | Any module (wires `:impl` together) |
+| Module Type   | Can Depend On                                              |
+|---------------|------------------------------------------------------------|
+| `:public`     | Other `:public` modules only                               |
+| `:impl`       | Any `:public` module, sibling `:public` via `api`          |
+| `:testing`    | Sibling `:public` module (exposes fakes of the public API) |
+| `:composeApp` | Any module (wires `:impl` together)                        |
 
 **Key Rule**: Only `:composeApp` can depend on `:impl` modules. This ensures implementation details stay hidden, enables parallel compilation, and keeps coupling low.
+
+---
+
+## Layered Architecture
+
+Following the [Android recommended architecture](https://developer.android.com/topic/architecture), the app is organized into three layers. Data flows down from the data layer to the UI; events flow up from the UI to the data layer.
+
+```
+┌─────────────────────────────────────────────────┐
+│  UI Layer (Screens, Components, UI Models)      │
+├─────────────────────────────────────────────────┤
+│  Domain Layer (Repositories, Domain Models,     │
+│                Domain Errors)                   │
+├─────────────────────────────────────────────────┤
+│  Data Layer (Network DTOs, Database Entities,   │
+│              API Clients)                       │
+└─────────────────────────────────────────────────┘
+```
+
+### Layer Responsibilities
+
+| Layer      | Responsibility                                                                       | Key Types                                                                                            |
+|------------|--------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| **UI**     | Renders state, captures user events, maps domain models to UI models                 | Screens, Components (`MoleculeComponent`), UI Models (`*UiModel`), Error Renderers                   |
+| **Domain** | Encapsulates business logic, defines repository contracts and domain-specific errors | Repository interfaces, Domain Models, Domain Errors                                                  |
+| **Data**   | Implements data access, maps network/database types to domain models                 | Repository implementations, API clients, Data Sources, Network DTOs (`*Response`), mapping functions |
+
+### Package Structure
+
+Within each feature module, domain and presentation code is organized into separate packages:
+
+```
+:feature:example:public/
+  src/commonMain/kotlin/.../feature/example/
+    data/
+      ExampleDataSource.kt            # Data source interface
+      models/
+        ExampleModel.kt               # Dto model + toModel() mapping
+    domain/
+      ExampleRepository.kt            # Repository interface
+      models/
+        ExampleModel.kt               # Domain model
+        ExampleError.kt               # Domain-specific error
+    presentation/
+      ExampleComponent.kt             # Component interface (StatefulComponent)
+      ExampleScreen.kt                # Screen interface
+      models/
+        ExampleUiModel.kt             # UI model + toUi() mapping
+
+:feature:example:impl/
+  src/commonMain/kotlin/.../feature/example/
+    data/
+      DefaultDataSource.kt            # Data source implementation
+    domain/
+      DefaultExampleRepository.kt     # Repository implementation
+    presentation/
+      DefaultExampleComponent.kt      # MoleculeComponent implementation
+      ExampleErrorRenderer.kt         # Error → user message mapping
+      DefaultExampleScreen.kt         # Compose UI
+```
+
+### Model Mapping Pipeline
+
+Each layer has its own model types. Mapping functions convert between them:
+
+```
+Network DTO (data layer)         Domain Model (domain layer)       UI Model (UI layer)
+───────────────────────          ──────────────────────────        ────────────────────
+ExampleResponse             ──→  ExampleModel                ──→  ExampleUiModel
+  @SerialName("title")            title: String                     title: String
+  val title: String               ...                               ...
+```
+
+- **Response DTOs** (`*Response`) — annotated with `@Serializable` and `@SerialName` for JSON mapping. Represent the raw API contract.
+- **Domain Models** — live in `feature:*:public/domain/models/`. Represent business concepts, stripped of serialization concerns.
+- **UI Models** (`*UiModel`) — live in `feature:*:public/presentation/models/`. Annotated with `@Serializable` for state restoration. Optimized for rendering.
+
+Mapping functions between layers:
+- **DTO → Domain**: public extension functions in `:public` (e.g., `ExampleResponse.toModel()`)
+- **Domain → UI**: public extension functions in `:public` (e.g., `ExampleModel.toUi()`)
+
+### Where Each Layer Lives
+
+| Layer      | Interfaces / Models                                          | Implementations                                            |
+|------------|--------------------------------------------------------------|------------------------------------------------------------|
+| **UI**     | `:public` → `presentation/` (Component, Screen, UiModel)     | `:impl` → `presentation/` (Default*, ErrorRenderer)        |
+| **Domain** | `:public` → `domain/` (Repository, Models, Errors)           | `:impl` → `domain/` (DefaultRepository, mapping functions) |
+| **Data**   | `:public` → `data/`  (Data source interface, *Response DTOs) | `:public` → `data/` (Data source implementation)           |
 
 ---
 
@@ -83,7 +142,7 @@ Modules are split into `:public` and `:impl` submodules:
 
 All components extend `AppComponentContext`, a custom interface that extends Decompose's `GenericComponentContext<AppComponentContext>` with app-specific capabilities (e.g., `snackbarHandler`). This means child contexts created by Decompose automatically carry app-level services.
 
-`DefaultAppComponentContext` is the concrete implementation. It accepts a `Lifecycle` (and optional `StateKeeper`, `InstanceKeeper`, `BackHandler`, `SnackbarHandler`) and can also wrap a plain Decompose `ComponentContext`. Its `componentContextFactory` creates child contexts with `ChildSnackbarHandler` to form the hierarchical snackbar chain.
+`DefaultAppComponentContext` is the concrete implementation. It accepts a `Lifecycle` (and optional `StateKeeper`, `InstanceKeeper`, `BackHandler`, `SnackbarHandler`, `SnapshotNotifier`) and can also wrap a plain Decompose `ComponentContext`. Its `componentContextFactory` creates child contexts with `ChildSnackbarHandler` and the same `SnapshotNotifier` to form the hierarchical snackbar chain. The `snapshotNotifier` defaults to `External` (for use with Compose UI) and is read by `MoleculeComponent` when launching Molecule.
 
 ```
 AppComponentContext (extends GenericComponentContext<AppComponentContext>)
@@ -105,11 +164,11 @@ AppComponentContext (extends GenericComponentContext<AppComponentContext>)
 
 ### When to Use Each Primitive
 
-| Primitive | Use When | Example |
-|-----------|----------|---------|
-| `StatefulComponent<S, E>` | Component produces reactive UI state and handles events | `LoginComponent`, `SearchComponent`, `HomeListComponent` |
-| `EventComponent<E>` | Component handles events but delegates state to children | `MainComponent` (tab clicks, no own state) |
-| `StackComponent<C, T>` | Component manages navigation between child components | `RootComponent`, `HomeComponent` (list → detail) |
+| Primitive                 | Use When                                                 | Example                                                  |
+|---------------------------|----------------------------------------------------------|----------------------------------------------------------|
+| `StatefulComponent<S, E>` | Component produces reactive UI state and handles events  | `LoginComponent`, `SearchComponent`, `HomeListComponent` |
+| `EventComponent<E>`       | Component handles events but delegates state to children | `MainComponent` (tab clicks, no own state)               |
+| `StackComponent<C, T>`    | Component manages navigation between child components    | `RootComponent`, `HomeComponent` (list → detail)         |
 
 These can be combined — e.g., a component could implement both `EventComponent` and `StackComponent`.
 
@@ -247,21 +306,22 @@ All navigation uses Decompose's `childStack` with `@Serializable` configuration 
 
 ## Convention Plugins
 
-| Plugin | Purpose |
-|--------|---------|
-| `kmp.library` | Base KMP library setup (targets, SDK versions) |
-| `kmp.feature.public` | Public feature module (adds serialization, coroutines) |
-| `kmp.feature.impl` | Impl feature module (adds Metro, auto-depends on `:public`) |
-| `kmp.compose.feature.public` | Public feature with Compose (adds `:core:component:public`) |
-| `kmp.compose.feature.impl` | Impl feature with Compose (adds Metro, Molecule, Decompose, `:core:component:public`, `:core:ui:public`). Also adds `commonTest` deps: kotlin-test, AssertK, Turbine, kotlinx.coroutines.test, `:core:testing:public` |
-| `metro` | Metro DI setup (KSP, runtime) |
-| `molecule` | Molecule setup (Compose compiler, runtime) |
-| `compose` | Compose Multiplatform UI |
-| `compose.resources` | Compose Multiplatform resources |
-| `coroutines` | kotlinx.coroutines |
-| `decompose` | Decompose setup |
-| `serialization` | kotlinx.serialization |
-| `screenshot.testing` | Roborazzi screenshot testing (androidHostTest sourceSet, Pixel 9 + Pixel Tablet, light/dark) |
+| Plugin                       | Purpose                                                                                                                                                                                                                                  |
+|------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `kmp.library`                | Base KMP library setup (targets, SDK versions)                                                                                                                                                                                           |
+| `kmp.feature.public`         | Public feature module (adds serialization, coroutines)                                                                                                                                                                                   |
+| `kmp.feature.impl`           | Impl feature module (adds Metro, Arrow, auto-depends on `:public`)                                                                                                                                                                       |
+| `kmp.compose.feature.public` | Public feature with Compose (adds `:core:component:public`, compose resources)                                                                                                                                                           |
+| `kmp.compose.feature.impl`   | Impl feature with Compose (adds Metro, Molecule, Decompose, compose resources, `:core:component:public`, `:core:ui:public`). Also adds `commonTest` deps: kotlin-test, AssertK, Turbine, kotlinx.coroutines.test, `:core:testing:public` |
+| `metro`                      | Metro DI setup (KSP, runtime)                                                                                                                                                                                                            |
+| `molecule`                   | Molecule setup (Compose compiler, runtime)                                                                                                                                                                                               |
+| `compose`                    | Compose Multiplatform UI                                                                                                                                                                                                                 |
+| `compose.resources`          | Compose Multiplatform resources (with `packageOfResClass` auto-configuration)                                                                                                                                                            |
+| `arrow`                      | Arrow functional programming (arrow-core, arrow-fx-coroutines)                                                                                                                                                                           |
+| `coroutines`                 | kotlinx.coroutines                                                                                                                                                                                                                       |
+| `decompose`                  | Decompose setup                                                                                                                                                                                                                          |
+| `serialization`              | kotlinx.serialization                                                                                                                                                                                                                    |
+| `screenshot.testing`         | Roborazzi screenshot testing (androidHostTest sourceSet, Pixel 9 + Pixel Tablet, light/dark)                                                                                                                                             |
 
 Features that use `StackComponent` need to add `api(project(":core:navigation:public"))` to their `:public` module's dependencies.
 
@@ -273,15 +333,15 @@ The snackbar system (in `:core:component:public`) enables any component to displ
 
 ### Architecture
 
-| Class | Role |
-|-------|------|
-| `SnackbarHandler` | Interface with `showSnackbar(message)`, `registerHost(callback)`, `unregisterHost(callback)` |
-| `SnackbarDispatcher` | Root implementation — forwards messages to the registered host (or drops them) |
-| `ChildSnackbarHandler` | Child implementation — forwards to local host if registered, otherwise bubbles up to parent |
-| `SnackbarHostState` | `SnackbarHostCallback` that exposes received messages as a `SharedFlow` |
-| `SnackbarMessage` | Data class with `text` and `duration` |
-| `snackbarHost()` | `AppComponentContext` extension that creates and registers a `SnackbarHostState`, auto-unregisters on destroy |
-| `rememberDispatchedSnackbarHostState()` | Composable that bridges `SnackbarHostState` → Compose `SnackbarHostState` |
+| Class                                   | Role                                                                                                          |
+|-----------------------------------------|---------------------------------------------------------------------------------------------------------------|
+| `SnackbarHandler`                       | Interface with `showSnackbar(message)`, `registerHost(callback)`, `unregisterHost(callback)`                  |
+| `SnackbarDispatcher`                    | Root implementation — forwards messages to the registered host (or drops them)                                |
+| `ChildSnackbarHandler`                  | Child implementation — forwards to local host if registered, otherwise bubbles up to parent                   |
+| `SnackbarHostState`                     | `SnackbarHostCallback` that exposes received messages as a `SharedFlow`                                       |
+| `SnackbarMessage`                       | Data class with `text` and `duration`                                                                         |
+| `snackbarHost()`                        | `AppComponentContext` extension that creates and registers a `SnackbarHostState`, auto-unregisters on destroy |
+| `rememberDispatchedSnackbarHostState()` | Composable that bridges `SnackbarHostState` → Compose `SnackbarHostState`                                     |
 
 ### Flow
 
@@ -292,15 +352,115 @@ The snackbar system (in `:core:component:public`) enables any component to displ
 
 ---
 
+## Error Handling
+
+The app uses typed, functional error handling with `Either<AppError, T>` (Arrow) instead of exceptions. Errors are defined per layer, wrapped as they cross layer boundaries, and rendered into localized user-facing messages via a composable renderer system.
+
+### Error Type Hierarchy
+
+All errors implement `AppError` (marker interface in `core:error:public`):
+
+```
+AppError (marker interface)
+├── NetworkError (sealed interface, core:error:public)
+│   ├── Http(code: Int, message: String?)
+│   ├── Connection(cause: Throwable)
+│   └── Serialization(cause: Throwable)
+│
+└── FeatureError (sealed interface, feature:*:public)
+    ├── SomeSpecificError(...)
+    └── Network(delegate: NetworkError) ← implements DelegatingError
+```
+
+- **`AppError`** — marker interface for all typed errors
+- **`DelegatingError`** — interface for feature errors that wrap a lower-level error (exposes `delegate: AppError`)
+- **`AppErrorException`** — wraps `AppError` as a `Throwable` for APIs that require exceptions (e.g., Paging3's `LoadResult.Error`)
+
+### Error Flow Across Layers
+
+```
+Data Layer                    Domain Layer                   UI Layer
+──────────                    ────────────                   ────────
+API returns                   Repository maps to             Component stores in state,
+Either<NetworkError, T>  ──→  Either<FeatureError, T>  ──→   Screen renders via ErrorRenderer
+                              (wraps NetworkError in
+                              FeatureError.Network)
+```
+
+**Data → Domain**: Repositories use Arrow's `either` DSL to map `NetworkError` into domain-specific errors:
+
+```kotlin
+override suspend fun getData(id: String): Either<FeatureError, Model> =
+    either {
+        api.getData(id)
+            .mapLeft { FeatureError.Network(it) }  // Wrap NetworkError
+            .map { it.toModel() }
+            .bind()
+    }
+```
+
+**Domain → UI**: Components store `AppError?` in state. Screens render it via the error renderer:
+
+```kotlin
+// In component (produceState)
+repository.getData(id).fold(
+    ifLeft = { error -> state.error = error },
+    ifRight = { data -> state.data = data },
+)
+
+// In screen (composable)
+val errorText = state.error?.message()  // Resolves via LocalErrorRenderer
+```
+
+### Error Rendering System
+
+The rendering system (in `core:ui:public`) translates `AppError` instances into localized strings:
+
+| Class                         | Role                                                                                                                              |
+|-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `ErrorRenderer<T : AppError>` | Interface — resolves an error to a `StringResource` (with optional format args), or renders it as a `String`                      |
+| `CompositeErrorRenderer`      | DI-injected root renderer — delegates to registered renderers, handles `DelegatingError` recursion, falls back to generic message |
+| `ErrorRendererGraph`          | Metro `@Multibinds` interface collecting all renderer contributions                                                               |
+
+### Adding Error Handling to a New Feature
+
+1. Define a sealed error type in `:public` implementing `AppError`. Wrap cross-layer errors with `DelegatingError`:
+
+```kotlin
+sealed interface MyFeatureError : AppError {
+    data class NotFound(val id: String) : MyFeatureError
+    data class Network(override val delegate: NetworkError) : MyFeatureError, DelegatingError
+}
+```
+
+2. Return `Either<MyFeatureError, T>` from repository methods
+
+3. Create an `ErrorRenderer<MyFeatureError>` in `:impl` with `@ContributesIntoSet`. Return `null` for delegating variants — `CompositeErrorRenderer` handles them automatically:
+
+```kotlin
+@Inject
+@ContributesIntoSet(AppScope::class, binding = binding<ErrorRenderer<AppError>>())
+class MyFeatureErrorRenderer : ErrorRenderer<MyFeatureError> {
+    override fun resolveResource(error: MyFeatureError): ResourceResult? = when (error) {
+        is MyFeatureError.NotFound -> ResourceResult(Res.string.error_not_found, arrayOf(error.id))
+        is MyFeatureError.Network -> null  // Delegate to NetworkErrorRenderer
+    }
+}
+```
+
+4. Add localized strings in `composeResources/values/strings.xml`
+
+---
+
 ## Component Platform Bridges
 
 All component platform bridges live in `:core:component:public`:
 
-| Bridge | Purpose |
-|--------|---------|
-| `EssentyLifecycleOwner` | Maps Essenty `Lifecycle` → AndroidX `LifecycleOwner` |
-| `StateKeeperSaveableStateRegistry` | Maps Essenty `StateKeeper` → Compose `SaveableStateRegistry` |
-| `moleculeContext()` | Platform-specific coroutine dispatcher for Molecule (expect/actual) |
+| Bridge                             | Purpose                                                             |
+|------------------------------------|---------------------------------------------------------------------|
+| `EssentyLifecycleOwner`            | Maps Essenty `Lifecycle` → AndroidX `LifecycleOwner`                |
+| `StateKeeperSaveableStateRegistry` | Maps Essenty `StateKeeper` → Compose `SaveableStateRegistry`        |
+| `moleculeContext()`                | Platform-specific coroutine dispatcher for Molecule (expect/actual) |
 
 ---
 
@@ -308,13 +468,13 @@ All component platform bridges live in `:core:component:public`:
 
 ### Testing Stack
 
-| Library | Purpose |
-|---------|---------|
-| [kotlin-test](https://kotlinlang.org/api/latest/kotlin.test/) | Test framework (`@Test`, platform-native runner) |
-| [AssertK](https://github.com/willowtreeapps/assertk) | Fluent assertion library (`assertThat(x).isEqualTo(y)`) |
-| [Turbine](https://github.com/cashapp/turbine) | `StateFlow` / `Flow` testing (`awaitItem()`, `expectNoEvents()`) |
-| [kotlinx.coroutines.test](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/) | `runTest`, `TestScope`, virtual time control |
-| [Roborazzi](https://github.com/takahirom/roborazzi) | Screenshot testing on JVM via Robolectric |
+| Library                                                                                           | Purpose                                                          |
+|---------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
+| [kotlin-test](https://kotlinlang.org/api/latest/kotlin.test/)                                     | Test framework (`@Test`, platform-native runner)                 |
+| [AssertK](https://github.com/willowtreeapps/assertk)                                              | Fluent assertion library (`assertThat(x).isEqualTo(y)`)          |
+| [Turbine](https://github.com/cashapp/turbine)                                                     | `StateFlow` / `Flow` testing (`awaitItem()`, `expectNoEvents()`) |
+| [kotlinx.coroutines.test](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-test/) | `runTest`, `TestScope`, virtual time control                     |
+| [Roborazzi](https://github.com/takahirom/roborazzi)                                               | Screenshot testing on JVM via Robolectric                        |
 
 ### Testing Principles
 
@@ -358,6 +518,8 @@ See `FakeUserRepository` in `:feature:user-data:testing` for the reference imple
 
 **`runLifecycleTest`** — top-level function that wraps `runTest` with lifecycle management. It creates a `LifecycleRegistry`, calls `resume()` before the test body, and `destroy()` after. The lifecycle is passed into the test block so it can be forwarded to `createComponent`.
 
+**`testComponentContext(lifecycle)`** — creates a `DefaultAppComponentContext` with `SnapshotNotifier.WhileActive`, so Molecule manages its own snapshot notifications in tests (in production, Compose UI handles this via `SnapshotNotifier.External`). All test `createComponent` helpers should use this instead of constructing `DefaultAppComponentContext` directly.
+
 ### Testing a StatefulComponent
 
 Tests extend `CoroutineTest()` and use `runLifecycleTest` to get a managed lifecycle. A private `createComponent` helper accepts the lifecycle plus any dependencies with defaults.
@@ -365,7 +527,7 @@ Tests extend `CoroutineTest()` and use `runLifecycleTest` to get a managed lifec
 **Key patterns:**
 - `CoroutineTest()` — base class that sets up `UnconfinedTestDispatcher` as `Dispatchers.Main`
 - `runLifecycleTest { lifecycle -> ... }` — manages `LifecycleRegistry` creation, `resume()`, and `destroy()`
-- `createComponent(lifecycle, ...)` — builds `DefaultAppComponentContext(lifecycle)` and the component under test
+- `createComponent(lifecycle, ...)` — builds `testComponentContext(lifecycle)` and the component under test
 - `component.state.test { ... }` — Turbine collects the `StateFlow` and provides `awaitItem()` for assertions
 - `component.onEvent(...)` — simulates UI interactions
 
