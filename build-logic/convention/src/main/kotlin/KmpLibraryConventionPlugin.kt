@@ -17,7 +17,10 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
 
             extensions.configure<KotlinMultiplatformExtension> {
                 compilerOptions {
-                    freeCompilerArgs.add("-Xannotation-default-target=param-property")
+                    freeCompilerArgs.addAll(
+                        "-Xannotation-default-target=param-property",
+                        "-Xcontext-parameters",
+                    )
                 }
 
                 iosArm64()
