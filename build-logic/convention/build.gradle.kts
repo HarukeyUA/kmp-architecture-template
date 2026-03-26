@@ -58,6 +58,10 @@ gradlePlugin {
             id = "convention.serialization"
             implementationClass = "SerializationConventionPlugin"
         }
+        register("arrow") {
+            id = "convention.arrow"
+            implementationClass = "ArrowConventionPlugin"
+        }
         register("screenshotTesting") {
             id = "convention.screenshot.testing"
             implementationClass = "ScreenshotTestingConventionPlugin"
