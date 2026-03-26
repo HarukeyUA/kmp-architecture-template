@@ -8,11 +8,12 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
+            api(project(":core:error:public"))
             api(libs.decompose)
             api(libs.essenty.lifecycle)
             api(libs.essenty.statekeeper)
             api(libs.essenty.backhandler)
-            implementation(libs.molecule)
+            api(libs.molecule)
             implementation(libs.essenty.lifecycle.coroutines)
             implementation(libs.androidx.lifecycle.runtimeCompose)
         }
