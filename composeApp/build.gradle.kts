@@ -30,7 +30,7 @@ kotlin {
         commonMain.dependencies {
             addLocalImplDependencies(project)
 
-            implementation(project(":core:ui:public"))
+            api(project(":core:ui:public"))
 
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
