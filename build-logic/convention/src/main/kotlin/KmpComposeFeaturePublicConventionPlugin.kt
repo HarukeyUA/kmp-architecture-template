@@ -9,6 +9,7 @@ class KmpComposeFeaturePublicConventionPlugin : Plugin<Project> {
             with(pluginManager) {
                 apply("convention.kmp.feature.public")
                 apply("convention.compose")
+                apply("convention.compose.resources")
             }
 
             extensions.configure<KotlinMultiplatformExtension> {
