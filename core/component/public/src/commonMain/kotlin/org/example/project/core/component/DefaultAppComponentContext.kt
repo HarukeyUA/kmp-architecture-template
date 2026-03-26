@@ -49,6 +49,21 @@ class DefaultAppComponentContext(
         }
 
     constructor(
+        lifecycle: Lifecycle,
+        stateKeeper: StateKeeper?,
+        instanceKeeper: InstanceKeeper?,
+        backHandler: BackHandler?,
+        snackbarHandler: SnackbarHandler,
+    ) : this(
+        lifecycle = lifecycle,
+        stateKeeper = stateKeeper,
+        instanceKeeper = instanceKeeper,
+        backHandler = backHandler,
+        snackbarHandler = snackbarHandler,
+        snapshotNotifier = SnapshotNotifier.External,
+    )
+
+    constructor(
         componentContext: ComponentContext
     ) : this(
         lifecycle = componentContext.lifecycle,
