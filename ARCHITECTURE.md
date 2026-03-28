@@ -186,6 +186,21 @@ These can be combined — e.g., a component could implement both `EventComponent
 
 `ChildStack()` (in `:core:ui:public`) is a convenience wrapper around Decompose's stack rendering that takes a `StackComponent` directly and wires up back-gesture animation automatically via `backAnimation()`. Each platform provides its own `backAnimation()` implementation (predictive back on Android and iOS, fade on others).
 
+### Side Effects
+
+Side effects (in `:core:component:public`) are one-time events dispatched from a component to the UI layer — things like scroll-to-top or focus a field. Unlike `UiState`, side effects are not persisted and are consumed exactly once.
+
+| Class | Role |
+|-------|------|
+| `UiSideEffect` | Marker interface for side effect types (analogous to `UiEvent` / `UiState`) |
+| `SideEffects<SE>` | Holds a buffered `Channel` and exposes a `Flow<SE>`. Components own an instance and call `send()` to emit |
+| `CollectSideEffects` | Composable that collects the flow lifecycle-aware (`repeatOnLifecycle(STARTED)`) and invokes a callback |
+
+**Flow:**
+1. Component interface declares `val sideEffects: SideEffects<SideEffect>` and a `sealed interface SideEffect : UiSideEffect`
+2. Component implementation creates `override val sideEffects = SideEffects<...>()` and calls `sideEffects.send(...)` inside `CollectEvents` (or anywhere with an `AppComponentContext` in scope)
+3. Screen composable calls `CollectSideEffects(component.sideEffects) { effect -> ... }` to react (e.g., animate scroll, request focus)
+
 ---
 
 ## Patterns
