@@ -1,6 +1,8 @@
 package org.example.project.core.ui.error
 
 import androidx.compose.runtime.Composable
+import dev.zacsweers.metro.DefaultBinding
+import dev.zacsweers.metro.ExperimentalMetroApi
 import org.example.project.core.error.AppError
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.getString
@@ -12,6 +14,8 @@ import org.jetbrains.compose.resources.stringResource
  *
  * Each module contributes its own [ErrorRenderer] via DI multibindings.
  */
+@OptIn(ExperimentalMetroApi::class)
+@DefaultBinding<ErrorRenderer<AppError>>
 interface ErrorRenderer<T : AppError> {
     fun resolveResource(error: T): ResourceResult?
 

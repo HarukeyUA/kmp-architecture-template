@@ -3,8 +3,6 @@ package org.example.project.core.ui.error
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoSet
 import dev.zacsweers.metro.Inject
-import dev.zacsweers.metro.binding
-import org.example.project.core.error.AppError
 import org.example.project.core.error.NetworkError
 import org.example.project.core.ui.Res
 import org.example.project.core.ui.error.ErrorRenderer.ResourceResult
@@ -14,7 +12,7 @@ import org.example.project.core.ui.error_network_http_with_message
 import org.example.project.core.ui.error_network_serialization
 
 @Inject
-@ContributesIntoSet(AppScope::class, binding = binding<ErrorRenderer<AppError>>())
+@ContributesIntoSet(AppScope::class)
 class NetworkErrorRenderer : ErrorRenderer<NetworkError> {
     override fun resolveResource(error: NetworkError): ResourceResult? =
         when (error) {
