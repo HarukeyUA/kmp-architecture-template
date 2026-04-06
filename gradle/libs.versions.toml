@@ -20,7 +20,7 @@ essenty = "2.5.0"
 
 kotlinx-serialization-json = "1.10.0"
 
-metro = "0.13.1"
+metro = "0.13.2"
 
 molecule = "2.2.0"
 
