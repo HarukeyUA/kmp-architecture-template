@@ -24,8 +24,8 @@ jobs:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
       - run: ./gradlew spotlessCheck
 
-  android-host-tests:
-    name: Android Host Tests
+  roborazzi-android-host-tests:
+    name: Roborazzi android Host Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -36,7 +36,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
-      - run: ./gradlew testAndroidHostTest
+      - run: ./gradlew verifyRoborazziAndroidHostTest
       - name: Upload test reports
         if: failure()
         uses: actions/upload-artifact@v7
@@ -49,6 +49,26 @@ jobs:
         with:
           name: roborazzi-reports
           path: '**/build/outputs/roborazzi/'
+
+  jvm-tests:
+    name: JVM Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      - run: ./gradlew jvmTest
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: jvm-test-reports
+          path: '**/build/reports/tests/jvmTest/'
 
   build-android:
     name: Build Android
