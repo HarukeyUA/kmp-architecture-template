@@ -103,6 +103,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v6
+      - run: sudo xcode-select -s /Applications/Xcode_26.0.app
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
