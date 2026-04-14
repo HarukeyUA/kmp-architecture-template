@@ -10,12 +10,16 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
-import kotlinx.serialization.Serializable
 import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.snackbar.snackbarHost
+import org.example.project.core.ui.navigation.ScreenChild
+import org.example.project.core.ui.navigation.asChild
 import org.example.project.feature.home.HomeComponent
+import org.example.project.feature.home.HomeScreen
 import org.example.project.feature.profile.ProfileComponent
+import org.example.project.feature.profile.ProfileScreen
 import org.example.project.feature.search.SearchComponent
+import org.example.project.feature.search.SearchScreen
 
 @AssistedInject
 class DefaultMainComponent(
@@ -24,62 +28,54 @@ class DefaultMainComponent(
     private val homeComponentFactory: HomeComponent.Factory,
     private val searchComponentFactory: SearchComponent.Factory,
     private val profileComponentFactory: ProfileComponent.Factory,
+    private val homeScreen: HomeScreen,
+    private val searchScreen: SearchScreen,
+    private val profileScreen: ProfileScreen,
 ) : MainComponent, AppComponentContext by componentContext {
 
     override val snackbarHostState = snackbarHost()
 
-    private val navigation = StackNavigation<Config>()
+    private val navigation = StackNavigation<MainComponent.Tab>()
 
-    private val _stack: Value<ChildStack<Config, MainComponent.Child>> =
+    private val _stack: Value<ChildStack<MainComponent.Tab, ScreenChild>> =
         childStack(
             source = navigation,
-            serializer = Config.serializer(),
-            initialConfiguration = Config.Home,
+            serializer = MainComponent.Tab.serializer(),
+            initialConfiguration = MainComponent.Tab.Home,
             childFactory = ::createChild,
         )
 
-    override val stack: Value<ChildStack<*, MainComponent.Child>> = _stack
+    override val stack: Value<ChildStack<MainComponent.Tab, ScreenChild>> = _stack
 
     override fun onEvent(event: MainComponent.Event) {
         when (event) {
-            MainComponent.Event.HomeTabClick -> navigation.bringToFront(Config.Home)
-            MainComponent.Event.ProfileTabClick -> navigation.bringToFront(Config.Profile)
-            MainComponent.Event.SearchTabClick -> navigation.bringToFront(Config.Search)
+            MainComponent.Event.HomeTabClick -> navigation.bringToFront(MainComponent.Tab.Home)
+            MainComponent.Event.ProfileTabClick ->
+                navigation.bringToFront(MainComponent.Tab.Profile)
+            MainComponent.Event.SearchTabClick -> navigation.bringToFront(MainComponent.Tab.Search)
         }
     }
 
     private fun createChild(
-        config: Config,
+        tab: MainComponent.Tab,
         componentContext: AppComponentContext,
-    ): MainComponent.Child =
-        when (config) {
-            Config.Home ->
-                MainComponent.Child.Home(
-                    homeComponentFactory.create(componentContext = componentContext)
-                )
+    ): ScreenChild =
+        when (tab) {
+            MainComponent.Tab.Home ->
+                homeComponentFactory
+                    .create(componentContext = componentContext)
+                    .asChild(homeScreen::Content)
 
-            Config.Search ->
-                MainComponent.Child.Search(
-                    searchComponentFactory.create(componentContext = componentContext)
-                )
+            MainComponent.Tab.Search ->
+                searchComponentFactory
+                    .create(componentContext = componentContext)
+                    .asChild(searchScreen::Content)
 
-            Config.Profile ->
-                MainComponent.Child.Profile(
-                    profileComponentFactory.create(
-                        componentContext = componentContext,
-                        onLogout = onLogout,
-                    )
-                )
+            MainComponent.Tab.Profile ->
+                profileComponentFactory
+                    .create(componentContext = componentContext, onLogout = onLogout)
+                    .asChild(profileScreen::Content)
         }
-
-    @Serializable
-    private sealed interface Config {
-        @Serializable data object Home : Config
-
-        @Serializable data object Search : Config
-
-        @Serializable data object Profile : Config
-    }
 
     @AssistedFactory
     @ContributesBinding(AppScope::class)

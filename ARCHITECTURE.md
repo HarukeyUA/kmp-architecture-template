@@ -186,6 +186,10 @@ These can be combined — e.g., a component could implement both `EventComponent
 
 `ChildStack()` (in `:core:ui:public`) is a convenience wrapper around Decompose's stack rendering that takes a `StackComponent` directly and wires up back-gesture animation automatically via `backAnimation()`. Each platform provides its own `backAnimation()` implementation (predictive back on Android and iOS, fade on others).
 
+Two overloads are available:
+- `ChildStack(component) { child -> ... }` — generic version where you render each child manually
+- `ChildStack(component)` — convenience overload for `StackComponent<*, ScreenChild>` where each child renders itself
+
 ### Side Effects
 
 Side effects (in `:core:component:public`) are one-time events dispatched from a component to the UI layer — things like scroll-to-top or focus a field. Unlike `UiState`, side effects are not persisted and are consumed exactly once.
@@ -221,28 +225,58 @@ In `:impl`, extend `MoleculeComponent` (passing `AppComponentContext`), override
 
 ### Defining a StackComponent
 
-In `:public`, define the interface with a `sealed interface Child` holding child component references:
+In `:public`, define the interface using `ScreenChild` as the child type. This keeps child component types out of the public API:
 
 ```kotlin
-interface HomeComponent : StackComponent<Any, HomeComponent.Child> {
-    sealed interface Child {
-        data class List(val component: HomeListComponent) : Child
-        data class Detail(val component: HomeDetailComponent) : Child
-    }
+interface HomeComponent : StackComponent<Any, ScreenChild> {
     fun interface Factory { fun create(componentContext: AppComponentContext): HomeComponent }
 }
 ```
 
-In `:impl`, use Decompose's `childStack()` with `StackNavigation` and a child factory function. The `ChildStack()` composable renders the active child with back-gesture animation.
+`ScreenChild` (in `:core:ui:public`) is a self-rendering child — it pairs a component with its screen so the host screen doesn't need to know about individual child types. The `asChild` extension function creates one by binding a component to its screen:
+
+```kotlin
+fun <T> T.asChild(screen: @Composable (T) -> Unit): ScreenChild
+```
+
+In `:impl`, use Decompose's `childStack()` with `StackNavigation`. The child factory creates components and pairs them with their screens via `asChild`. Child component and screen interfaces live in `:impl` since they're internal to the feature:
+
+```kotlin
+// In DefaultHomeComponent (impl)
+private fun createChild(config: Config, componentContext: AppComponentContext): ScreenChild =
+    when (config) {
+        Config.List ->
+            homeListComponentFactory.create(componentContext, ::onItemSelected)
+                .asChild(homeListScreen::Content)
+        is Config.Detail ->
+            homeDetailComponentFactory.create(componentContext, config.itemId, navigation::pop)
+                .asChild(homeDetailScreen::Content)
+    }
+```
+
+The host screen uses the `ChildStack()` convenience overload — each child renders itself, so no child-type matching is needed:
+
+```kotlin
+// In DefaultHomeScreen (impl)
+@Composable
+override fun Content(component: HomeComponent) {
+    ChildStack(component)
+}
+```
 
 ### Defining an EventComponent
 
-In `:public`, define the interface with a `sealed interface Event`:
+In `:public`, define the interface with a `sealed interface Event`. For tab-based coordinators, expose a `@Serializable sealed interface Tab` as the stack configuration type so the screen can determine the active tab via `stack.active.configuration` without referencing child component types:
 
 ```kotlin
 interface MainComponent : EventComponent<MainComponent.Event> {
-    val stack: Value<ChildStack<*, Child>>
-    sealed interface Child { ... }
+    val snackbarHostState: SnackbarHostState
+    val stack: Value<ChildStack<Tab, ScreenChild>>
+    @Serializable sealed interface Tab {
+        @Serializable data object Home : Tab
+        @Serializable data object Search : Tab
+        @Serializable data object Profile : Tab
+    }
     sealed interface Event : UiEvent {
         object HomeTabClick : Event
         object SearchTabClick : Event
@@ -251,14 +285,14 @@ interface MainComponent : EventComponent<MainComponent.Event> {
 }
 ```
 
-In `:impl`, implement `onEvent()` to handle each event (e.g., calling `navigation.bringToFront()`).
+In `:impl`, implement `onEvent()` to handle each event (e.g., calling `navigation.bringToFront()`). The `Tab` type doubles as Decompose's stack configuration, eliminating the need for a separate private `Config` class. The child factory pairs each feature component with its screen via `asChild`.
 
 ### Screen Interface Pattern
 
-Screens are defined as interfaces in `:public` and implemented in `:impl`. This allows screens to be injected via DI, keeping `:impl` modules decoupled from each other.
+Screens are defined as interfaces and implemented in `:impl`. For feature entry-point screens (e.g., `HomeScreen`), the interface lives in `:public` so other features can inject and render it. For feature-internal child screens (e.g., `HomeListScreen`, `HomeDetailScreen`), both the interface and implementation live in `:impl` since they're only used within the feature's `StackComponent`.
 
 - **StatefulComponent screens** — observe `component.state` via `collectAsStateWithLifecycle()`, delegate to a private stateless composable for previewability
-- **StackComponent screens** — use the `ChildStack(component)` composable, matching on child types and delegating to injected child screens
+- **StackComponent screens** — use the `ChildStack(component)` convenience overload; each `ScreenChild` renders itself, so the host screen has no child-specific knowledge
 
 ---
 
@@ -338,7 +372,7 @@ All navigation uses Decompose's `childStack` with `@Serializable` configuration 
 | `serialization`              | kotlinx.serialization                                                                                                                                                                                                                    |
 | `screenshot.testing`         | Roborazzi screenshot testing (androidHostTest sourceSet, Pixel 9 + Pixel Tablet, light/dark)                                                                                                                                             |
 
-Features that use `StackComponent` need to add `api(project(":core:navigation:public"))` to their `:public` module's dependencies.
+Features that use `StackComponent` need to add `api(project(":core:ui:public"))` to their `:public` module's dependencies (this transitively provides `:core:navigation:public`).
 
 ---
 

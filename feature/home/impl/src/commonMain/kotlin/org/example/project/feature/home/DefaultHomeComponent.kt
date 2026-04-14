@@ -13,17 +13,21 @@ import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
 import kotlinx.serialization.Serializable
 import org.example.project.core.component.AppComponentContext
+import org.example.project.core.ui.navigation.ScreenChild
+import org.example.project.core.ui.navigation.asChild
 
 @AssistedInject
 class DefaultHomeComponent(
     @Assisted componentContext: AppComponentContext,
     private val homeListComponentFactory: HomeListComponent.Factory,
     private val homeDetailComponentFactory: HomeDetailComponent.Factory,
+    private val homeListScreen: HomeListScreen,
+    private val homeDetailScreen: HomeDetailScreen,
 ) : HomeComponent, AppComponentContext by componentContext {
 
     private val navigation = StackNavigation<Config>()
 
-    private val _stack: Value<ChildStack<Config, HomeComponent.Child>> =
+    private val _stack: Value<ChildStack<Config, ScreenChild>> =
         childStack(
             source = navigation,
             serializer = Config.serializer(),
@@ -32,33 +36,30 @@ class DefaultHomeComponent(
             childFactory = ::createChild,
         )
 
-    override val stack: Value<ChildStack<Any, HomeComponent.Child>> = _stack
+    override val stack: Value<ChildStack<Any, ScreenChild>> = _stack
 
     override fun onBackClick() {
         navigation.pop()
     }
 
-    private fun createChild(
-        config: Config,
-        componentContext: AppComponentContext,
-    ): HomeComponent.Child =
+    private fun createChild(config: Config, componentContext: AppComponentContext): ScreenChild =
         when (config) {
             Config.List ->
-                HomeComponent.Child.List(
-                    homeListComponentFactory.create(
+                homeListComponentFactory
+                    .create(
                         componentContext = componentContext,
                         onItemSelected = { id -> navigation.pushNew(Config.Detail(id)) },
                     )
-                )
+                    .asChild(homeListScreen::Content)
 
             is Config.Detail ->
-                HomeComponent.Child.Detail(
-                    homeDetailComponentFactory.create(
+                homeDetailComponentFactory
+                    .create(
                         componentContext = componentContext,
                         itemId = config.itemId,
                         onBack = { navigation.pop() },
                     )
-                )
+                    .asChild(homeDetailScreen::Content)
         }
 
     @Serializable

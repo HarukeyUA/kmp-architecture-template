@@ -9,19 +9,11 @@ import org.example.project.core.ui.navigation.ChildStack
 
 @ContributesBinding(AppScope::class)
 @Inject
-class DefaultHomeScreen(
-    private val homeListScreen: HomeListScreen,
-    private val homeDetailScreen: HomeDetailScreen,
-) : HomeScreen {
+class DefaultHomeScreen : HomeScreen {
 
     @OptIn(ExperimentalDecomposeApi::class)
     @Composable
     override fun Content(component: HomeComponent) {
-        ChildStack(component) { child ->
-            when (val instance = child.instance) {
-                is HomeComponent.Child.List -> homeListScreen.Content(instance.component)
-                is HomeComponent.Child.Detail -> homeDetailScreen.Content(instance.component)
-            }
-        }
+        ChildStack(component)
     }
 }

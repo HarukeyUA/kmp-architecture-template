@@ -2,14 +2,9 @@ package org.example.project.feature.home
 
 import org.example.project.core.component.AppComponentContext
 import org.example.project.core.navigation.StackComponent
+import org.example.project.core.ui.navigation.ScreenChild
 
-interface HomeComponent : StackComponent<Any, HomeComponent.Child> {
-
-    sealed interface Child {
-        data class List(val component: HomeListComponent) : Child
-
-        data class Detail(val component: HomeDetailComponent) : Child
-    }
+interface HomeComponent : StackComponent<Any, ScreenChild> {
 
     fun interface Factory {
         fun create(componentContext: AppComponentContext): HomeComponent

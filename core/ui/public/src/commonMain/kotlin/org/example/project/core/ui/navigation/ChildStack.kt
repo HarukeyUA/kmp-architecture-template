@@ -18,19 +18,9 @@ import org.example.project.core.navigation.StackComponent
  * This is a convenience wrapper around Decompose's [Children] composable that simplifies the common
  * pattern of rendering a stack.
  *
- * Example usage:
- * ```
- * ChildStack(component) { child ->
- *     when (val instance = child.instance) {
- *         is HomeComponent.Child.List -> ListScreen(instance.component)
- *         is HomeComponent.Child.Detail -> DetailScreen(instance.component)
- *     }
- * }
- * ```
- *
  * @param component The [StackComponent] whose stack should be rendered
  * @param modifier Modifier to apply to the container
- * @param animation Stack animation to use for transitions, defaults to fade
+ * @param animation Stack animation to use for transitions, defaults to platform back animation
  * @param content Composable to render for the active child
  */
 @OptIn(ExperimentalDecomposeApi::class)
@@ -48,6 +38,29 @@ fun <C : Any, T : Any> ChildStack(
         animation = animation,
         content = content,
     )
+}
+
+/**
+ * Renders the active [ScreenChild] from a [StackComponent] with optional animation.
+ *
+ * Convenience overload for components that use [ScreenChild] — each child renders itself, so no
+ * `content` lambda is needed.
+ *
+ * @param component The [StackComponent] whose stack should be rendered
+ * @param modifier Modifier to apply to the container
+ * @param animation Stack animation to use for transitions, defaults to platform back animation
+ */
+@OptIn(ExperimentalDecomposeApi::class)
+@Composable
+fun <C : Any> ChildStack(
+    component: StackComponent<C, ScreenChild>,
+    modifier: Modifier = Modifier,
+    animation: StackAnimation<C, ScreenChild>? =
+        backAnimation(backHandler = component.backHandler, onBackClick = component::onBackClick),
+) {
+    ChildStack(stack = component.stack, modifier = modifier, animation = animation) { child ->
+        child.instance.Content()
+    }
 }
 
 @OptIn(ExperimentalDecomposeApi::class)
