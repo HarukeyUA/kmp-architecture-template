@@ -133,13 +133,8 @@ private object AnyValueSerializer : KSerializer<Any?> {
 
             is Map<*, *> -> {
                 composite.encodeByteElement(descriptor, 0, SerializableTypes.MAP.code)
-                @Suppress("UNCHECKED_CAST")
-                composite.encodeSerializableElement(
-                    descriptor,
-                    1,
-                    AnyMapSerializer,
-                    value as Map<String, Any?>,
-                )
+                val stringKeyMap = value.entries.associate { (k, v) -> k.toString() to v }
+                composite.encodeSerializableElement(descriptor, 1, AnyMapSerializer, stringKeyMap)
             }
 
             is SavedState -> {
@@ -149,9 +144,7 @@ private object AnyValueSerializer : KSerializer<Any?> {
 
             else -> {
                 if (!PlatformSavedStateRegistryUtils.write(composite, descriptor, value)) {
-                    throw SerializationException(
-                        "Value of type ${value::class} is not supported by SavedStateSerializer"
-                    )
+                    composite.encodeByteElement(descriptor, 0, SerializableTypes.NULL.code)
                 }
             }
         }

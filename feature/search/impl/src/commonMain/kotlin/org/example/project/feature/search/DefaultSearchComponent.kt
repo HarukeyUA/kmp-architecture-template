@@ -1,5 +1,6 @@
 package org.example.project.feature.search
 
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -13,7 +14,6 @@ import dev.zacsweers.metro.ContributesBinding
 import kotlinx.coroutines.delay
 import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.MoleculeComponent
-import org.example.project.core.ui.textfield.rememberKmpTextFieldState
 
 @AssistedInject
 class DefaultSearchComponent(@Assisted componentContext: AppComponentContext) :
@@ -22,7 +22,7 @@ class DefaultSearchComponent(@Assisted componentContext: AppComponentContext) :
 
     @Composable
     override fun produceState(): SearchComponent.State {
-        val query = rememberKmpTextFieldState()
+        val query = rememberTextFieldState()
         var results by rememberSaveable { mutableStateOf(emptyList<String>()) }
         var isSearching by rememberSaveable { mutableStateOf(false) }
 
@@ -35,11 +35,11 @@ class DefaultSearchComponent(@Assisted componentContext: AppComponentContext) :
                         delay(500)
                         results =
                             listOf(
-                                "Result 1 for '$query'",
-                                "Result 2 for '$query'",
-                                "Result 3 for '$query'",
-                                "Result 4 for '$query'",
-                                "Result 5 for '$query'",
+                                "Result 1 for '${query.text}'",
+                                "Result 2 for '${query.text}'",
+                                "Result 3 for '${query.text}'",
+                                "Result 4 for '${query.text}'",
+                                "Result 5 for '${query.text}'",
                             )
                         isSearching = false
                     }

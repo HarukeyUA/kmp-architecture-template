@@ -54,7 +54,7 @@ internal class StateKeeperSaveableStateRegistry(
             }
 
             is Map<*, *> -> {
-                value.none { (key, item) -> key !is String || (item != null && !canBeSaved(item)) }
+                value.none { (_, item) -> item != null && !canBeSaved(item) }
             }
 
             is SavedState -> true

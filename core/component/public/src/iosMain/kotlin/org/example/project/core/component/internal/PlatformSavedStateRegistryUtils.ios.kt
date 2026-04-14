@@ -5,7 +5,7 @@ import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.CompositeEncoder
 
 internal actual object PlatformSavedStateRegistryUtils {
-    actual fun canBeSaved(value: Any): Boolean = false
+    actual fun canBeSaved(value: Any): Boolean = true
 
     actual fun write(encoder: CompositeEncoder, descriptor: SerialDescriptor, value: Any): Boolean {
         return false
