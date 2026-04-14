@@ -2,8 +2,10 @@ package org.example.project.core.component
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.cash.molecule.RecompositionMode
 import app.cash.molecule.launchMolecule
@@ -64,8 +66,9 @@ abstract class MoleculeComponent<S : UiState, E : UiEvent>(componentContext: App
     @Composable
     protected fun CollectEvents(onEvent: suspend (E) -> Unit) {
         val coroutineScope = rememberCoroutineScope()
+        val onEventUpdatedState by rememberUpdatedState(onEvent)
         LaunchedEffect(Unit) {
-            events.consumeAsFlow().collect { coroutineScope.launch { onEvent(it) } }
+            events.consumeAsFlow().collect { coroutineScope.launch { onEventUpdatedState(it) } }
         }
     }
 
