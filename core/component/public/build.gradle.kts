@@ -17,5 +17,9 @@ kotlin {
             implementation(libs.essenty.lifecycle.coroutines)
             implementation(libs.androidx.lifecycle.runtimeCompose)
         }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.assertk)
+        }
     }
 }
