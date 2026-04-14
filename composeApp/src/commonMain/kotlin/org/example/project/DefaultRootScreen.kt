@@ -35,19 +35,19 @@ class DefaultRootScreen(
     override fun Content(component: RootComponent) {
         AppTheme {
             CompositionLocalProvider(LocalErrorRenderer provides errorRenderer) {
-                ChildStack(
-                    component = component,
-                    animation =
-                        stackAnimation { child, otherChild, _, _ ->
-                            val isSplash =
-                                child.instance is RootComponent.Child.Splash ||
-                                    otherChild.instance is RootComponent.Child.Splash
-                            if (isSplash) fade() else defaultStackAnimator()
-                        },
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background,
                 ) {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background,
+                    ChildStack(
+                        component = component,
+                        animation =
+                            stackAnimation { child, otherChild, _, _ ->
+                                val isSplash =
+                                    child.instance is RootComponent.Child.Splash ||
+                                        otherChild.instance is RootComponent.Child.Splash
+                                if (isSplash) fade() else defaultStackAnimator()
+                            },
                     ) {
                         when (val child = it.instance) {
                             is RootComponent.Child.Splash -> splashScreen.Content()
