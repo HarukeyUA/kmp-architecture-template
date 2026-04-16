@@ -20,7 +20,7 @@ class SpotlessConventionPlugin : Plugin<Project> {
                 }
                 kotlinGradle {
                     ktfmt(ktfmtVersion).kotlinlangStyle()
-                    target("*.kts")
+                    target("*.kts", "build-logic/**/*.kts")
                 }
                 format("xml") { target("src/**/*.xml") }
             }
