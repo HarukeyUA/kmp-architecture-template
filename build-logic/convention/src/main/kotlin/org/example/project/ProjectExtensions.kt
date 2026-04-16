@@ -7,7 +7,6 @@ import org.gradle.api.artifacts.VersionCatalogsExtension
 import org.gradle.api.project.IsolatedProject
 import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import org.jetbrains.kotlin.gradle.plugin.KotlinDependencyHandler
 
 val Project.libs: VersionCatalog
     get() = extensions.getByType<VersionCatalogsExtension>().named("libs")
@@ -69,16 +68,3 @@ val Project.moduleType: ModuleType
 fun Project.isImplModule(): Boolean = moduleType == ModuleType.IMPL
 
 fun Project.isPublicModule(): Boolean = moduleType == ModuleType.PUBLIC
-
-private fun Project.localImplModules(rootProject: Project = this.rootProject): List<String> {
-    return rootProject.subprojects
-        .filter { it.subprojects.isEmpty() }
-        .filter { it.isImplModule() }
-        .filter { it.path != this.path }
-        .map { it.path }
-        .sorted()
-}
-
-fun KotlinDependencyHandler.addLocalImplDependencies(project: Project) {
-    project.localImplModules().forEach { implModulePath -> api(project.project(implModulePath)) }
-}

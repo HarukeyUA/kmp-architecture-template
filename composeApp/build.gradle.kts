@@ -1,8 +1,8 @@
-import org.example.project.addLocalImplDependencies
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
     alias(libs.plugins.convention.kmp.library)
+    alias(libs.plugins.convention.impl.aggregator)
     alias(libs.plugins.convention.serialization)
     alias(libs.plugins.convention.compose)
     alias(libs.plugins.convention.compose.resources)
@@ -28,8 +28,6 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            addLocalImplDependencies(project)
-
             api(project(":core:ui:public"))
 
             implementation(libs.compose.runtime)

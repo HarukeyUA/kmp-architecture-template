@@ -1,3 +1,5 @@
+import org.example.project.implAggregator
+
 pluginManagement {
     includeBuild("build-logic")
     repositories {
@@ -26,9 +28,14 @@ dependencyResolutionManagement {
     }
 }
 
-plugins { id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0" }
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+    id("convention.impl-aggregator.settings")
+}
 
 rootProject.name = "MyApplication"
+
+implAggregator { aggregatorProjectPath.set(":composeApp") }
 
 // App modules
 include(":androidApp")
