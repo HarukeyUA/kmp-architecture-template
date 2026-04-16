@@ -70,5 +70,9 @@ gradlePlugin {
             id = "convention.screenshot.testing"
             implementationClass = "ScreenshotTestingConventionPlugin"
         }
+        register("implAggregator") {
+            id = "convention.impl-aggregator"
+            implementationClass = "ImplAggregatorConventionPlugin"
+        }
     }
 }
