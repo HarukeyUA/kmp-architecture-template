@@ -8,7 +8,6 @@ plugins {
     alias(libs.plugins.convention.compose.resources)
     alias(libs.plugins.convention.molecule)
     alias(libs.plugins.convention.coroutines)
-    alias(libs.plugins.composeHotReload)
     alias(libs.plugins.serialization)
     alias(libs.plugins.metro)
 }

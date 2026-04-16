@@ -49,6 +49,7 @@ kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-pl
 compose-gradlePlugin = { group = "org.jetbrains.compose", name = "compose-gradle-plugin", version.ref = "composeMultiplatform" }
 composeCompiler-gradlePlugin = { group = "org.jetbrains.kotlin", name = "compose-compiler-gradle-plugin", version.ref = "kotlin" }
 serialization-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-serialization", version.ref = "kotlin" }
+spotless-gradlePlugin = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
 
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
@@ -143,3 +144,4 @@ convention-ktor = { id = "convention.ktor", version = "unspecified" }
 convention-screenshot-testing = { id = "convention.screenshot.testing", version = "unspecified" }
 convention-impl-aggregator-settings = { id = "convention.impl-aggregator.settings", version = "unspecified" }
 convention-impl-aggregator = { id = "convention.impl-aggregator", version = "unspecified" }
+convention-spotless = { id = "convention.spotless", version = "unspecified" }

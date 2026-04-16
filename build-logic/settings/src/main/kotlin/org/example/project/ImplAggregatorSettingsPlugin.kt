@@ -18,14 +18,14 @@ fun Settings.implAggregator(action: ImplAggregatorSettingsExtension.() -> Unit) 
 }
 
 /**
- * Settings plugin that enumerates every leaf `:impl` project at settings evaluation time and
- * writes their paths into the aggregator project's own build directory.
+ * Settings plugin that enumerates every leaf `:impl` project at settings evaluation time and writes
+ * their paths into the aggregator project's own build directory.
  *
  * Walking the project tree is sanctioned at settings time -- [ProjectDescriptor] is the
- * settings-level representation of a project and carries no configuration-time state. The file
- * is written under the aggregator's own `projectDir`, so its consuming build script can read it
- * via [org.gradle.api.file.ProjectLayout] without ever reaching into another project. That keeps
- * the whole round-trip safe under Gradle's project isolation model.
+ * settings-level representation of a project and carries no configuration-time state. The file is
+ * written under the aggregator's own `projectDir`, so its consuming build script can read it via
+ * [org.gradle.api.file.ProjectLayout] without ever reaching into another project. That keeps the
+ * whole round-trip safe under Gradle's project isolation model.
  */
 class ImplAggregatorSettingsPlugin : Plugin<Settings> {
     override fun apply(target: Settings) {
@@ -71,8 +71,8 @@ class ImplAggregatorSettingsPlugin : Plugin<Settings> {
 
         /**
          * Path of the generated file, relative to the aggregator project's `projectDir`. The
-         * consuming convention plugin resolves it through [org.gradle.api.file.ProjectLayout],
-         * so no cross-project access occurs at configuration time.
+         * consuming convention plugin resolves it through [org.gradle.api.file.ProjectLayout], so
+         * no cross-project access occurs at configuration time.
          */
         const val AGGREGATOR_OUTPUT_REL_PATH = "build/impl-aggregator/impl-modules.txt"
     }
