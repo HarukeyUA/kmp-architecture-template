@@ -4,6 +4,11 @@ plugins {
     alias(libs.plugins.metro)
 }
 
+// `convention.spotless` lives in `build-logic:settings`, which the settings plugin
+// `convention.impl-aggregator.settings` loads onto the settings classpath. The plugins DSL rejects
+// ids that are already on the classpath, so apply it imperatively.
+apply(plugin = "convention.spotless")
+
 android {
     namespace = "com.rainy.myapplication"
     compileSdk { version = release(36) }
