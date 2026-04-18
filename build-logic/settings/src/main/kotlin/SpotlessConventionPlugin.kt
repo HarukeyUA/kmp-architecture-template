@@ -13,16 +13,29 @@ class SpotlessConventionPlugin : Plugin<Project> {
             val ktfmtVersion = libs.findVersion("ktfmt").get().requiredVersion
 
             pluginManager.apply(spotlessPluginId)
+            val isRoot = this == rootProject
             extensions.configure<SpotlessExtension> {
                 kotlin {
                     ktfmt(ktfmtVersion).kotlinlangStyle()
-                    target("src/**/*.kt", "build-logic/**/*.kt")
+                    if (isRoot) {
+                        target("src/**/*.kt", "build-logic/**/*.kt")
+                    } else {
+                        target("src/**/*.kt")
+                    }
                 }
                 kotlinGradle {
                     ktfmt(ktfmtVersion).kotlinlangStyle()
-                    target("*.kts", "build-logic/**/*.kts")
+                    if (isRoot) {
+                        target("*.kts", "build-logic/**/*.kts")
+                    } else {
+                        target("*.kts")
+                    }
                 }
-                format("xml") { target("src/**/*.xml") }
+                format("xml") {
+                    target("src/**/*.xml")
+                    trimTrailingWhitespace()
+                    endWithNewline()
+                }
             }
         }
     }

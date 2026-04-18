@@ -1,4 +1,3 @@
-import org.example.project.androidLibrary
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
@@ -21,10 +20,6 @@ class KmpComposeFeatureImplConventionPlugin : Plugin<Project> {
                     implementation(project(":core:component:public"))
                     implementation(project(":core:ui:public"))
                 }
-            }
-
-            extensions.configure<KotlinMultiplatformExtension> {
-                androidLibrary { androidResources { enable = true } }
             }
         }
     }

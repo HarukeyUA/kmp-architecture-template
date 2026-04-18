@@ -4,8 +4,10 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
 import org.gradle.language.base.plugins.LifecycleBasePlugin
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 /**
  * Registers `assertModuleDependencies` on the module it's applied to. The task inspects only this
@@ -28,34 +30,35 @@ class ModuleGraphAssertConventionPlugin : Plugin<Project> {
 
             pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
                 val kotlin = extensions.getByType<KotlinMultiplatformExtension>()
-                kotlin.sourceSets.configureEach {
-                    if (name.contains("Test", ignoreCase = true)) return@configureEach
-
-                    val configNames =
-                        listOf(
-                            apiConfigurationName,
-                            implementationConfigurationName,
-                            compileOnlyConfigurationName,
-                            runtimeOnlyConfigurationName,
-                        )
-                    configNames.forEach { cfgName ->
-                        configurations.named(cfgName).configure {
-                            val declared = dependencies
-                            assertTask.configure {
-                                dependencyPaths.addAll(
-                                    provider {
-                                        declared.withType(ProjectDependency::class.java).map {
-                                            it.path
-                                        }
-                                    }
-                                )
-                            }
+                assertTask.configure {
+                    dependencyPaths.addAll(
+                        provider {
+                            kotlin.sourceSets
+                                .asSequence()
+                                .filterNot { it.name.contains("Test", ignoreCase = true) }
+                                .flatMap { ss ->
+                                    sequenceOf(
+                                        ss.apiConfigurationName,
+                                        ss.implementationConfigurationName,
+                                        ss.compileOnlyConfigurationName,
+                                        ss.runtimeOnlyConfigurationName,
+                                    )
+                                }
+                                .mapNotNull { configurations.findByName(it) }
+                                .flatMap {
+                                    it.dependencies
+                                        .withType(ProjectDependency::class.java)
+                                        .asSequence()
+                                        .map(ProjectDependency::getPath)
+                                }
+                                .toSet()
                         }
-                    }
+                    )
                 }
             }
 
             tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME).configure { dependsOn(assertTask) }
+            tasks.withType<KotlinCompilationTask<*>>().configureEach { dependsOn(assertTask) }
         }
     }
 }

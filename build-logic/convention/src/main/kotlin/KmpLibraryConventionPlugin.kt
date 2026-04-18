@@ -5,6 +5,7 @@ import org.example.project.version
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 class KmpLibraryConventionPlugin : Plugin<Project> {
@@ -27,16 +28,14 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
 
                 iosArm64()
                 iosSimulatorArm64()
-                jvm()
+                jvm { compilerOptions { jvmTarget.set(JvmTarget.JVM_21) } }
 
                 androidLibrary {
                     compileSdk = libs.version("android-compileSdk").toInt()
                     minSdk = libs.version("android-minSdk").toInt()
                     namespace = namespace()
 
-                    compilerOptions {
-                        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-                    }
+                    compilerOptions { jvmTarget.set(JvmTarget.JVM_21) }
                 }
             }
         }
