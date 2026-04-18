@@ -47,23 +47,12 @@ class ImplAggregatorSettingsPlugin : Plugin<Settings> {
                         )
                     }
 
-            val paths = collectImplModulePaths(target.rootProject)
+            val paths =
+                target.rootProject.leafDescendants().filter { it.name == "impl" }.map { it.path }
             val outputFile = aggregator.projectDir.resolve(AGGREGATOR_OUTPUT_REL_PATH)
             outputFile.parentFile?.mkdirs()
             outputFile.writeText(paths.sorted().joinToString(separator = "\n"))
         }
-    }
-
-    private fun collectImplModulePaths(root: ProjectDescriptor): List<String> {
-        val collected = mutableListOf<String>()
-        fun visit(descriptor: ProjectDescriptor) {
-            if (descriptor.name == "impl" && descriptor.children.isEmpty()) {
-                collected += descriptor.path
-            }
-            descriptor.children.forEach(::visit)
-        }
-        visit(root)
-        return collected
     }
 
     companion object {

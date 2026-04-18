@@ -52,18 +52,20 @@ private fun Project.requireParent(): IsolatedProject = requireNotNull(parent).is
 enum class ModuleType {
     PUBLIC,
     IMPL,
+    TESTING,
     UNKNOWN,
 }
 
-val Project.moduleType: ModuleType
-    get() {
-        val name = path.substringAfterLast(':')
-        return when {
-            name == "public" -> ModuleType.PUBLIC
-            name == "impl" -> ModuleType.IMPL
-            else -> ModuleType.UNKNOWN
-        }
+fun moduleTypeOf(path: String): ModuleType =
+    when (path.substringAfterLast(':')) {
+        "public" -> ModuleType.PUBLIC
+        "impl" -> ModuleType.IMPL
+        "testing" -> ModuleType.TESTING
+        else -> ModuleType.UNKNOWN
     }
+
+val Project.moduleType: ModuleType
+    get() = moduleTypeOf(path)
 
 fun Project.isImplModule(): Boolean = moduleType == ModuleType.IMPL
 

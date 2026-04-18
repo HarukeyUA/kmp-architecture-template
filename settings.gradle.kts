@@ -31,6 +31,7 @@ dependencyResolutionManagement {
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
     id("convention.impl-aggregator.settings")
+    id("convention.module-structure-assert.settings")
 }
 
 rootProject.name = "MyApplication"

@@ -74,5 +74,9 @@ gradlePlugin {
             id = "convention.impl-aggregator"
             implementationClass = "ImplAggregatorConventionPlugin"
         }
+        register("moduleGraphAssert") {
+            id = "convention.module-graph-assert"
+            implementationClass = "ModuleGraphAssertConventionPlugin"
+        }
     }
 }

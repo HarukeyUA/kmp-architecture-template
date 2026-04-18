@@ -46,6 +46,20 @@ Modules are split into `:public` and `:impl` submodules
 
 **Key Rule**: Only `:composeApp` can depend on `:impl` modules. This ensures implementation details stay hidden, enables parallel compilation, and keeps coupling low.
 
+**Layering Rule**: `:core:*` modules cannot depend on `:feature:*` modules. Core is foundation; features sit on top.
+
+### Enforcement
+
+The rules above are enforced at build time and are compatible with Gradle project isolation.
+
+| Rule                                                                           | Where                                                                                                                                    |
+|--------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| Module dependency rules + `:core` → `:feature`                                 | `assertModuleDependencies` task per module (runs as part of `check`). Inspects declared `project(...)` dependencies in main source sets. |
+| Every leaf module is named `public`/`impl`/`testing`/`composeApp`/`androidApp` | `convention.module-structure-assert.settings` — fails at settings evaluation.                                                            |
+| Every `:impl` has a sibling `:public`                                          | Same settings plugin.                                                                                                                    |
+
+Run directly with `./gradlew assertModuleDependencies` or any `check` task.
+
 ---
 
 ## Layered Architecture

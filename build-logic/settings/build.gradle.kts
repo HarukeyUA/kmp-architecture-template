@@ -12,5 +12,9 @@ gradlePlugin {
             id = "convention.spotless"
             implementationClass = "SpotlessConventionPlugin"
         }
+        register("moduleStructureAssertSettings") {
+            id = "convention.module-structure-assert.settings"
+            implementationClass = "org.example.project.ModuleStructureAssertSettingsPlugin"
+        }
     }
 }
