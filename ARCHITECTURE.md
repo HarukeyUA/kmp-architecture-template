@@ -134,7 +134,7 @@ ExampleResponse             ──→  ExampleModel                ──→  Ex
 
 - **Response DTOs** (`*Response`) — annotated with `@Serializable` and `@SerialName` for JSON mapping. Represent the raw API contract.
 - **Domain Models** — live in `feature:*:public/domain/models/`. Represent business concepts, stripped of serialization concerns.
-- **UI Models** (`*UiModel`) — live in `feature:*:public/presentation/models/`. Annotated with `@Serializable` for state restoration. Optimized for rendering.
+- **UI Models** (`*UiModel`) — live in `feature:*:public/presentation/models/`. Optimized for rendering.
 
 Mapping functions between layers:
 - **DTO → Domain**: public extension functions in `:public` (e.g., `ExampleResponse.toModel()`)
@@ -462,7 +462,7 @@ override suspend fun getData(id: String): Either<FeatureError, Model> =
     }
 ```
 
-**Domain → UI**: Components store `AppError?` in state. Screens render it via the error renderer:
+**Domain → UI**: Components store `AppError` in state. Screens render it via the error renderer:
 
 ```kotlin
 // In component (produceState)
@@ -502,7 +502,7 @@ sealed interface MyFeatureError : AppError {
 
 ```kotlin
 @Inject
-@ContributesIntoSet(AppScope::class, binding = binding<ErrorRenderer<AppError>>())
+@ContributesIntoSet(AppScope::class)
 class MyFeatureErrorRenderer : ErrorRenderer<MyFeatureError> {
     override fun resolveResource(error: MyFeatureError): ResourceResult? = when (error) {
         is MyFeatureError.NotFound -> ResourceResult(Res.string.error_not_found, arrayOf(error.id))
