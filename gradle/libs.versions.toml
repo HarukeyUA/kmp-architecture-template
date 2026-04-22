@@ -26,7 +26,7 @@ molecule = "2.2.0"
 
 arrow = "2.2.2.1"
 
-ktor = "3.4.2"
+ktor = "3.4.3"
 
 androidx-splash-splash-screen = "1.2.0"
 
