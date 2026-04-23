@@ -4,7 +4,7 @@ coreKtx = "1.18.0"
 datastore = "1.3.0-alpha08"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
-kotlin = "2.3.20"
+kotlin = "2.3.21"
 
 android-compileSdk = "36"
 android-minSdk = "26"
