@@ -30,7 +30,7 @@ ktor = "3.4.3"
 
 androidx-splash-splash-screen = "1.2.0"
 
-roborazzi = "1.59.0"
+roborazzi = "1.60.0"
 robolectric = "4.16.1"
 junit = "4.13.2"
 
