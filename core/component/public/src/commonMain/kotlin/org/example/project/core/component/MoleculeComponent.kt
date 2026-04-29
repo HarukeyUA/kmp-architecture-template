@@ -8,15 +8,12 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.cash.molecule.RecompositionMode
 import app.cash.molecule.launchMolecule
-import com.arkivanov.essenty.lifecycle.coroutines.coroutineScope
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 import org.example.project.core.component.internal.EssentyLifecycleOwner
-import org.example.project.core.component.internal.moleculeContext
 import org.example.project.core.component.internal.returningCompositionLocalProvider
 
 /**
@@ -33,10 +30,10 @@ abstract class MoleculeComponent<S : UiState, E : UiEvent>(componentContext: App
     StatefulComponent<S, E>, AppComponentContext by componentContext {
 
     /**
-     * Lifecycle-aware coroutine scope. Uses platform-specific dispatcher via moleculeContext().
-     * Automatically cancelled when component is destroyed.
+     * Lifecycle-aware coroutine scope. Uses the platform main dispatcher and a SupervisorJob.
+     * Automatically canceled when the component is destroyed.
      */
-    protected val scope: CoroutineScope = coroutineScope(moleculeContext() + SupervisorJob())
+    protected val scope: CoroutineScope = lifecycleAwareScope()
 
     /** Event channel with buffer to guarantee delivery even before collection starts */
     private val events = Channel<E>(capacity = 64)

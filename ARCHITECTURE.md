@@ -523,7 +523,7 @@ All component platform bridges live in `:core:component:public`:
 |------------------------------------|---------------------------------------------------------------------|
 | `EssentyLifecycleOwner`            | Maps Essenty `Lifecycle` → AndroidX `LifecycleOwner`                |
 | `StateKeeperSaveableStateRegistry` | Maps Essenty `StateKeeper` → Compose `SaveableStateRegistry`        |
-| `moleculeContext()`                | Platform-specific coroutine dispatcher for Molecule (expect/actual) |
+| `mainCoroutineContext()`           | Platform-specific main coroutine context (expect/actual)            |
 
 ---
 
