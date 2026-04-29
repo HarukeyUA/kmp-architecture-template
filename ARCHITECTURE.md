@@ -26,6 +26,10 @@ Architecture of the sample project — a Kotlin Multiplatform (KMP) application 
 4. **Platform Agnostic** — Business logic in commonMain, platform specifics isolated
 5. **Testability** — Clean separation enables unit testing without UI framework
 6. **Minimal Boilerplate** — Convention plugins and base classes reduce repetition
+7. **Typed Errors over Exceptions** — Use Arrow's `Either` and `either {}` DSL; never let exceptions cross layer boundaries (see [Error Handling](#error-handling))
+8. **Main-Thread-Safe Repositories** — Repository APIs are safe to call from the main thread; dispatcher selection is the implementation's responsibility (see [Concurrency and Threading](#concurrency-and-threading))
+9. **Inject Dispatchers, Don't Reach for `Dispatchers.X`** — All `CoroutineDispatcher`s and the app-wide scope are obtained via DI qualifiers from `:core:dispatchers:public`
+10. **Prefer Lifecycle-Scoped Coroutines** — Components launch work in their lifecycle-aware scope; the `@ApplicationCoroutineScope` is reserved for operations that *must* outlive the component
 
 ---
 
@@ -419,6 +423,20 @@ The snackbar system (in `:core:component:public`) enables any component to displ
 
 The app uses typed, functional error handling with `Either<AppError, T>` (Arrow) instead of exceptions. Errors are defined per layer, wrapped as they cross layer boundaries, and rendered into localized user-facing messages via a composable renderer system.
 
+### Rules
+
+1. **Typed errors over exceptions.** Any function that can fail in a recoverable way returns `Either<E, T>` where `E : AppError`. Do not throw, and do not let an exception escape across a `:public` API boundary. Throwing is reserved for genuinely unrecoverable programmer errors (e.g., `IllegalStateException` for broken invariants).
+2. **Compose with the `either { }` DSL.** Build multi-step error flows with the `arrow.core.raise.either { }` DSL and `.bind()`. Avoid manual `flatMap` chains and avoid `try`/`catch` in feature/domain code.
+3. **Wrap external exception-throwing APIs with `catch`.** Any third-party or platform API that signals failures via exceptions (Ktor calls, `kotlinx.serialization`, `DataStore`, JNI, platform SDKs, etc.) must be converted into a typed error at the boundary using Arrow's `arrow.core.raise.catch`. The exception must not propagate further. See `core:network:public/SafeRequest.kt` for the canonical pattern:
+   ```kotlin
+   either {
+       val response = catch({ block() }) { e -> raise(NetworkError.Connection(e)) }
+       catch({ transform(response) }) { e -> raise(NetworkError.Serialization(e)) }
+   }
+   ```
+4. **`runCatching` is not a substitute.** It silently captures `CancellationException` and produces an untyped `Throwable`. Use Arrow's `catch` so cancellation propagates correctly and the error type is explicit.
+5. **No exception-based control flow across module boundaries.** If a `:public` API needs to expose a failure, model it as part of the return type. `AppErrorException` exists only for adapting to third-party APIs that *require* a `Throwable` (e.g., Paging3's `LoadResult.Error`); it is not for inter-module signaling.
+
 ### Error Type Hierarchy
 
 All errors implement `AppError` (marker interface in `core:error:public`):
@@ -512,6 +530,79 @@ class MyFeatureErrorRenderer : ErrorRenderer<MyFeatureError> {
 ```
 
 4. Add localized strings in `composeResources/values/strings.xml`
+
+---
+
+## Concurrency and Threading
+
+All threading concerns — dispatcher selection, scope ownership, and main-thread safety — are governed by the rules below. The `:core:dispatchers:public` module owns the qualifiers used throughout the app.
+
+### Injected Dispatchers
+
+Direct references to `Dispatchers.IO`, `Dispatchers.Default`, or `Dispatchers.Main` are **not** allowed in feature or repository code. Dispatchers are injected via Metro qualifiers so they can be replaced with `TestDispatcher`s in tests:
+
+| Qualifier                    | Purpose                                                              |
+|------------------------------|----------------------------------------------------------------------|
+| `@MainDispatcher`            | UI-thread work (typically the platform's main dispatcher)            |
+| `@IoDispatcher`              | Blocking I/O (network, disk, DataStore, JNI)                         |
+| `@DefaultDispatcher`         | CPU-bound work (parsing, hashing, image decoding)                    |
+| `@ApplicationCoroutineScope` | App-wide `CoroutineScope` (`SupervisorJob`) for fire-and-forget work |
+
+```kotlin
+@Inject
+@ContributesBinding(AppScope::class)
+class DefaultExampleRepository(
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+    private val api: ExampleApi,
+) : ExampleRepository { ... }
+```
+
+The only places that may reference `Dispatchers.X` directly are:
+- `:core:dispatchers:impl` — the binding module that *provides* them
+- Platform-specific `expect/actual` dispatcher bridges in `:core:component:public` (e.g., `mainCoroutineContext()`)
+- Test infrastructure in `:core:testing:public`
+
+### Main-Thread-Safe Repositories
+
+Every repository method exposed by a `:public` interface **must be safe to call from the main thread.** The implementation is responsible for switching to the appropriate dispatcher (typically `@IoDispatcher`) using `withContext` *inside* the method body. Callers — components, other repositories, screens — are not expected to wrap repository calls in `withContext` themselves.
+
+```kotlin
+override suspend fun getData(id: String): Either<FeatureError, Model> =
+    withContext(ioDispatcher) {
+        either {
+            api.getData(id)
+                .mapLeft { FeatureError.Network(it) }
+                .map { it.toModel() }
+                .bind()
+        }
+    }
+```
+
+For `Flow`-returning APIs, apply `.flowOn(ioDispatcher)` at the boundary so collection on the main thread does not block it.
+
+### Coroutine Scope Selection
+
+Components have a built-in lifecycle-aware coroutine scope that is cancelled when the component is destroyed. **This is the default scope for all component-initiated work.**
+
+- **`MoleculeComponent` subclasses** — already expose a lifecycle-aware `CoroutineScope`; use it directly.
+- **Components that do not extend `MoleculeComponent`** (e.g., plain `EventComponent` or `StackComponent` implementations that need to launch coroutines) — call `LifecycleOwner.lifecycleAwareScope()` from `:core:component:public`. It returns a `CoroutineScope` tied to the component's lifecycle, running on the platform main dispatcher with a `SupervisorJob`, and is cancelled automatically on destroy. Since `AppComponentContext` extends `LifecycleOwner`, this is available on any component context:
+  ```kotlin
+  class DefaultMyComponent(
+      componentContext: AppComponentContext,
+  ) : MyComponent, AppComponentContext by componentContext {
+      private val scope = lifecycleAwareScope()
+      // launch lifecycle-bound work in `scope`
+  }
+  ```
+
+The `@ApplicationCoroutineScope` is reserved for operations that *must* outlive the originating component — e.g., a logout request that needs to complete after the screen is gone, or telemetry emission tied to app lifetime. Reaching for it as a convenience to escape structured concurrency is a code smell; prefer the lifecycle-aware scope and let cancellation propagate.
+
+| Need                                                                                                        | Use                                                                                          |
+|-------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| State production, event handling, data loads bound to a screen                                              | `MoleculeComponent`'s built-in scope, or `lifecycleAwareScope()` for non-Molecule components |
+| One-shot work that must survive component destruction (logout, analytics flush, write-through cache update) | `@ApplicationCoroutineScope`                                                                 |
+
+When `@ApplicationCoroutineScope` is used, it should be a deliberate decision documented in code (a brief comment explaining *why* it must outlive the component is appropriate).
 
 ---
 
