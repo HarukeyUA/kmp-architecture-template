@@ -7,11 +7,11 @@ import assertk.assertions.isEqualTo
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlin.test.Test
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.example.project.core.testing.CoroutineTest
+import org.example.project.core.testing.LifecycleTestMainMode
 import org.example.project.core.testing.runLifecycleTest
 import org.example.project.core.testing.testComponentContext
 
-class DefaultHomeListComponentTest : CoroutineTest() {
+class DefaultHomeListComponentTest {
     @Test
     fun `produces initial list of three items`() = runLifecycleTest { lifecycle ->
         val component = createComponent(lifecycle)
@@ -27,7 +27,7 @@ class DefaultHomeListComponentTest : CoroutineTest() {
 
     @Test
     fun `item click triggers navigation callback with correct id`() =
-        runLifecycleTest { lifecycle ->
+        runLifecycleTest(mainMode = LifecycleTestMainMode.Eager) { lifecycle ->
             val selectedId = MutableStateFlow(-1)
             val component =
                 createComponent(lifecycle = lifecycle, onItemSelected = { selectedId.value = it })

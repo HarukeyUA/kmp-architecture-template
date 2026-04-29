@@ -6,13 +6,13 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isTrue
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlin.test.Test
-import org.example.project.core.testing.CoroutineTest
+import kotlinx.coroutines.test.runCurrent
 import org.example.project.core.testing.runLifecycleTest
 import org.example.project.core.testing.testComponentContext
 import org.example.project.feature.user.data.FakeUserRepository
 import org.example.project.feature.user.data.UserRepository
 
-class DefaultLoginComponentTest : CoroutineTest() {
+class DefaultLoginComponentTest {
     @Test
     fun `initial state has counter equal to zero`() = runLifecycleTest { lifecycle ->
         val component = createComponent(lifecycle = lifecycle)
@@ -35,6 +35,7 @@ class DefaultLoginComponentTest : CoroutineTest() {
 
             component.state.test {
                 component.onEvent(LoginComponent.Event.LoginClicked)
+                runCurrent()
                 cancelAndConsumeRemainingEvents()
             }
 

@@ -7,11 +7,11 @@ import assertk.assertions.isTrue
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlin.test.Test
 import kotlinx.coroutines.flow.MutableStateFlow
-import org.example.project.core.testing.CoroutineTest
+import org.example.project.core.testing.LifecycleTestMainMode
 import org.example.project.core.testing.runLifecycleTest
 import org.example.project.core.testing.testComponentContext
 
-class DefaultHomeDetailComponentTest : CoroutineTest() {
+class DefaultHomeDetailComponentTest {
     @Test
     fun `produces state with correct title and description for item id`() =
         runLifecycleTest { lifecycle ->
@@ -27,18 +27,19 @@ class DefaultHomeDetailComponentTest : CoroutineTest() {
         }
 
     @Test
-    fun `back click triggers navigation callback`() = runLifecycleTest { lifecycle ->
-        val backClicked = MutableStateFlow(false)
-        val component =
-            createComponent(lifecycle = lifecycle, onBack = { backClicked.value = true })
+    fun `back click triggers navigation callback`() =
+        runLifecycleTest(mainMode = LifecycleTestMainMode.Eager) { lifecycle ->
+            val backClicked = MutableStateFlow(false)
+            val component =
+                createComponent(lifecycle = lifecycle, onBack = { backClicked.value = true })
 
-        component.state.test {
-            component.onEvent(HomeDetailComponent.Event.BackClick)
-            cancelAndIgnoreRemainingEvents()
+            component.state.test {
+                component.onEvent(HomeDetailComponent.Event.BackClick)
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            assertThat(backClicked.value).isTrue()
         }
-
-        assertThat(backClicked.value).isTrue()
-    }
 
     private fun createComponent(
         lifecycle: LifecycleRegistry,

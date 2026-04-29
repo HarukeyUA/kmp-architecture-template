@@ -23,6 +23,7 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
                     freeCompilerArgs.addAll(
                         "-Xannotation-default-target=param-property",
                         "-Xcontext-parameters",
+                        "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
                     )
                 }
 

@@ -668,19 +668,25 @@ See `FakeUserRepository` in `:feature:user-data:testing` for the reference imple
 
 ### Core Testing Utilities (`:core:testing:public`)
 
-**`CoroutineTest`** — abstract base class for all component tests. Sets `Dispatchers.Main` to an `UnconfinedTestDispatcher` in `@BeforeTest` and resets it in `@AfterTest`. All test classes extend this.
+**`runLifecycleTest`** — top-level function that wraps `runTest` with lifecycle management and `Dispatchers.Main` setup. It creates a `LifecycleRegistry`, calls `resume()` before the test body, and reliably calls `destroy()` plus `resetMain()` afterwards (in a `finally` block, so they run even when the body times out or fails). The lifecycle is passed into the test block so it can be forwarded to `createComponent`.
 
-**`runLifecycleTest`** — top-level function that wraps `runTest` with lifecycle management. It creates a `LifecycleRegistry`, calls `resume()` before the test body, and `destroy()` after. The lifecycle is passed into the test block so it can be forwarded to `createComponent`.
+The `mainMode` parameter selects how coroutines launched on `Dispatchers.Main` are driven during the test:
+
+| Mode                                       | Dispatcher                 | When to use                                                                                                                                                                                   |
+|--------------------------------------------|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `LifecycleTestMainMode.Queued` *(default)* | `StandardTestDispatcher`   | Work runs only as the scheduler advances. Pair with Turbine's `awaitItem()` (or explicit `runCurrent()` / `advanceUntilIdle()`) to observe each intermediate state emission.                  |
+| `LifecycleTestMainMode.Eager`              | `UnconfinedTestDispatcher` | Launched coroutines start eagerly on the calling thread. Useful when asserting on a side effect immediately after dispatching an event (e.g. checking a navigation callback after `onEvent`). |
+
+**`runCoroutineTest`** — same dispatcher / mode handling as `runLifecycleTest`, without lifecycle management. Use for tests that don't involve a component lifecycle.
 
 **`testComponentContext(lifecycle)`** — creates a `DefaultAppComponentContext` with `SnapshotNotifier.WhileActive`, so Molecule manages its own snapshot notifications in tests (in production, Compose UI handles this via `SnapshotNotifier.External`). All test `createComponent` helpers should use this instead of constructing `DefaultAppComponentContext` directly.
 
 ### Testing a StatefulComponent
 
-Tests extend `CoroutineTest()` and use `runLifecycleTest` to get a managed lifecycle. A private `createComponent` helper accepts the lifecycle plus any dependencies with defaults.
+Tests use `runLifecycleTest` to get a managed lifecycle and a test-scheduler-backed `Dispatchers.Main`. A private `createComponent` helper accepts the lifecycle plus any dependencies with defaults.
 
 **Key patterns:**
-- `CoroutineTest()` — base class that sets up `UnconfinedTestDispatcher` as `Dispatchers.Main`
-- `runLifecycleTest { lifecycle -> ... }` — manages `LifecycleRegistry` creation, `resume()`, and `destroy()`
+- `runLifecycleTest { lifecycle -> ... }` — manages `LifecycleRegistry` creation, `resume()`, `destroy()`, and `Dispatchers.Main`
 - `createComponent(lifecycle, ...)` — builds `testComponentContext(lifecycle)` and the component under test
 - `component.state.test { ... }` — Turbine collects the `StateFlow` and provides `awaitItem()` for assertions
 - `component.onEvent(...)` — simulates UI interactions

@@ -5,11 +5,10 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlin.test.Test
-import {{BASE_PACKAGE}}.core.testing.CoroutineTest
 import {{BASE_PACKAGE}}.core.testing.runLifecycleTest
 import {{BASE_PACKAGE}}.core.testing.testComponentContext
 
-class Default{{FEATURE_NAME}}ComponentTest : CoroutineTest() {
+class Default{{FEATURE_NAME}}ComponentTest {
     @Test
     fun `initial state has expected placeholder`() = runLifecycleTest { lifecycle ->
         val component = createComponent(lifecycle = lifecycle)
