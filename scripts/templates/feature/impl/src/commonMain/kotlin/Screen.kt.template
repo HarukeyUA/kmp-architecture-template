@@ -4,9 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,36 +31,31 @@ class Default{{FEATURE_NAME}}Screen : {{FEATURE_NAME}}Screen {
     override fun Content(component: {{FEATURE_NAME}}Component) {
         val state by component.state.collectAsStateWithLifecycle()
 
-        {{FEATURE_NAME}}ScreenContent(
-            state = state,
-            onEvent = component::onEvent
-        )
+        {{FEATURE_NAME}}ScreenContent(state = state, onEvent = component::onEvent)
     }
 }
 
 @Composable
 private fun {{FEATURE_NAME}}ScreenContent(
     state: {{FEATURE_NAME}}Component.State,
-    onEvent: ({{FEATURE_NAME}}Component.Event) -> Unit
+    onEvent: ({{FEATURE_NAME}}Component.Event) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.background)
-            .systemBarsPadding(),
+        modifier =
+            Modifier.fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.background)
+                .systemBarsPadding(),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
-            text = "{{FEATURE_NAME}} Screen",
-            style = MaterialTheme.typography.headlineMedium
+            text = "{{FEATURE_NAME}}: ${state.placeholder}",
+            style = MaterialTheme.typography.headlineMedium,
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = { onEvent({{FEATURE_NAME}}Component.Event.PlaceholderClicked) }
-        ) {
+        Button(onClick = { onEvent({{FEATURE_NAME}}Component.Event.PlaceholderClicked) }) {
             Text(text = "Click Me")
         }
     }

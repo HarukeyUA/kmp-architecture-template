@@ -1,0 +1,27 @@
+package {{PACKAGE_PATH}}
+
+import app.cash.turbine.test
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import kotlin.test.Test
+import {{BASE_PACKAGE}}.core.testing.CoroutineTest
+import {{BASE_PACKAGE}}.core.testing.runLifecycleTest
+import {{BASE_PACKAGE}}.core.testing.testComponentContext
+
+class Default{{FEATURE_NAME}}ComponentTest : CoroutineTest() {
+    @Test
+    fun `initial state has expected placeholder`() = runLifecycleTest { lifecycle ->
+        val component = createComponent(lifecycle = lifecycle)
+
+        component.state.test { assertThat(awaitItem().placeholder).isEqualTo("{{FEATURE_NAME}}") }
+    }
+
+    private fun createComponent(
+        lifecycle: LifecycleRegistry = LifecycleRegistry()
+    ): {{FEATURE_NAME}}Component {
+        val context = testComponentContext(lifecycle = lifecycle)
+
+        return Default{{FEATURE_NAME}}Component(componentContext = context)
+    }
+}

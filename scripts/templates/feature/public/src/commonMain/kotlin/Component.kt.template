@@ -1,22 +1,18 @@
 package {{PACKAGE_PATH}}
 
-import org.example.project.core.component.AppComponentContext
-import org.example.project.core.component.StatefulComponent
-import org.example.project.core.component.UiEvent
-import org.example.project.core.component.UiState
+import {{BASE_PACKAGE}}.core.component.AppComponentContext
+import {{BASE_PACKAGE}}.core.component.StatefulComponent
+import {{BASE_PACKAGE}}.core.component.UiEvent
+import {{BASE_PACKAGE}}.core.component.UiState
 
 interface {{FEATURE_NAME}}Component : StatefulComponent<{{FEATURE_NAME}}Component.State, {{FEATURE_NAME}}Component.Event> {
-    data class State(
-        val placeholder: String = ""
-    ) : UiState
+    data class State(val placeholder: String = "") : UiState
 
     sealed interface Event : UiEvent {
         data object PlaceholderClicked : Event
     }
 
     fun interface Factory {
-        fun create(
-            componentContext: AppComponentContext,
-        ): {{FEATURE_NAME}}Component
+        fun create(componentContext: AppComponentContext): {{FEATURE_NAME}}Component
     }
 }

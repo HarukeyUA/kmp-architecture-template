@@ -107,7 +107,7 @@ if ! $DRY_RUN; then
     echo "WARNING: You have uncommitted changes. It is strongly recommended to"
     echo "         commit or stash them before renaming so you can review the diff."
     read -r -p "Continue anyway? [y/N] " answer
-    [[ "${answer,,}" == "y" ]] || { echo "Aborted."; exit 0; }
+    [[ "$answer" == "y" || "$answer" == "Y" ]] || { echo "Aborted."; exit 0; }
   fi
 fi
 
@@ -240,12 +240,8 @@ done
 # ── Step 8: Relocate shared Kotlin source directories ─────────────────────────
 step "Relocating shared Kotlin source directories ($OLD_BASE_PATH → $NEW_PKG_PATH)"
 
-# build-logic convention plugin
-move_dir \
-  "$ROOT_DIR/build-logic/convention/src/main/kotlin/$OLD_BASE_PATH" \
-  "$ROOT_DIR/build-logic/convention/src/main/kotlin/$NEW_PKG_PATH"
-
-# All source-set kotlin roots across all modules (commonMain, jvmMain, iosMain, etc.)
+# All source-set kotlin roots across all modules and build-logic subprojects
+# (commonMain, jvmMain, iosMain, build-logic/{convention,settings}, etc.)
 while IFS= read -r -d '' kotlin_root; do
   move_dir "$kotlin_root/$OLD_BASE_PATH" "$kotlin_root/$NEW_PKG_PATH"
 done < <(find "$ROOT_DIR" \
@@ -253,8 +249,23 @@ done < <(find "$ROOT_DIR" \
     -not -path "*/.gradle/*"  \
     -not -path "*/build/*"    \
     -not -path "*/.kotlin/*"  \
-    -not -path "*/build-logic/*" \
+    -not -path "*/scripts/templates/*" \
     -type d -name "kotlin" -print0)
+
+# ── Step 9: Run Spotless to clean up import ordering and remove now-redundant ─
+# imports (files that previously crossed packages may now be in the same package).
+if ! $DRY_RUN; then
+  step "Running ./gradlew spotlessApply"
+  if [[ -x "$ROOT_DIR/gradlew" ]]; then
+    if (cd "$ROOT_DIR" && ./gradlew --quiet spotlessApply); then
+      info "Spotless reformatting complete."
+    else
+      info "Spotless run failed — re-run './gradlew spotlessApply' manually before committing."
+    fi
+  else
+    info "gradlew not found or not executable — run './gradlew spotlessApply' manually."
+  fi
+fi
 
 # ── Done ───────────────────────────────────────────────────────────────────────
 echo
@@ -264,8 +275,7 @@ else
   echo "✓ Project renamed to '$NEW_APP_NAME' with package '$NEW_PACKAGE'."
   echo
   echo "Recommended next steps:"
-  echo "  1. ./gradlew spotlessApply          # auto-fix any formatting"
-  echo "  2. ./gradlew build                  # verify the build"
-  echo "  3. Open iosApp/Configuration/Config.xcconfig and set TEAM_ID if needed"
-  echo "  4. git add -A && git commit -m 'chore: rename project to $NEW_APP_NAME'"
+  echo "  1. ./gradlew build                  # verify the build"
+  echo "  2. Open iosApp/Configuration/Config.xcconfig and set TEAM_ID if needed"
+  echo "  3. git add -A && git commit -m 'chore: rename project to $NEW_APP_NAME'"
 fi
