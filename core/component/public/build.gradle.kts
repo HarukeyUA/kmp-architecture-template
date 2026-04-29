@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.convention.compose)
     alias(libs.plugins.convention.serialization)
     alias(libs.plugins.convention.coroutines)
+    alias(libs.plugins.convention.arrow)
 }
 
 kotlin {
