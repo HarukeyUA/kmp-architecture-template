@@ -1,10 +1,14 @@
 package org.example.project
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.fade
@@ -12,6 +16,7 @@ import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.s
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
+import org.example.project.core.component.snackbar.rememberDispatchedSnackbarHostState
 import org.example.project.core.ui.error.CompositeErrorRenderer
 import org.example.project.core.ui.error.LocalErrorRenderer
 import org.example.project.core.ui.navigation.ChildStack
@@ -33,27 +38,39 @@ class DefaultRootScreen(
     @OptIn(ExperimentalDecomposeApi::class)
     @Composable
     override fun Content(component: RootComponent) {
+        val composeSnackbarHostState =
+            rememberDispatchedSnackbarHostState(component.snackbarHostState)
+
         AppTheme {
             CompositionLocalProvider(LocalErrorRenderer provides errorRenderer) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    ChildStack(
-                        component = component,
-                        animation =
-                            stackAnimation { child, otherChild, _, _ ->
-                                val isSplash =
-                                    child.instance is RootComponent.Child.Splash ||
-                                        otherChild.instance is RootComponent.Child.Splash
-                                if (isSplash) fade() else defaultStackAnimator()
-                            },
-                    ) {
-                        when (val child = it.instance) {
-                            is RootComponent.Child.Splash -> splashScreen.Content()
-                            is RootComponent.Child.Login -> loginScreen.Content(child.component)
-                            is RootComponent.Child.Main -> mainScreen.Content(child.component)
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        ChildStack(
+                            modifier = Modifier.fillMaxSize(),
+                            component = component,
+                            animation =
+                                stackAnimation { child, otherChild, _, _ ->
+                                    val isSplash =
+                                        child.instance is RootComponent.Child.Splash ||
+                                            otherChild.instance is RootComponent.Child.Splash
+                                    if (isSplash) fade() else defaultStackAnimator()
+                                },
+                        ) {
+                            when (val child = it.instance) {
+                                is RootComponent.Child.Splash -> splashScreen.Content()
+                                is RootComponent.Child.Login -> loginScreen.Content(child.component)
+                                is RootComponent.Child.Main -> mainScreen.Content(child.component)
+                            }
                         }
+
+                        SnackbarHost(
+                            hostState = composeSnackbarHostState,
+                            modifier =
+                                Modifier.align(Alignment.BottomCenter).navigationBarsPadding(),
+                        )
                     }
                 }
             }

@@ -13,12 +13,17 @@ import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
 import kotlinx.serialization.Serializable
 import org.example.project.core.component.AppComponentContext
+import org.example.project.core.component.snackbar.SnackbarHostState
+import org.example.project.core.component.snackbar.snackbarHost
 import org.example.project.core.navigation.StackComponent
 import org.example.project.feature.auth.LoginComponent
 import org.example.project.feature.main.MainComponent
 import org.example.project.feature.splash.SplashComponent
 
 interface RootComponent : StackComponent<Any, RootComponent.Child> {
+
+    val snackbarHostState: SnackbarHostState
+
     sealed class Child {
         data class Splash(val component: SplashComponent) : Child()
 
@@ -39,6 +44,9 @@ class DefaultRootComponent(
     private val loginComponentFactory: LoginComponent.Factory,
     private val mainComponentFactory: MainComponent.Factory,
 ) : RootComponent, AppComponentContext by componentContext {
+
+    override val snackbarHostState = snackbarHost()
+
     private val navigation = StackNavigation<Config>()
 
     private val _stack =
