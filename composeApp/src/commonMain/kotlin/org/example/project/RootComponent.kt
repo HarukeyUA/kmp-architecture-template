@@ -53,7 +53,7 @@ class DefaultRootComponent(
         childStack(
             source = navigation,
             serializer = Config.serializer(),
-            handleBackButton = false,
+            handleBackButton = true,
             initialStack = { listOf(Config.Splash) },
             childFactory = ::child,
         )
