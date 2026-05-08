@@ -13,7 +13,7 @@ androidx-lifecycle = "2.10.0"
 composeHotReload = "1.1.0"
 composeMultiplatform = "1.11.0-rc01"
 material3 = "1.11.0-alpha07"
-kotlinx-coroutines = "1.10.2"
+kotlinx-coroutines = "1.11.0"
 
 decompose = "3.5.0"
 essenty = "2.5.0"
