@@ -1,5 +1,3 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-
 plugins {
     alias(libs.plugins.convention.kmp.library)
     alias(libs.plugins.convention.impl.aggregator)
@@ -51,21 +49,7 @@ kotlin {
             api(libs.essenty.statekeeper)
             implementation(libs.essenty.lifecycle.coroutines)
         }
-
-        jvmMain.dependencies { implementation(compose.desktop.currentOs) }
     }
 }
 
 dependencies { "androidRuntimeClasspath"(libs.compose.ui.tooling) }
-
-compose.desktop {
-    application {
-        mainClass = "org.example.project.MainKt"
-
-        nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "org.example.project"
-            packageVersion = "1.0.0"
-        }
-    }
-}

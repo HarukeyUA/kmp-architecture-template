@@ -44,7 +44,8 @@ For the full rationale and conventions, see [ARCHITECTURE.md](ARCHITECTURE.md).
 ```text
 androidApp/        Android entry point
 iosApp/            iOS entry point
-composeApp/        JVM Desktop entry point, Shared app, app graph, and root navigation
+desktopApp/        JVM Desktop entry point
+composeApp/        Shared app, app graph, and root navigation
 core/              Reusable architecture, UI, dispatchers, networking, storage, and testing modules
 feature/           Feature slices using public/impl/testing module boundaries
 build-logic/       Convention plugins and architecture enforcement

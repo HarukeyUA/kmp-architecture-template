@@ -116,6 +116,7 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
@@ -145,5 +146,5 @@ convention-screenshot-testing = { id = "convention.screenshot.testing", version 
 convention-impl-aggregator-settings = { id = "convention.impl-aggregator.settings", version = "unspecified" }
 convention-module-structure-assert-settings = { id = "convention.module-structure-assert.settings", version = "unspecified" }
 convention-impl-aggregator = { id = "convention.impl-aggregator", version = "unspecified" }
-convention-spotless = { id = "convention.spotless", version = "unspecified" }
+convention-spotless = { id = "convention.spotless" }
 convention-module-graph-assert = { id = "convention.module-graph-assert", version = "unspecified" }

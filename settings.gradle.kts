@@ -41,6 +41,8 @@ implAggregator { aggregatorProjectPath.set(":composeApp") }
 // App modules
 include(":androidApp")
 
+include(":desktopApp")
+
 include(":composeApp")
 
 // Core modules

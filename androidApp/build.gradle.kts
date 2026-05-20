@@ -2,12 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.metro)
+    alias(libs.plugins.convention.spotless)
 }
-
-// `convention.spotless` lives in `build-logic:settings`, which the settings plugin
-// `convention.impl-aggregator.settings` loads onto the settings classpath. The plugins DSL rejects
-// ids that are already on the classpath, so apply it imperatively.
-apply(plugin = "convention.spotless")
 
 android {
     namespace = "com.rainy.myapplication"

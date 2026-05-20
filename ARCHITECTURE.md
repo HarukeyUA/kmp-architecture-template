@@ -47,8 +47,9 @@ Modules are split into `:public` and `:impl` submodules
 | `:impl`       | Any `:public` module, sibling `:public` via `api`          |
 | `:testing`    | Sibling `:public` module (exposes fakes of the public API) |
 | `:composeApp` | Any module (wires `:impl` together)                        |
+| `:androidApp` / `:desktopApp` | `:composeApp` (entry-point modules only)   |
 
-**Key Rule**: Only `:composeApp` can depend on `:impl` modules. This ensures implementation details stay hidden, enables parallel compilation, and keeps coupling low.
+**Key Rule**: Only `:composeApp` can depend on `:impl` modules. This ensures implementation details stay hidden, enables parallel compilation, and keeps coupling low. The platform entry-point modules (`:androidApp`, `:desktopApp`) depend on `:composeApp` to host the per-platform `@DependencyGraph`.
 
 **Layering Rule**: `:core:*` modules cannot depend on `:feature:*` modules. Core is foundation; features sit on top.
 
@@ -59,7 +60,7 @@ The rules above are enforced at build time and are compatible with Gradle projec
 | Rule                                                                           | Where                                                                                                                                    |
 |--------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
 | Module dependency rules + `:core` → `:feature`                                 | `assertModuleDependencies` task per module (runs as part of `check`). Inspects declared `project(...)` dependencies in main source sets. |
-| Every leaf module is named `public`/`impl`/`testing`/`composeApp`/`androidApp` | `convention.module-structure-assert.settings` — fails at settings evaluation.                                                            |
+| Every leaf module is named `public`/`impl`/`testing`/`composeApp`/`androidApp`/`desktopApp` | `convention.module-structure-assert.settings` — fails at settings evaluation.                                                            |
 | Every `:impl` has a sibling `:public`                                          | Same settings plugin.                                                                                                                    |
 
 Run directly with `./gradlew assertModuleDependencies` or any `check` task.
@@ -367,7 +368,7 @@ All navigation uses Decompose's `childStack` with `@Serializable` configuration 
 
 **Screen bindings** use `@Inject` + `@ContributesBinding(AppScope::class)` on the implementation class. Screens can inject other screens to compose UI hierarchies.
 
-**App graph** is defined per-platform in `:composeApp` (`AndroidAppGraph`, `IosAppGraph`, `JvmAppGraph`), each annotated with `@DependencyGraph(AppScope::class)`. The graph exposes `rootComponentFactory` and `rootScreen` as entry points.
+**App graph** is defined per-platform: `AndroidAppGraph` in `:composeApp` (`androidMain`), `IosAppGraph` in `:composeApp` (`iosMain`), and `JvmAppGraph` in `:desktopApp`. Each is annotated with `@DependencyGraph(AppScope::class)` and exposes `rootComponentFactory` and `rootScreen` as entry points.
 
 ---
 
