@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.metro)
     alias(libs.plugins.convention.spotless)
+    alias(libs.plugins.convention.detekt)
 }
 
 kotlin { jvmToolchain(21) }

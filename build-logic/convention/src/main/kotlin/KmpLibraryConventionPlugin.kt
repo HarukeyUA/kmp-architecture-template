@@ -15,6 +15,7 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
                 apply("org.jetbrains.kotlin.multiplatform")
                 apply("com.android.kotlin.multiplatform.library")
                 apply("convention.spotless")
+                apply("convention.detekt")
                 apply("convention.module-graph-assert")
             }
 

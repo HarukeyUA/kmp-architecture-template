@@ -23,7 +23,7 @@ interface JvmDataStoreStorageGraph {
             fileSystem = FileSystem.SYSTEM,
             serializer = dataStoreJsonSerializer(SettingsLocalModel()),
             producePath = {
-                // TODO: Store data in a persistent OS dependent dir
+                // Temporary storage until a platform-specific app data directory is introduced.
                 File(System.getProperty("java.io.tmpdir"), SETTINGS_FILE_NAME).toOkioPath()
             },
         )

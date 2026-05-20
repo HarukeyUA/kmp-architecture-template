@@ -6,6 +6,7 @@ dependencies {
     compileOnly(libs.compose.gradlePlugin)
     compileOnly(libs.composeCompiler.gradlePlugin)
     compileOnly(libs.serialization.gradlePlugin)
+    implementation(libs.detekt.gradlePlugin)
 }
 
 gradlePlugin {
@@ -77,6 +78,10 @@ gradlePlugin {
         register("moduleGraphAssert") {
             id = "convention.module-graph-assert"
             implementationClass = "ModuleGraphAssertConventionPlugin"
+        }
+        register("detekt") {
+            id = "convention.detekt"
+            implementationClass = "DetektConventionPlugin"
         }
     }
 }

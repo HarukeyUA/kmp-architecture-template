@@ -9,6 +9,7 @@ import dev.zacsweers.metro.createGraph
 import javax.swing.SwingUtilities
 import org.example.project.core.component.DefaultAppComponentContext
 
+@Suppress("TooGenericExceptionCaught")
 internal fun <T> runOnUiThread(block: () -> T): T {
     if (SwingUtilities.isEventDispatchThread()) {
         return block()

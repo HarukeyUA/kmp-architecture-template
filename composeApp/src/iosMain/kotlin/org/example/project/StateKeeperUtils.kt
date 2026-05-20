@@ -3,6 +3,7 @@ package org.example.project
 import com.arkivanov.essenty.statekeeper.SerializableContainer
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import platform.Foundation.NSCoder
 import platform.Foundation.NSString
@@ -29,7 +30,7 @@ fun restore(coder: NSCoder): SerializableContainer? =
         ?.let {
             try {
                 json.decodeFromString(SerializableContainer.serializer(), it)
-            } catch (e: Exception) {
+            } catch (_: SerializationException) {
                 null
             }
         }

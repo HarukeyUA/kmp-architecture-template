@@ -1,0 +1,91 @@
+config:
+  validation: true
+  warningsAsErrors: false
+
+complexity:
+  CognitiveComplexMethod:
+    active: true
+    allowedComplexity: 18
+  CyclomaticComplexMethod:
+    allowedComplexity: 22
+    ignoreSingleWhenExpression: true
+  ComplexInterface:
+    active: true
+    allowedDefinitions: 8
+  LongMethod:
+    active: true
+    allowedLines: 80
+  LongParameterList:
+    active: true
+    allowedFunctionParameters: 8
+    allowedConstructorParameters: 8
+    ignoreDefaultParameters: true
+    ignoreAnnotatedParameter:
+      - Composable
+  TooManyFunctions:
+    active: true
+    allowedFunctionsPerFile: 16
+    allowedFunctionsPerClass: 12
+    allowedFunctionsPerInterface: 8
+    ignoreAnnotatedFunctions:
+      - Preview
+
+coroutines:
+  GlobalCoroutineUsage:
+    active: true
+  InjectDispatcher:
+    active: true
+    excludes:
+      - "**/core/dispatchers/impl/src/**"
+      - "**/core/testing/public/src/**"
+  SuspendFunInFinallySection:
+    active: true
+  SuspendFunSwallowedCancellation:
+    active: true
+
+exceptions:
+  NotImplementedDeclaration:
+    active: true
+  ObjectExtendsThrowable:
+    active: true
+  TooGenericExceptionCaught:
+    active: true
+  TooGenericExceptionThrown:
+    active: true
+
+naming:
+  FunctionNaming:
+    functionPattern: "[a-zA-Z][a-zA-Z0-9]*"
+  MatchingDeclarationName:
+    active: false
+  TopLevelPropertyNaming:
+    constantPattern: "[A-Z][A-Za-z0-9_]*"
+
+potential-bugs:
+  CastNullableToNonNullableType:
+    active: true
+  CastToNullableType:
+    active: true
+  DontDowncastCollectionTypes:
+    active: true
+  ElseCaseInsteadOfExhaustiveWhen:
+    active: true
+
+style:
+  DataClassContainsFunctions:
+    active: true
+  DataClassShouldBeImmutable:
+    active: true
+  ForbiddenComment:
+    active: true
+    comments:
+      - reason: "TODO markers should be tracked outside production code."
+        value: TODO
+  MagicNumber:
+    active: false
+    ignorePropertyDeclaration: true
+    ignoreCompanionObjectPropertyDeclaration: true
+  MaxLineLength:
+    active: false
+  ReturnCount:
+    active: false

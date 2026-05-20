@@ -16,6 +16,7 @@ material3 = "1.11.0-alpha07"
 kotlinx-coroutines = "1.11.0"
 
 decompose = "3.5.0"
+detekt = "2.0.0-alpha.3"
 essenty = "2.5.0"
 
 kotlinx-serialization-json = "1.11.0"
@@ -43,6 +44,7 @@ ktfmt = "0.62"
 [libraries]
 # Gradle plugins for build-logic
 android-gradlePlugin = { module = "com.android.tools.build:gradle-api", version.ref = "agp" }
+detekt-gradlePlugin = { module = "dev.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -115,6 +117,7 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }
 composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
@@ -147,4 +150,5 @@ convention-impl-aggregator-settings = { id = "convention.impl-aggregator.setting
 convention-module-structure-assert-settings = { id = "convention.module-structure-assert.settings", version = "unspecified" }
 convention-impl-aggregator = { id = "convention.impl-aggregator", version = "unspecified" }
 convention-spotless = { id = "convention.spotless" }
+convention-detekt = { id = "convention.detekt" }
 convention-module-graph-assert = { id = "convention.module-graph-assert", version = "unspecified" }
