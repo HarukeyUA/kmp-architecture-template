@@ -6,6 +6,18 @@ plugins {
     alias(libs.plugins.convention.detekt)
 }
 
+fun gitCommitCount(): Int {
+    val output = providers.exec {
+        commandLine("git", "rev-list", "--count", "HEAD")
+        isIgnoreExitValue = true
+    }
+    return if (output.result.get().exitValue == 0) {
+        output.standardOutput.asText.get().trim().toIntOrNull() ?: 1
+    } else {
+        1
+    }
+}
+
 android {
     namespace = "com.rainy.myapplication"
     compileSdk { version = release(36) }
@@ -14,7 +26,7 @@ android {
         applicationId = "com.rainy.myapplication"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
+        versionCode = gitCommitCount()
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
