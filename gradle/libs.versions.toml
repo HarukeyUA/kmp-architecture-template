@@ -131,24 +131,24 @@ spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 
 # Convention plugins
-convention-kmp-library = { id = "convention.kmp.library", version = "unspecified" }
-convention-serialization = { id = "convention.serialization", version = "unspecified" }
-convention-kmp-feature-public = { id = "convention.kmp.feature.public", version = "unspecified" }
-convention-kmp-compose-feature-public = { id = "convention.kmp.compose.feature.public", version = "unspecified" }
-convention-kmp-feature-impl = { id = "convention.kmp.feature.impl", version = "unspecified" }
-convention-kmp-compose-feature-impl = { id = "convention.kmp.compose.feature.impl", version = "unspecified" }
-convention-metro = { id = "convention.metro", version = "unspecified" }
-convention-molecule = { id = "convention.molecule", version = "unspecified" }
-convention-compose = { id = "convention.compose", version = "unspecified" }
-convention-compose-resources = { id = "convention.compose.resources", version = "unspecified" }
-convention-coroutines = { id = "convention.coroutines", version = "unspecified" }
-convention-decompose = { id = "convention.decompose", version = "unspecified" }
-convention-arrow = { id = "convention.arrow", version = "unspecified" }
-convention-ktor = { id = "convention.ktor", version = "unspecified" }
-convention-screenshot-testing = { id = "convention.screenshot.testing", version = "unspecified" }
-convention-impl-aggregator-settings = { id = "convention.impl-aggregator.settings", version = "unspecified" }
-convention-module-structure-assert-settings = { id = "convention.module-structure-assert.settings", version = "unspecified" }
-convention-impl-aggregator = { id = "convention.impl-aggregator", version = "unspecified" }
+convention-kmp-library = { id = "convention.kmp.library" }
+convention-serialization = { id = "convention.serialization" }
+convention-kmp-feature-public = { id = "convention.kmp.feature.public" }
+convention-kmp-compose-feature-public = { id = "convention.kmp.compose.feature.public" }
+convention-kmp-feature-impl = { id = "convention.kmp.feature.impl" }
+convention-kmp-compose-feature-impl = { id = "convention.kmp.compose.feature.impl" }
+convention-metro = { id = "convention.metro" }
+convention-molecule = { id = "convention.molecule" }
+convention-compose = { id = "convention.compose" }
+convention-compose-resources = { id = "convention.compose.resources" }
+convention-coroutines = { id = "convention.coroutines" }
+convention-decompose = { id = "convention.decompose" }
+convention-arrow = { id = "convention.arrow" }
+convention-ktor = { id = "convention.ktor" }
+convention-screenshot-testing = { id = "convention.screenshot.testing" }
+convention-impl-aggregator-settings = { id = "convention.impl-aggregator.settings" }
+convention-module-structure-assert-settings = { id = "convention.module-structure-assert.settings" }
+convention-impl-aggregator = { id = "convention.impl-aggregator" }
 convention-spotless = { id = "convention.spotless" }
 convention-detekt = { id = "convention.detekt" }
-convention-module-graph-assert = { id = "convention.module-graph-assert", version = "unspecified" }
+convention-module-graph-assert = { id = "convention.module-graph-assert" }
