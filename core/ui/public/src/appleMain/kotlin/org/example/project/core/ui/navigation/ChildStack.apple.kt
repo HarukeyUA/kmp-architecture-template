@@ -46,6 +46,17 @@ actual fun <C : Any, T : Any> backAnimation(
 @OptIn(ExperimentalDecomposeApi::class)
 actual fun defaultStackAnimator(): StackAnimator = iosSlide()
 
+@ExperimentalDecomposeApi
+actual fun defaultPredictiveBackParams(
+    backHandler: BackHandler,
+    onBackClick: () -> Unit,
+): PredictiveBackParams? =
+    PredictiveBackParams(
+        backHandler = backHandler,
+        onBack = onBackClick,
+        animatable = ::iosSlideAnimatable,
+    )
+
 @OptIn(ExperimentalDecomposeApi::class)
 private fun iosSlide(): StackAnimator =
     stackAnimator(animationSpec = tween(durationMillis = DurationMs, easing = IOSEasing)) {

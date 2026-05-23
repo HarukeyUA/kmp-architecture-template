@@ -20,6 +20,7 @@ import org.example.project.core.component.snackbar.rememberDispatchedSnackbarHos
 import org.example.project.core.ui.error.CompositeErrorRenderer
 import org.example.project.core.ui.error.LocalErrorRenderer
 import org.example.project.core.ui.navigation.ChildStack
+import org.example.project.core.ui.navigation.defaultPredictiveBackParams
 import org.example.project.core.ui.navigation.defaultStackAnimator
 import org.example.project.core.ui.theme.AppTheme
 import org.example.project.feature.auth.LoginScreen
@@ -52,7 +53,14 @@ class DefaultRootScreen(
                             modifier = Modifier.fillMaxSize(),
                             component = component,
                             animation =
-                                stackAnimation { child, otherChild, _, _ ->
+                                stackAnimation(
+                                    predictiveBackParams = {
+                                        defaultPredictiveBackParams(
+                                            backHandler = component.backHandler,
+                                            onBackClick = component::onBackClick,
+                                        )
+                                    }
+                                ) { child, otherChild, _, _ ->
                                     val isSplash =
                                         child.instance is RootComponent.Child.Splash ||
                                             otherChild.instance is RootComponent.Child.Splash

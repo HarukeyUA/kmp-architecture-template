@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.Child
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.ChildStack
+import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.PredictiveBackParams
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.StackAnimation
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.StackAnimationScope
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.StackAnimator
@@ -68,5 +69,11 @@ expect fun <C : Any, T : Any> backAnimation(
     backHandler: BackHandler,
     onBackClick: () -> Unit,
 ): StackAnimation<C, T>
+
+@ExperimentalDecomposeApi
+expect fun defaultPredictiveBackParams(
+    backHandler: BackHandler,
+    onBackClick: () -> Unit,
+): PredictiveBackParams?
 
 @ExperimentalDecomposeApi expect fun defaultStackAnimator(): StackAnimator

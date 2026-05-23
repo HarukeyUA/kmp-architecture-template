@@ -1,6 +1,7 @@
 package org.example.project.core.ui.navigation
 
 import com.arkivanov.decompose.ExperimentalDecomposeApi
+import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.PredictiveBackParams
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.StackAnimation
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.StackAnimator
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.fade
@@ -14,3 +15,9 @@ actual fun <C : Any, T : Any> backAnimation(
 ): StackAnimation<C, T> = stackAnimation(animator = fade(), predictiveBackParams = { null })
 
 @OptIn(ExperimentalDecomposeApi::class) actual fun defaultStackAnimator(): StackAnimator = fade()
+
+@ExperimentalDecomposeApi
+actual fun defaultPredictiveBackParams(
+    backHandler: BackHandler,
+    onBackClick: () -> Unit,
+): PredictiveBackParams? = null
