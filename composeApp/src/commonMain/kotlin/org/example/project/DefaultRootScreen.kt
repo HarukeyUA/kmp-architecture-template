@@ -24,8 +24,8 @@ import org.example.project.core.ui.navigation.defaultPredictiveBackParams
 import org.example.project.core.ui.navigation.defaultStackAnimator
 import org.example.project.core.ui.theme.AppTheme
 import org.example.project.feature.auth.LoginScreen
-import org.example.project.feature.main.MainScreen
-import org.example.project.feature.splash.SplashScreen
+import org.example.project.feature.main.presentation.MainScreen
+import org.example.project.feature.splash.presentation.SplashScreen
 
 @ContributesBinding(AppScope::class)
 @Inject

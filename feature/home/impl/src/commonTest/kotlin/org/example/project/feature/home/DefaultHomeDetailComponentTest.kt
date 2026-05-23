@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.example.project.core.testing.LifecycleTestMainMode
 import org.example.project.core.testing.runLifecycleTest
 import org.example.project.core.testing.testComponentContext
+import org.example.project.feature.home.details.presentation.DefaultHomeDetailComponent
+import org.example.project.feature.home.details.presentation.HomeDetailComponent
 
 class DefaultHomeDetailComponentTest {
     @Test

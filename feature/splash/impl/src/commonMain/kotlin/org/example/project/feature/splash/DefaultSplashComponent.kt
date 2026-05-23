@@ -9,6 +9,7 @@ import dev.zacsweers.metro.ContributesBinding
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.example.project.core.component.AppComponentContext
+import org.example.project.feature.splash.presentation.SplashComponent
 import org.example.project.feature.user.data.UserRepository
 
 @AssistedInject

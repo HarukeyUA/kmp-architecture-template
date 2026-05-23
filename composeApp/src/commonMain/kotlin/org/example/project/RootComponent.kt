@@ -17,8 +17,8 @@ import org.example.project.core.component.snackbar.SnackbarHostState
 import org.example.project.core.component.snackbar.snackbarHost
 import org.example.project.core.navigation.StackComponent
 import org.example.project.feature.auth.LoginComponent
-import org.example.project.feature.main.MainComponent
-import org.example.project.feature.splash.SplashComponent
+import org.example.project.feature.main.presentation.MainComponent
+import org.example.project.feature.splash.presentation.SplashComponent
 
 interface RootComponent : StackComponent<Any, RootComponent.Child> {
 

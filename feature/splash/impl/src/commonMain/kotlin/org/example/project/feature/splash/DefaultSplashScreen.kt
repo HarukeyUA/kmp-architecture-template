@@ -11,6 +11,7 @@ import androidx.compose.ui.text.style.TextAlign
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
+import org.example.project.feature.splash.presentation.SplashScreen
 
 @ContributesBinding(AppScope::class)
 @Inject
