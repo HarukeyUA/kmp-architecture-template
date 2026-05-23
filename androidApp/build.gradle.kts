@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -7,15 +9,26 @@ plugins {
 }
 
 fun gitCommitCount(): Int {
-    val output = providers.exec {
+    val gitOutput = providers.exec {
         commandLine("git", "rev-list", "--count", "HEAD")
         isIgnoreExitValue = true
     }
-    return if (output.result.get().exitValue == 0) {
-        output.standardOutput.asText.get().trim().toIntOrNull() ?: 1
-    } else {
-        1
-    }
+
+    return gitOutput.standardOutput.asText
+        .map { it.trim().toIntOrNull() ?: 1 }
+        .getOrElse(1)
+}
+
+fun versionNameFromFile(): String {
+    val versionFile = rootProject.layout.projectDirectory.file("version.properties")
+
+    return providers.fileContents(versionFile).asText.map { content ->
+        val properties = Properties().apply {
+            load(content.reader())
+        }
+        properties.getProperty("versionName")?.trim()
+            ?: error("Property 'versionName' not found in ${versionFile.asFile.absolutePath}")
+    }.get()
 }
 
 android {
@@ -27,7 +40,7 @@ android {
         minSdk = 26
         targetSdk = 36
         versionCode = gitCommitCount()
-        versionName = "1.0"
+        versionName = versionNameFromFile()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

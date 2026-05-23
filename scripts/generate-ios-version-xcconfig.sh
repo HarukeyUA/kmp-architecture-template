@@ -11,5 +11,14 @@ else
     BUILD_NUMBER=1
 fi
 
+VERSION_NAME=$(awk -F= '/^versionName=/ {print $2; exit}' "$REPO_ROOT/version.properties" | tr -d '[:space:]')
+if [ -z "$VERSION_NAME" ]; then
+    echo "error: versionName missing from version.properties" >&2
+    exit 1
+fi
+
 mkdir -p "$(dirname "$OUTPUT")"
-printf 'CURRENT_PROJECT_VERSION=%s\n' "$BUILD_NUMBER" > "$OUTPUT"
+{
+    printf 'CURRENT_PROJECT_VERSION=%s\n' "$BUILD_NUMBER"
+    printf 'MARKETING_VERSION=%s\n' "$VERSION_NAME"
+} > "$OUTPUT"
