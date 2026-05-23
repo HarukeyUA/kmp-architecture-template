@@ -21,8 +21,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
-import org.example.project.feature.home.details.presentation.HomeDetailComponent
-import org.example.project.feature.home.details.presentation.HomeDetailScreen
 
 @ContributesBinding(AppScope::class)
 @Inject

@@ -68,11 +68,9 @@ class DefaultHomeComponent(
 
     @Serializable
     private sealed interface Config {
-        @Serializable
-        data object List : Config
+        @Serializable data object List : Config
 
-        @Serializable
-        data class Detail(val itemId: Int) : Config
+        @Serializable data class Detail(val itemId: Int) : Config
     }
 
     @AssistedFactory

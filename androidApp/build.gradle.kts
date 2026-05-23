@@ -14,21 +14,21 @@ fun gitCommitCount(): Int {
         isIgnoreExitValue = true
     }
 
-    return gitOutput.standardOutput.asText
-        .map { it.trim().toIntOrNull() ?: 1 }
-        .getOrElse(1)
+    return gitOutput.standardOutput.asText.map { it.trim().toIntOrNull() ?: 1 }.getOrElse(1)
 }
 
 fun versionNameFromFile(): String {
     val versionFile = rootProject.layout.projectDirectory.file("version.properties")
 
-    return providers.fileContents(versionFile).asText.map { content ->
-        val properties = Properties().apply {
-            load(content.reader())
+    return providers
+        .fileContents(versionFile)
+        .asText
+        .map { content ->
+            val properties = Properties().apply { load(content.reader()) }
+            properties.getProperty("versionName")?.trim()
+                ?: error("Property 'versionName' not found in ${versionFile.asFile.absolutePath}")
         }
-        properties.getProperty("versionName")?.trim()
-            ?: error("Property 'versionName' not found in ${versionFile.asFile.absolutePath}")
-    }.get()
+        .get()
 }
 
 android {

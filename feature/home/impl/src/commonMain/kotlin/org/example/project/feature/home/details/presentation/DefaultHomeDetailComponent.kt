@@ -10,7 +10,6 @@ import dev.zacsweers.metro.ContributesBinding
 import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.MoleculeComponent
 import org.example.project.core.component.snackbar.SnackbarMessage
-import org.example.project.feature.home.details.presentation.HomeDetailComponent
 
 @AssistedInject
 class DefaultHomeDetailComponent(
