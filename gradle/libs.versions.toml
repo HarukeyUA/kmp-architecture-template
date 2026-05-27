@@ -38,7 +38,7 @@ junit = "4.13.2"
 assertk = "0.28.1"
 turbine = "1.2.1"
 
-spotless = "8.5.1"
+spotless = "8.6.0"
 ktfmt = "0.62"
 
 [libraries]
