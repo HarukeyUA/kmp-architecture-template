@@ -1,60 +1,77 @@
 package org.example.project.feature.auth
 
 import app.cash.turbine.test
+import arrow.core.left
+import arrow.core.right
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlin.test.Test
 import kotlinx.coroutines.test.runCurrent
+import org.example.project.core.error.NetworkError
 import org.example.project.core.testing.runLifecycleTest
 import org.example.project.core.testing.testComponentContext
-import org.example.project.feature.user.data.FakeUserRepository
-import org.example.project.feature.user.data.UserRepository
+import org.example.project.shared.common.Unauthorized
 
 class DefaultLoginComponentTest {
     @Test
-    fun `initial state has counter equal to zero`() = runLifecycleTest { lifecycle ->
+    fun `email and password edits update state`() = runLifecycleTest { lifecycle ->
         val component = createComponent(lifecycle = lifecycle)
 
-        component.state.test { assertThat(awaitItem().counter).isEqualTo(0) }
+        component.state.test {
+            assertThat(awaitItem().email).isEqualTo("")
+            component.onEvent(LoginComponent.Event.EmailChanged("alice@example.com"))
+            assertThat(awaitItem().email).isEqualTo("alice@example.com")
+            component.onEvent(LoginComponent.Event.PasswordChanged("hunter2hunter2"))
+            assertThat(awaitItem().password).isEqualTo("hunter2hunter2")
+        }
     }
 
     @Test
-    fun `login click calls user repository and triggers success callback`() =
-        runLifecycleTest { lifecycle ->
-            val userRepository = FakeUserRepository()
-            var loginSuccess = false
+    fun `successful login invokes the authenticated callback`() = runLifecycleTest { lifecycle ->
+        var authenticated = false
+        val component =
+            createComponent(
+                lifecycle = lifecycle,
+                authRepository = FakeAuthRepository(result = Unit.right()),
+                onAuthenticated = { authenticated = true },
+            )
 
-            val component =
-                createComponent(
-                    lifecycle = lifecycle,
-                    userRepository = userRepository,
-                    onLoginSuccess = { loginSuccess = true },
-                )
-
-            component.state.test {
-                component.onEvent(LoginComponent.Event.LoginClicked)
-                runCurrent()
-                cancelAndConsumeRemainingEvents()
-            }
-
-            assertThat(loginSuccess).isTrue()
-
-            userRepository.isLoggedIn.test { assertThat(awaitItem()).isTrue() }
+        component.state.test {
+            awaitItem()
+            component.onEvent(LoginComponent.Event.LoginClicked)
+            runCurrent()
+            cancelAndConsumeRemainingEvents()
         }
 
-    private fun createComponent(
-        userRepository: UserRepository = FakeUserRepository(),
-        lifecycle: LifecycleRegistry = LifecycleRegistry(),
-        onLoginSuccess: () -> Unit = {},
-    ): LoginComponent {
-        val context = testComponentContext(lifecycle = lifecycle)
-
-        return DefaultLoginComponent(
-            componentContext = context,
-            onLoginSuccess = onLoginSuccess,
-            userRepository = userRepository,
-        )
+        assertThat(authenticated).isTrue()
     }
+
+    @Test
+    fun `failed login surfaces the error in state`() = runLifecycleTest { lifecycle ->
+        val component =
+            createComponent(
+                lifecycle = lifecycle,
+                authRepository = FakeAuthRepository(result = NetworkError.Api(Unauthorized).left()),
+            )
+
+        component.state.test { awaitItem() }
+        component.onEvent(LoginComponent.Event.LoginClicked)
+        runCurrent()
+
+        assertThat(component.state.value.error).isNotNull()
+    }
+
+    private fun createComponent(
+        authRepository: AuthRepository = FakeAuthRepository(),
+        lifecycle: LifecycleRegistry = LifecycleRegistry(),
+        onAuthenticated: () -> Unit = {},
+    ): LoginComponent =
+        DefaultLoginComponent(
+            componentContext = testComponentContext(lifecycle = lifecycle),
+            onAuthenticated = onAuthenticated,
+            authRepository = authRepository,
+        )
 }

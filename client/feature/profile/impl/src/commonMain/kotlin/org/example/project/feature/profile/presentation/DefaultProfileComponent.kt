@@ -12,13 +12,13 @@ import dev.zacsweers.metro.ContributesBinding
 import kotlinx.coroutines.launch
 import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.MoleculeComponent
-import org.example.project.feature.user.data.UserRepository
+import org.example.project.feature.auth.AuthRepository
 
 @AssistedInject
 class DefaultProfileComponent(
     @Assisted componentContext: AppComponentContext,
     @Assisted private val onLogout: () -> Unit,
-    private val userRepository: UserRepository,
+    private val authRepository: AuthRepository,
 ) :
     ProfileComponent,
     MoleculeComponent<ProfileComponent.State, ProfileComponent.Event>(componentContext) {
@@ -41,7 +41,7 @@ class DefaultProfileComponent(
 
     private fun logout() {
         scope.launch {
-            userRepository.logout()
+            authRepository.logout()
             onLogout()
         }
     }

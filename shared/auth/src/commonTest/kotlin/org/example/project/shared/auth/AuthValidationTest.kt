@@ -9,7 +9,7 @@ import org.example.project.shared.common.FieldError
 
 class AuthValidationTest {
     @Test
-    fun `email is trimmed, lowercased, and accepted`() {
+    fun `email is trimmed and lowercased then accepted`() {
         assertThat(Email.of("  Alice@Example.COM ").getOrNull()?.value)
             .isEqualTo("alice@example.com")
     }

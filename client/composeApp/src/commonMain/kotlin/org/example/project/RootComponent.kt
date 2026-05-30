@@ -11,14 +11,17 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.example.project.core.component.AppComponentContext
+import org.example.project.core.component.lifecycleAwareScope
 import org.example.project.core.component.snackbar.SnackbarHostState
 import org.example.project.core.component.snackbar.snackbarHost
 import org.example.project.core.navigation.StackComponent
 import org.example.project.feature.auth.LoginComponent
 import org.example.project.feature.main.presentation.MainComponent
 import org.example.project.feature.splash.presentation.SplashComponent
+import org.example.project.feature.user.data.UserRepository
 
 interface RootComponent : StackComponent<Any, RootComponent.Child> {
 
@@ -43,6 +46,7 @@ class DefaultRootComponent(
     private val splashComponentFactory: SplashComponent.Factory,
     private val loginComponentFactory: LoginComponent.Factory,
     private val mainComponentFactory: MainComponent.Factory,
+    userRepository: UserRepository,
 ) : RootComponent, AppComponentContext by componentContext {
 
     override val snackbarHostState = snackbarHost()
@@ -58,6 +62,18 @@ class DefaultRootComponent(
             childFactory = ::child,
         )
     override val stack: Value<ChildStack<*, RootComponent.Child>> = _stack
+
+    init {
+        // Bounce to Login whenever the session is lost while signed in — covers both an explicit
+        // logout and the HttpClient's global 401 interceptor clearing a revoked session (ADR-0009).
+        lifecycleAwareScope().launch {
+            userRepository.isLoggedIn.collect { loggedIn ->
+                if (!loggedIn && _stack.value.active.configuration is Config.Main) {
+                    navigateToLogin()
+                }
+            }
+        }
+    }
 
     override fun onBackClick() {
         navigation.pop()
@@ -78,7 +94,7 @@ class DefaultRootComponent(
                 RootComponent.Child.Login(
                     loginComponentFactory.create(
                         componentContext = componentContext,
-                        onLoginSuccess = ::navigateToMain,
+                        onAuthenticated = ::navigateToMain,
                     )
                 )
 

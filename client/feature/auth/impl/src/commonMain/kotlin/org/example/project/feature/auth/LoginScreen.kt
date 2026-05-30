@@ -1,24 +1,28 @@
 package org.example.project.feature.auth
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
+import org.example.project.core.ui.error.message
 
 @ContributesBinding(AppScope::class)
 @Inject
@@ -37,17 +41,52 @@ internal fun LoginScreenContent(
     onEvent: (LoginComponent.Event) -> Unit,
 ) {
     Column(
-        modifier =
-            Modifier.background(color = MaterialTheme.colorScheme.background)
-                .fillMaxSize()
-                .systemBarsPadding(),
-        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxSize().systemBarsPadding().padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(text = "Counter: ${state.counter}", style = MaterialTheme.typography.headlineMedium)
+        Text(text = "Welcome", style = MaterialTheme.typography.headlineMedium)
 
-        Spacer(modifier = Modifier.height(24.dp))
+        OutlinedTextField(
+            value = state.email,
+            onValueChange = { onEvent(LoginComponent.Event.EmailChanged(it)) },
+            label = { Text(text = "Email") },
+            singleLine = true,
+            enabled = !state.isSubmitting,
+            modifier = Modifier.fillMaxWidth(),
+        )
 
-        Button(onClick = { onEvent(LoginComponent.Event.LoginClicked) }) { Text(text = "Login") }
+        OutlinedTextField(
+            value = state.password,
+            onValueChange = { onEvent(LoginComponent.Event.PasswordChanged(it)) },
+            label = { Text(text = "Password") },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            enabled = !state.isSubmitting,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        state.error?.let { error ->
+            Text(text = error.message(), color = MaterialTheme.colorScheme.error)
+        }
+
+        Button(
+            onClick = { onEvent(LoginComponent.Event.LoginClicked) },
+            enabled = !state.isSubmitting,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(text = "Log in")
+        }
+
+        TextButton(
+            onClick = { onEvent(LoginComponent.Event.SignupClicked) },
+            enabled = !state.isSubmitting,
+        ) {
+            Text(text = "Create account")
+        }
+
+        if (state.isSubmitting) {
+            CircularProgressIndicator()
+        }
     }
 }
