@@ -4,4 +4,4 @@ plugins {
     alias(libs.plugins.convention.arrow)
 }
 
-kotlin { sourceSets { commonMain.dependencies { api(project(":core:error:public")) } } }
+kotlin { sourceSets { commonMain.dependencies { api(project(":client:core:error:public")) } } }

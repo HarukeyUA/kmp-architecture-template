@@ -6,9 +6,9 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":feature:home:public"))
-            implementation(project(":feature:search:public"))
-            implementation(project(":feature:profile:public"))
+            implementation(project(":client:feature:home:public"))
+            implementation(project(":client:feature:search:public"))
+            implementation(project(":client:feature:profile:public"))
             implementation(libs.decompose.compose.experimental)
             implementation(libs.kotlinx.serialization.json)
         }

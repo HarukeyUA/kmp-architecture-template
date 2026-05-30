@@ -17,8 +17,8 @@ class KmpComposeFeatureImplConventionPlugin : Plugin<Project> {
 
             extensions.configure<KotlinMultiplatformExtension> {
                 sourceSets.commonMain.dependencies {
-                    implementation(project(":core:component:public"))
-                    implementation(project(":core:ui:public"))
+                    implementation(project(":client:core:component:public"))
+                    implementation(project(":client:core:ui:public"))
                 }
             }
         }

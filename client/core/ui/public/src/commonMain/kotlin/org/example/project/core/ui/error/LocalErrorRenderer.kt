@@ -2,9 +2,9 @@ package org.example.project.core.ui.error
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
+import org.example.project.client.core.ui.Res
+import org.example.project.client.core.ui.error_unexpected
 import org.example.project.core.error.AppError
-import org.example.project.core.ui.Res
-import org.example.project.core.ui.error_unexpected
 import org.jetbrains.compose.resources.stringResource
 
 /** Provides the app-wide [ErrorRenderer] through the composition tree. */

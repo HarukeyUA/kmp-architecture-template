@@ -12,8 +12,8 @@ kotlin {
             api(libs.compose.resources)
             api(libs.decompose.compose)
             api(libs.decompose.compose.experimental)
-            api(project(":core:navigation:public"))
-            api(project(":core:error:public"))
+            api(project(":client:core:navigation:public"))
+            api(project(":client:core:error:public"))
         }
     }
 }

@@ -4,6 +4,8 @@
 
 Architecture of the sample project — a Kotlin Multiplatform (KMP) application using Compose Multiplatform for UI.
 
+> **Fullstack extension:** a server + shared-contract layer is documented separately in [`ARCHITECTURE_SERVER.md`](ARCHITECTURE_SERVER.md), with decisions in [`docs/adr/`](docs/adr/README.md) and vocabulary in [`CONTEXT.md`](CONTEXT.md). These client modules now live under the `:client:*` umbrella (the server under `:server:*`, the shared contract under `:shared:*`); this document describes the `:client:*` structure.
+
 ### Tech Stack
 
 | Layer                  | Technology                                             |
@@ -28,7 +30,7 @@ Architecture of the sample project — a Kotlin Multiplatform (KMP) application 
 6. **Minimal Boilerplate** — Convention plugins and base classes reduce repetition
 7. **Typed Errors over Exceptions** — Use Arrow's `Either` and `either {}` DSL; never let exceptions cross layer boundaries (see [Error Handling](#error-handling))
 8. **Main-Thread-Safe Repositories** — Repository APIs are safe to call from the main thread; dispatcher selection is the implementation's responsibility (see [Concurrency and Threading](#concurrency-and-threading))
-9. **Inject Dispatchers, Don't Reach for `Dispatchers.X`** — All `CoroutineDispatcher`s and the app-wide scope are obtained via DI qualifiers from `:core:dispatchers:public`
+9. **Inject Dispatchers, Don't Reach for `Dispatchers.X`** — All `CoroutineDispatcher`s and the app-wide scope are obtained via DI qualifiers from `:client:core:dispatchers:public`
 10. **Prefer Lifecycle-Scoped Coroutines** — Components launch work in their lifecycle-aware scope; the `@ApplicationCoroutineScope` is reserved for operations that *must* outlive the component
 
 ---
@@ -46,12 +48,12 @@ Modules are split into `:public` and `:impl` submodules
 | `:public`     | Other `:public` modules only                               |
 | `:impl`       | Any `:public` module, sibling `:public` via `api`          |
 | `:testing`    | Sibling `:public` module (exposes fakes of the public API) |
-| `:composeApp` | Any module (wires `:impl` together)                        |
-| `:androidApp` / `:desktopApp` | `:composeApp` (entry-point modules only)   |
+| `:client:composeApp` | Any module (wires `:impl` together)                        |
+| `:client:androidApp` / `:client:desktopApp` | `:client:composeApp` (entry-point modules only)   |
 
-**Key Rule**: Only `:composeApp` can depend on `:impl` modules. This ensures implementation details stay hidden, enables parallel compilation, and keeps coupling low. The platform entry-point modules (`:androidApp`, `:desktopApp`) depend on `:composeApp` to host the per-platform `@DependencyGraph`.
+**Key Rule**: Only `:client:composeApp` can depend on `:impl` modules. This ensures implementation details stay hidden, enables parallel compilation, and keeps coupling low. The platform entry-point modules (`:client:androidApp`, `:client:desktopApp`) depend on `:client:composeApp` to host the per-platform `@DependencyGraph`.
 
-**Layering Rule**: `:core:*` modules cannot depend on `:feature:*` modules. Core is foundation; features sit on top.
+**Layering Rule**: `:client:core:*` modules cannot depend on `:client:feature:*` modules. Core is foundation; features sit on top.
 
 ### Enforcement
 
@@ -59,7 +61,7 @@ The rules above are enforced at build time and are compatible with Gradle projec
 
 | Rule                                                                           | Where                                                                                                                                    |
 |--------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| Module dependency rules + `:core` → `:feature`                                 | `assertModuleDependencies` task per module (runs as part of `check`). Inspects declared `project(...)` dependencies in main source sets. |
+| Module dependency rules + `:client:core` → `:client:feature`                                 | `assertModuleDependencies` task per module (runs as part of `check`). Inspects declared `project(...)` dependencies in main source sets. |
 | Every leaf module is named `public`/`impl`/`testing`/`composeApp`/`androidApp`/`desktopApp` | `convention.module-structure-assert.settings` — fails at settings evaluation.                                                            |
 | Every `:impl` has a sibling `:public`                                          | Same settings plugin.                                                                                                                    |
 
@@ -96,7 +98,7 @@ Following the [Android recommended architecture](https://developer.android.com/t
 Within each feature module, domain and presentation code is organized into separate packages:
 
 ```
-:feature:example:public/
+:client:feature:example:public/
   src/commonMain/kotlin/.../feature/example/
     data/
       ExampleDataSource.kt            # Data source interface
@@ -113,7 +115,7 @@ Within each feature module, domain and presentation code is organized into separ
       models/
         ExampleUiModel.kt             # UI model + toUi() mapping
 
-:feature:example:impl/
+:client:feature:example:impl/
   src/commonMain/kotlin/.../feature/example/
     data/
       DefaultDataSource.kt            # Data source implementation
@@ -193,7 +195,7 @@ These can be combined — e.g., a component could implement both `EventComponent
 
 ### MoleculeComponent
 
-`MoleculeComponent<S, E>` (in `:core:component:public`) is the default implementation of `StatefulComponent`. It takes an `AppComponentContext` and delegates to it via `AppComponentContext by componentContext`. It provides:
+`MoleculeComponent<S, E>` (in `:client:core:component:public`) is the default implementation of `StatefulComponent`. It takes an `AppComponentContext` and delegates to it via `AppComponentContext by componentContext`. It provides:
 
 - **Lifecycle-aware coroutine scope** — cancels on destroy
 - **Molecule-powered state production** — state is produced via a `@Composable produceState()` function
@@ -203,7 +205,7 @@ These can be combined — e.g., a component could implement both `EventComponent
 
 ### ChildStack Composable
 
-`ChildStack()` (in `:core:ui:public`) is a convenience wrapper around Decompose's stack rendering that takes a `StackComponent` directly and wires up back-gesture animation automatically via `backAnimation()`. Each platform provides its own `backAnimation()` implementation (predictive back on Android and iOS, fade on others).
+`ChildStack()` (in `:client:core:ui:public`) is a convenience wrapper around Decompose's stack rendering that takes a `StackComponent` directly and wires up back-gesture animation automatically via `backAnimation()`. Each platform provides its own `backAnimation()` implementation (predictive back on Android and iOS, fade on others).
 
 Two overloads are available:
 - `ChildStack(component) { child -> ... }` — generic version where you render each child manually
@@ -211,7 +213,7 @@ Two overloads are available:
 
 ### Side Effects
 
-Side effects (in `:core:component:public`) are one-time events dispatched from a component to the UI layer — things like scroll-to-top or focus a field. Unlike `UiState`, side effects are not persisted and are consumed exactly once.
+Side effects (in `:client:core:component:public`) are one-time events dispatched from a component to the UI layer — things like scroll-to-top or focus a field. Unlike `UiState`, side effects are not persisted and are consumed exactly once.
 
 | Class | Role |
 |-------|------|
@@ -252,7 +254,7 @@ interface HomeComponent : StackComponent<Any, ScreenChild> {
 }
 ```
 
-`ScreenChild` (in `:core:ui:public`) is a self-rendering child — it pairs a component with its screen so the host screen doesn't need to know about individual child types. The `asChild` extension function creates one by binding a component to its screen:
+`ScreenChild` (in `:client:core:ui:public`) is a self-rendering child — it pairs a component with its screen so the host screen doesn't need to know about individual child types. The `asChild` extension function creates one by binding a component to its screen:
 
 ```kotlin
 fun <T> T.asChild(screen: @Composable (T) -> Unit): ScreenChild
@@ -368,7 +370,7 @@ All navigation uses Decompose's `childStack` with `@Serializable` configuration 
 
 **Screen bindings** use `@Inject` + `@ContributesBinding(AppScope::class)` on the implementation class. Screens can inject other screens to compose UI hierarchies.
 
-**App graph** is defined per-platform: `AndroidAppGraph` in `:composeApp` (`androidMain`), `IosAppGraph` in `:composeApp` (`iosMain`), and `JvmAppGraph` in `:desktopApp`. Each is annotated with `@DependencyGraph(AppScope::class)` and exposes `rootComponentFactory` and `rootScreen` as entry points.
+**App graph** is defined per-platform: `AndroidAppGraph` in `:client:composeApp` (`androidMain`), `IosAppGraph` in `:client:composeApp` (`iosMain`), and `JvmAppGraph` in `:client:desktopApp`. Each is annotated with `@DependencyGraph(AppScope::class)` and exposes `rootComponentFactory` and `rootScreen` as entry points.
 
 ---
 
@@ -379,8 +381,8 @@ All navigation uses Decompose's `childStack` with `@Serializable` configuration 
 | `kmp.library`                | Base KMP library setup (targets, SDK versions)                                                                                                                                                                                           |
 | `kmp.feature.public`         | Public feature module (adds serialization, coroutines)                                                                                                                                                                                   |
 | `kmp.feature.impl`           | Impl feature module (adds Metro, Arrow, auto-depends on `:public`)                                                                                                                                                                       |
-| `kmp.compose.feature.public` | Public feature with Compose (adds `:core:component:public`, compose resources)                                                                                                                                                           |
-| `kmp.compose.feature.impl`   | Impl feature with Compose (adds Metro, Molecule, Decompose, compose resources, `:core:component:public`, `:core:ui:public`). Also adds `commonTest` deps: kotlin-test, AssertK, Turbine, kotlinx.coroutines.test, `:core:testing:public` |
+| `kmp.compose.feature.public` | Public feature with Compose (adds `:client:core:component:public`, compose resources)                                                                                                                                                           |
+| `kmp.compose.feature.impl`   | Impl feature with Compose (adds Metro, Molecule, Decompose, compose resources, `:client:core:component:public`, `:client:core:ui:public`). Also adds `commonTest` deps: kotlin-test, AssertK, Turbine, kotlinx.coroutines.test, `:client:core:testing:public` |
 | `metro`                      | Metro DI setup (KSP, runtime)                                                                                                                                                                                                            |
 | `molecule`                   | Molecule setup (Compose compiler, runtime)                                                                                                                                                                                               |
 | `compose`                    | Compose Multiplatform UI                                                                                                                                                                                                                 |
@@ -391,13 +393,13 @@ All navigation uses Decompose's `childStack` with `@Serializable` configuration 
 | `serialization`              | kotlinx.serialization                                                                                                                                                                                                                    |
 | `screenshot.testing`         | Roborazzi screenshot testing (androidHostTest sourceSet, Pixel 9 + Pixel Tablet, light/dark)                                                                                                                                             |
 
-Features that use `StackComponent` need to add `api(project(":core:ui:public"))` to their `:public` module's dependencies (this transitively provides `:core:navigation:public`).
+Features that use `StackComponent` need to add `api(project(":client:core:ui:public"))` to their `:public` module's dependencies (this transitively provides `:client:core:navigation:public`).
 
 ---
 
 ## Snackbar System
 
-The snackbar system (in `:core:component:public`) enables any component to display snackbar messages that bubble up through the component hierarchy to the nearest host.
+The snackbar system (in `:client:core:component:public`) enables any component to display snackbar messages that bubble up through the component hierarchy to the nearest host.
 
 ### Architecture
 
@@ -536,7 +538,7 @@ class MyFeatureErrorRenderer : ErrorRenderer<MyFeatureError> {
 
 ## Concurrency and Threading
 
-All threading concerns — dispatcher selection, scope ownership, and main-thread safety — are governed by the rules below. The `:core:dispatchers:public` module owns the qualifiers used throughout the app.
+All threading concerns — dispatcher selection, scope ownership, and main-thread safety — are governed by the rules below. The `:client:core:dispatchers:public` module owns the qualifiers used throughout the app.
 
 ### Injected Dispatchers
 
@@ -559,9 +561,9 @@ class DefaultExampleRepository(
 ```
 
 The only places that may reference `Dispatchers.X` directly are:
-- `:core:dispatchers:impl` — the binding module that *provides* them
-- Platform-specific `expect/actual` dispatcher bridges in `:core:component:public` (e.g., `mainCoroutineContext()`)
-- Test infrastructure in `:core:testing:public`
+- `:client:core:dispatchers:impl` — the binding module that *provides* them
+- Platform-specific `expect/actual` dispatcher bridges in `:client:core:component:public` (e.g., `mainCoroutineContext()`)
+- Test infrastructure in `:client:core:testing:public`
 
 ### Main-Thread-Safe Repositories
 
@@ -586,7 +588,7 @@ For `Flow`-returning APIs, apply `.flowOn(ioDispatcher)` at the boundary so coll
 Components have a built-in lifecycle-aware coroutine scope that is cancelled when the component is destroyed. **This is the default scope for all component-initiated work.**
 
 - **`MoleculeComponent` subclasses** — already expose a lifecycle-aware `CoroutineScope`; use it directly.
-- **Components that do not extend `MoleculeComponent`** (e.g., plain `EventComponent` or `StackComponent` implementations that need to launch coroutines) — call `LifecycleOwner.lifecycleAwareScope()` from `:core:component:public`. It returns a `CoroutineScope` tied to the component's lifecycle, running on the platform main dispatcher with a `SupervisorJob`, and is cancelled automatically on destroy. Since `AppComponentContext` extends `LifecycleOwner`, this is available on any component context:
+- **Components that do not extend `MoleculeComponent`** (e.g., plain `EventComponent` or `StackComponent` implementations that need to launch coroutines) — call `LifecycleOwner.lifecycleAwareScope()` from `:client:core:component:public`. It returns a `CoroutineScope` tied to the component's lifecycle, running on the platform main dispatcher with a `SupervisorJob`, and is cancelled automatically on destroy. Since `AppComponentContext` extends `LifecycleOwner`, this is available on any component context:
   ```kotlin
   class DefaultMyComponent(
       componentContext: AppComponentContext,
@@ -609,7 +611,7 @@ When `@ApplicationCoroutineScope` is used, it should be a deliberate decision do
 
 ## Component Platform Bridges
 
-All component platform bridges live in `:core:component:public`:
+All component platform bridges live in `:client:core:component:public`:
 
 | Bridge                             | Purpose                                                             |
 |------------------------------------|---------------------------------------------------------------------|
@@ -641,20 +643,20 @@ All component platform bridges live in `:core:component:public`:
 ### Test Organization
 
 ```
-:feature:auth:impl/
+:client:feature:auth:impl/
   src/commonMain/kotlin/          # Production code
   src/commonTest/kotlin/          # Unit tests (DefaultLoginComponentTest)
   src/androidHostTest/kotlin/     # Screenshot tests (LoginScreenScreenshotTest)
 
-:feature:user-data:testing/       # Shared fakes (FakeUserRepository)
+:client:feature:user-data:testing/       # Shared fakes (FakeUserRepository)
   src/commonMain/kotlin/
 ```
 
-The `kmp.compose.feature.impl` convention plugin auto-provides all core test dependencies (`kotlin-test`, `AssertK`, `Turbine`, `kotlinx.coroutines.test`, `:core:testing:public`). Feature modules only need to add feature-specific fakes:
+The `kmp.compose.feature.impl` convention plugin auto-provides all core test dependencies (`kotlin-test`, `AssertK`, `Turbine`, `kotlinx.coroutines.test`, `:client:core:testing:public`). Feature modules only need to add feature-specific fakes:
 
 ```kotlin
-// :feature:auth:impl build.gradle.kts — only the :testing dep is manual
-commonTest.dependencies { implementation(project(":feature:user-data:testing")) }
+// :client:feature:auth:impl build.gradle.kts — only the :testing dep is manual
+commonTest.dependencies { implementation(project(":client:feature:user-data:testing")) }
 ```
 
 ### Creating Fakes
@@ -665,9 +667,9 @@ Fakes implement the `:public` interface with controllable state. Shared fakes li
 - `MutableStateFlow` backing fields allow tests to observe state changes via Turbine
 - Spy fields (e.g., `setIsLoggedInCalled`, `logoutCalled`) track method invocations without a mocking library
 
-See `FakeUserRepository` in `:feature:user-data:testing` for the reference implementation.
+See `FakeUserRepository` in `:client:feature:user-data:testing` for the reference implementation.
 
-### Core Testing Utilities (`:core:testing:public`)
+### Core Testing Utilities (`:client:core:testing:public`)
 
 **`runLifecycleTest`** — top-level function that wraps `runTest` with lifecycle management and `Dispatchers.Main` setup. It creates a `LifecycleRegistry`, calls `resume()` before the test body, and reliably calls `destroy()` plus `resetMain()` afterwards (in a `finally` block, so they run even when the body times out or fails). The lifecycle is passed into the test block so it can be forwarded to `createComponent`.
 
@@ -692,15 +694,15 @@ Tests use `runLifecycleTest` to get a managed lifecycle and a test-scheduler-bac
 - `component.state.test { ... }` — Turbine collects the `StateFlow` and provides `awaitItem()` for assertions
 - `component.onEvent(...)` — simulates UI interactions
 
-See `DefaultLoginComponentTest` in `:feature:auth:impl` for a full example.
+See `DefaultLoginComponentTest` in `:client:feature:auth:impl` for a full example.
 
 ### Testing a Component with Navigation Callbacks
 
 Components that receive navigation callbacks (e.g., `onLoginSuccess`, `onItemSelected`) are tested by capturing the callback invocation. The callback writes to a local variable or `MutableStateFlow`, and the test asserts on it after the event.
 
-See `DefaultHomeListComponentTest` and `DefaultHomeDetailComponentTest` in `:feature:home:impl` for examples.
+See `DefaultHomeListComponentTest` and `DefaultHomeDetailComponentTest` in `:client:feature:home:impl` for examples.
 
-### Screenshot Testing (`:core:screenshot-testing:public`)
+### Screenshot Testing (`:client:core:screenshot-testing:public`)
 
 **`ScreenshotTest`** — abstract base class for screenshot tests. Uses Roborazzi to capture composable snapshots on the JVM (via Robolectric), without a physical device.
 

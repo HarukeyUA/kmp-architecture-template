@@ -19,13 +19,13 @@ kotlin {
             export(libs.essenty.lifecycle)
             export(libs.essenty.backhandler)
             export(libs.essenty.statekeeper)
-            export(project(":core:component:public"))
+            export(project(":client:core:component:public"))
         }
     }
 
     sourceSets {
         commonMain.dependencies {
-            api(project(":core:ui:public"))
+            api(project(":client:core:ui:public"))
 
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)

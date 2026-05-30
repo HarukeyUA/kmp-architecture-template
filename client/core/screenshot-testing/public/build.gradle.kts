@@ -13,7 +13,7 @@ kotlin {
             implementation(libs.junit)
             implementation(libs.compose.ui.test.junit4)
             implementation(kotlin("test-junit"))
-            implementation(project(":core:ui:public"))
+            implementation(project(":client:core:ui:public"))
         }
     }
 }

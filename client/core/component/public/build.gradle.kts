@@ -9,7 +9,7 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
-            api(project(":core:error:public"))
+            api(project(":client:core:error:public"))
             api(libs.decompose)
             api(libs.essenty.lifecycle)
             api(libs.essenty.statekeeper)

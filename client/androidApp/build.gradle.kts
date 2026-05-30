@@ -68,5 +68,5 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.splashscreen)
 
-    implementation(project(":composeApp"))
+    implementation(project(":client:composeApp"))
 }

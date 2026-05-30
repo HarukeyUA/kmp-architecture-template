@@ -36,67 +36,68 @@ plugins {
 
 rootProject.name = "MyApplication"
 
-implAggregator { aggregatorProjectPath.set(":composeApp") }
+implAggregator { aggregatorProjectPath.set(":client:composeApp") }
 
+// ===================== :client umbrella (Compose Multiplatform app) =====================
 // App modules
-include(":androidApp")
+include(":client:androidApp")
 
-include(":desktopApp")
+include(":client:desktopApp")
 
-include(":composeApp")
+include(":client:composeApp")
 
 // Core modules
-include(":core:component:public")
+include(":client:core:component:public")
 
-include(":core:navigation:public")
+include(":client:core:navigation:public")
 
-include(":core:error:public")
+include(":client:core:error:public")
 
-include(":core:network:public")
+include(":client:core:network:public")
 
-include(":core:network:impl")
+include(":client:core:network:impl")
 
-include(":core:ui:public")
+include(":client:core:ui:public")
 
-include(":core:dispatchers:public")
+include(":client:core:dispatchers:public")
 
-include(":core:dispatchers:impl")
+include(":client:core:dispatchers:impl")
 
-include(":core:local-storage:public")
+include(":client:core:local-storage:public")
 
-include(":core:local-storage:impl")
+include(":client:core:local-storage:impl")
 
 // Feature modules
-include(":feature:auth:public")
+include(":client:feature:auth:public")
 
-include(":feature:auth:impl")
+include(":client:feature:auth:impl")
 
-include(":feature:main:public")
+include(":client:feature:main:public")
 
-include(":feature:main:impl")
+include(":client:feature:main:impl")
 
-include(":feature:home:public")
+include(":client:feature:home:public")
 
-include(":feature:home:impl")
+include(":client:feature:home:impl")
 
-include(":feature:search:public")
+include(":client:feature:search:public")
 
-include(":feature:search:impl")
+include(":client:feature:search:impl")
 
-include(":feature:splash:public")
+include(":client:feature:splash:public")
 
-include(":feature:splash:impl")
+include(":client:feature:splash:impl")
 
-include(":feature:profile:public")
+include(":client:feature:profile:public")
 
-include(":feature:profile:impl")
+include(":client:feature:profile:impl")
 
-include(":feature:user-data:public")
+include(":client:feature:user-data:public")
 
-include(":feature:user-data:impl")
+include(":client:feature:user-data:impl")
 
-include(":feature:user-data:testing")
+include(":client:feature:user-data:testing")
 
-include(":core:testing:public")
+include(":client:core:testing:public")
 
-include(":core:screenshot-testing:public")
+include(":client:core:screenshot-testing:public")

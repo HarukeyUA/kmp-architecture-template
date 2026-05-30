@@ -102,7 +102,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
-      - run: ./gradlew :androidApp:assembleDebug
+      - run: ./gradlew :client:androidApp:assembleDebug
 
   build-jvm:
     name: Build JVM
@@ -116,7 +116,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
-      - run: ./gradlew :composeApp:jvmJar
+      - run: ./gradlew :client:composeApp:jvmJar
 
   build-ios:
     name: Build iOS

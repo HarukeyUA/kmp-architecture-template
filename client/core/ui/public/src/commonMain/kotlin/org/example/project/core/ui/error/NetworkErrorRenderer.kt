@@ -3,13 +3,13 @@ package org.example.project.core.ui.error
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoSet
 import dev.zacsweers.metro.Inject
+import org.example.project.client.core.ui.Res
+import org.example.project.client.core.ui.error_network_connection
+import org.example.project.client.core.ui.error_network_http
+import org.example.project.client.core.ui.error_network_http_with_message
+import org.example.project.client.core.ui.error_network_serialization
 import org.example.project.core.error.NetworkError
-import org.example.project.core.ui.Res
 import org.example.project.core.ui.error.ErrorRenderer.ResourceResult
-import org.example.project.core.ui.error_network_connection
-import org.example.project.core.ui.error_network_http
-import org.example.project.core.ui.error_network_http_with_message
-import org.example.project.core.ui.error_network_serialization
 
 @Inject
 @ContributesIntoSet(AppScope::class)

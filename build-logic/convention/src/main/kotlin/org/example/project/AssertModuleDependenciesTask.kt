@@ -18,10 +18,11 @@ import org.gradle.api.tasks.TaskAction
  * Rules enforced (derived from module path):
  * - `:public` may depend only on `:public`.
  * - `:impl` may depend only on `:public`.
- * - `:testing` may depend only on its sibling `:public` (e.g. `:feature:x:testing` ->
- *   `:feature:x:public`).
- * - Anything else (`:composeApp`, `:androidApp`, ...) is unrestricted.
- * - In addition, no `:core:*` module may depend on a `:feature:*` module (layering rule).
+ * - `:testing` may depend only on its sibling `:public` (e.g. `:client:feature:x:testing` ->
+ *   `:client:feature:x:public`).
+ * - Anything else (`:client:composeApp`, `:client:androidApp`, ...) is unrestricted.
+ * - In addition, no `:client:core:*` module may depend on a `:client:feature:*` module (layering
+ *   rule).
  */
 @CacheableTask
 abstract class AssertModuleDependenciesTask : DefaultTask() {
@@ -52,7 +53,7 @@ abstract class AssertModuleDependenciesTask : DefaultTask() {
 }
 
 private fun violation(sourcePath: String, targetPath: String): String? {
-    if (sourcePath.startsWith(":core:") && targetPath.startsWith(":feature:")) {
+    if (sourcePath.startsWith(":client:core:") && targetPath.startsWith(":client:feature:")) {
         return "'$targetPath' not allowed — :core modules may not depend on :feature modules"
     }
     val targetType = moduleTypeOf(targetPath)

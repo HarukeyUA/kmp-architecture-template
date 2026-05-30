@@ -26,7 +26,7 @@ class KmpFeatureImplConventionPlugin : Plugin<Project> {
                         implementation(libs.library("assertk"))
                         implementation(libs.library("turbine"))
                         implementation(libs.library("kotlinx-coroutines-test"))
-                        implementation(project(":core:testing:public"))
+                        implementation(project(":client:core:testing:public"))
                     }
                 }
             }

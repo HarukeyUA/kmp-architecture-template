@@ -12,7 +12,7 @@ plugins {
 kotlin { jvmToolchain(21) }
 
 dependencies {
-    api(project(":composeApp"))
+    api(project(":client:composeApp"))
 
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutines.swing)

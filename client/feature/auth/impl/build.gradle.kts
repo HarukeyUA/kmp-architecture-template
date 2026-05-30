@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     sourceSets {
-        commonMain.dependencies { implementation(project(":feature:user-data:public")) }
-        commonTest.dependencies { implementation(project(":feature:user-data:testing")) }
+        commonMain.dependencies { implementation(project(":client:feature:user-data:public")) }
+        commonTest.dependencies { implementation(project(":client:feature:user-data:testing")) }
     }
 }

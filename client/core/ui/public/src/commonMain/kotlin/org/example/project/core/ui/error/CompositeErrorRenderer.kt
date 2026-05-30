@@ -4,10 +4,10 @@ import androidx.compose.runtime.Composable
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
+import org.example.project.client.core.ui.Res
+import org.example.project.client.core.ui.error_unexpected
 import org.example.project.core.error.AppError
 import org.example.project.core.error.DelegatingError
-import org.example.project.core.ui.Res
-import org.example.project.core.ui.error_unexpected
 import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 

@@ -33,9 +33,9 @@ if [ $# -lt 2 ]; then
     echo "  scope        - Optional scope: 'feature' (default) or 'core'"
     echo ""
     echo "Examples:"
-    echo "  $0 settings Settings            # creates feature:settings:public/impl"
-    echo "  $0 user/details UserDetails     # creates feature:user:details:public/impl"
-    echo "  $0 local-storage LocalStorage core  # creates core:local-storage:public/impl"
+    echo "  $0 settings Settings            # creates client:feature:settings:public/impl"
+    echo "  $0 user/details UserDetails     # creates client:feature:user:details:public/impl"
+    echo "  $0 local-storage LocalStorage core  # creates client:core:local-storage:public/impl"
     echo ""
     echo "Note: 'core' scope reuses the feature template (Component + Screen). For"
     echo "      infrastructure-only core modules (no UI), edit the generated files"
@@ -54,14 +54,14 @@ if [ "$SCOPE" != "feature" ] && [ "$SCOPE" != "core" ]; then
 fi
 
 # Detect the project's base package by reading the package declaration of a known
-# anchor file (`AppComponentContext.kt` in `:core:component:public`) and stripping
+# anchor file (`AppComponentContext.kt` in `:client:core:component:public`) and stripping
 # the `.core.component` suffix. This keeps the script working after `rename-project.sh`
 # changes the base package away from `org.example.project`.
-ANCHOR_FILE=$(find "$PROJECT_ROOT/core/component/public/src/commonMain/kotlin" \
+ANCHOR_FILE=$(find "$PROJECT_ROOT/client/core/component/public/src/commonMain/kotlin" \
     -type f -name "AppComponentContext.kt" 2>/dev/null | head -n1)
 if [ -z "$ANCHOR_FILE" ] || [ ! -f "$ANCHOR_FILE" ]; then
     echo -e "${RED}Error: Could not locate AppComponentContext.kt to detect the base package.${NC}"
-    echo "       Expected under: core/component/public/src/commonMain/kotlin/"
+    echo "       Expected under: client/core/component/public/src/commonMain/kotlin/"
     exit 1
 fi
 ANCHOR_PACKAGE=$(awk '/^package /{print $2; exit}' "$ANCHOR_FILE")
@@ -85,15 +85,15 @@ MODULE_PACKAGE_PATH=$(echo "$MODULE_PATH" | tr '/-' '..')
 # Full package path
 PACKAGE_PATH="$BASE_PACKAGE.$SCOPE.$MODULE_PACKAGE_PATH"
 
-# Module paths
-MODULE_DIR="$PROJECT_ROOT/$SCOPE/$MODULE_PATH"
+# Module paths (client modules live under the :client umbrella — see ARCHITECTURE.md)
+MODULE_DIR="$PROJECT_ROOT/client/$SCOPE/$MODULE_PATH"
 PUBLIC_DIR="$MODULE_DIR/public"
 IMPL_DIR="$MODULE_DIR/impl"
 
 # Gradle module paths (using : separator)
 GRADLE_MODULE_PATH=$(echo "$MODULE_PATH" | tr '/' ':')
-PUBLIC_MODULE=":$SCOPE:$GRADLE_MODULE_PATH:public"
-IMPL_MODULE=":$SCOPE:$GRADLE_MODULE_PATH:impl"
+PUBLIC_MODULE=":client:$SCOPE:$GRADLE_MODULE_PATH:public"
+IMPL_MODULE=":client:$SCOPE:$GRADLE_MODULE_PATH:impl"
 
 echo -e "${GREEN}Generating $SCOPE module: $MODULE_NAME${NC}"
 echo "  Path: $MODULE_PATH"
