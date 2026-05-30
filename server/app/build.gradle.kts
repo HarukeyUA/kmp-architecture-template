@@ -11,4 +11,9 @@ dependencies {
     testImplementation(libs.exposed.migration.jdbc)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.postgresql)
+
+    // Auth integration test drives the real routes through the Ktor test client, using the shared
+    // @Resource (client + server consume one source of truth) and the seam Json.
+    testImplementation(libs.ktor.client.content.negotiation)
+    testImplementation(libs.ktor.client.resources)
 }

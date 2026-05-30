@@ -23,6 +23,7 @@ enum class PluginOrder {
     MONITORING,
     METRICS,
     CONTENT_NEGOTIATION,
+    RESOURCES,
     STATUS_PAGES,
     AUTHENTICATION,
 }

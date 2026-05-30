@@ -105,8 +105,14 @@ include(":client:core:testing:public")
 
 include(":client:core:screenshot-testing:public")
 
+include(":client:core:secure-storage:public")
+
+include(":client:core:secure-storage:impl")
+
 // ===================== :shared umbrella (the Seam — contracts) =====================
 include(":shared:common")
+
+include(":shared:auth")
 
 // ===================== :server umbrella (Ktor server) =====================
 include(":server:app")
@@ -123,3 +129,12 @@ include(":server:core:web:impl")
 include(":server:core:observability:public")
 
 include(":server:core:observability:impl")
+
+include(":server:core:auth:public")
+
+include(":server:core:auth:impl")
+
+// Server domain modules
+include(":server:feature:auth:public")
+
+include(":server:feature:auth:impl")

@@ -26,11 +26,12 @@ class SharedContractConventionPlugin : Plugin<Project> {
                 sourceSets {
                     commonMain.dependencies {
                         // `api` because these types appear on the Seam's public surface
-                        // (SerializersModule,
-                        // JsonObject, Either, @Resource), which both sides consume.
+                        // (SerializersModule, JsonObject, Either, @Resource, Instant), which both
+                        // sides consume.
                         api(libs.library("kotlinx-serialization-json"))
                         api(libs.library("ktor-resources"))
                         api(libs.library("arrow-core"))
+                        api(libs.library("kotlinx-datetime"))
                     }
                 }
             }

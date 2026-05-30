@@ -5,4 +5,6 @@ dependencies {
     // receiver — both are part of this module's public API surface.
     api(libs.exposed.core)
     api(libs.exposed.jdbc)
+    // instantTimestampTz exposes a Column<Instant> built on exposed-kotlin-datetime.
+    api(libs.exposed.kotlin.datetime)
 }
