@@ -83,6 +83,10 @@ gradlePlugin {
             id = "convention.detekt"
             implementationClass = "DetektConventionPlugin"
         }
+        register("sharedContract") {
+            id = "convention.shared.contract"
+            implementationClass = "SharedContractConventionPlugin"
+        }
         register("serverCorePublic") {
             id = "convention.server.core.public"
             implementationClass = "ServerCorePublicConventionPlugin"

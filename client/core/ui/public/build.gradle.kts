@@ -15,5 +15,9 @@ kotlin {
             api(project(":client:core:navigation:public"))
             api(project(":client:core:error:public"))
         }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.assertk)
+        }
     }
 }

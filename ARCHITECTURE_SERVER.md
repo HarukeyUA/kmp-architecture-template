@@ -2,7 +2,7 @@
 
 > **Companion to [`ARCHITECTURE.md`](ARCHITECTURE.md)**, which documents the client. This file covers the server, the shared **Seam**, and the fullstack module topology that joins them.
 >
-> **Status: in progress** (see [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) for the phased plan). **Landed:** Phase 1 — client modules under `:client:*`; Phase 2 — the `:server:app` skeleton (boots against Postgres, `/health` + `/metrics`, Flyway, Metro-on-JVM graph, migration drift test). **Pending:** the seam + error pipeline (Phase 3), the auth tracer bullet (Phase 4), and beyond. Rationale and rejected alternatives live in [`docs/adr/`](docs/adr/README.md); vocabulary lives in [`CONTEXT.md`](CONTEXT.md).
+> **Status: in progress** (see [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) for the phased plan). **Landed:** Phase 1 — client modules under `:client:*`; Phase 2 — the `:server:app` skeleton (boots against Postgres, `/health` + `/metrics`, Flyway, Metro-on-JVM graph, migration drift test); Phase 3 — the `:shared:common` seam + the polymorphic `ApiError` error pipeline end-to-end (stop-gap: no sealed grouping yet). **Pending:** the auth tracer bullet (Phase 4) and beyond. Rationale and rejected alternatives live in [`docs/adr/`](docs/adr/README.md); vocabulary lives in [`CONTEXT.md`](CONTEXT.md).
 
 The goal: a Compose Multiplatform client and a Ktor server in **one Gradle build**, joined by a shared contract so the two halves feel like "one whole thing" — while staying changeable and not foreclosing horizontal scale. The unity comes from the **type-safe Seam**, not from interleaving code.
 
@@ -136,6 +136,8 @@ data class UnknownApiError(val code: String, val raw: JsonObject?) : ApiError   
 ```
 
 **Registration is assembled outside `:shared`** (the dependency direction forbids `:shared:common` knowing its domains). Each domain exposes a `SerializersModule`; each side's `:impl` contributes it via Metro `@ContributesIntoSet`; `:client:core:network` and `:server:core:web` build one `Json` from the multibound set. A duplicate `@SerialName` fails at module-build time → global uniqueness for free. `@SerialName`s are namespaced (`notes.quota_exceeded`) and frozen by a **golden-set test**.
+
+> **Implemented (Phase 3).** Both sides build their `Json` via the shared `buildSeamJson(domainModules)` (folds the multibound set onto `commonApiErrorSerializersModule`), so the wire format is byte-identical. `UnknownApiError` is produced by a `defaultDeserializer` on the polymorphic `ApiError`. One Kotlin/Native subtlety, pre-solved: a bare `serializer<ApiError>()` can't resolve an *interface* serializer at runtime on Native, so `ApiError` always crosses the wire **inside `ErrorEnvelope`** — whose generated serializer wires the polymorphic field at compile time on every target. (Serialize a bare `ApiError` only via `PolymorphicSerializer(ApiError::class)`.)
 
 **Server side** — services return `Either<ApiError, T>`; `ApiError` is *semantic*, the route maps it to a status:
 

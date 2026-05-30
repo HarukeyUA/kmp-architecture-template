@@ -1,6 +1,7 @@
 import org.example.project.AssertModuleDependenciesTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
@@ -54,6 +55,35 @@ class ModuleGraphAssertConventionPlugin : Plugin<Project> {
                                 .toSet()
                         }
                     )
+                }
+
+                // The Seam's rationed external surface is policed only for `:shared:*` modules.
+                if (path.startsWith(":shared:")) {
+                    assertTask.configure {
+                        externalDependencyCoordinates.addAll(
+                            provider {
+                                kotlin.sourceSets
+                                    .asSequence()
+                                    .filterNot { it.name.contains("Test", ignoreCase = true) }
+                                    .flatMap { ss ->
+                                        sequenceOf(
+                                            ss.apiConfigurationName,
+                                            ss.implementationConfigurationName,
+                                            ss.compileOnlyConfigurationName,
+                                            ss.runtimeOnlyConfigurationName,
+                                        )
+                                    }
+                                    .mapNotNull { configurations.findByName(it) }
+                                    .flatMap {
+                                        it.dependencies
+                                            .withType(ExternalModuleDependency::class.java)
+                                            .asSequence()
+                                            .map { dep -> "${dep.group}:${dep.name}" }
+                                    }
+                                    .toSet()
+                            }
+                        )
+                    }
                 }
             }
 

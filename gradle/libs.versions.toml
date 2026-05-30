@@ -114,6 +114,9 @@ ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "kto
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 
+# Shared seam (rationed dependency surface)
+ktor-resources = { module = "io.ktor:ktor-resources", version.ref = "ktor" }
+
 # Ktor server
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
@@ -198,6 +201,9 @@ convention-impl-aggregator = { id = "convention.impl-aggregator" }
 convention-spotless = { id = "convention.spotless" }
 convention-detekt = { id = "convention.detekt" }
 convention-module-graph-assert = { id = "convention.module-graph-assert" }
+
+# Shared seam convention plugin
+convention-shared-contract = { id = "convention.shared.contract" }
 
 # Server convention plugins
 convention-server-core-public = { id = "convention.server.core.public" }

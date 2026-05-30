@@ -7,6 +7,7 @@ import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.isSuccess
 import org.example.project.core.error.NetworkError
+import org.example.project.shared.common.ErrorEnvelope
 
 /**
  * Executes a Ktor HTTP request safely, catching exceptions and mapping failures to [NetworkError].
@@ -22,9 +23,28 @@ suspend inline fun <T> executeSafe(
     if (response.status.isSuccess()) {
         catch({ transform(response) }) { e -> raise(NetworkError.Serialization(e)) }
     } else {
-        raise(NetworkError.Http(response.status.value))
+        raise(response.toNetworkError())
     }
 }
+
+/**
+ * Maps a non-2xx response to a typed error: a parseable 4xx [ErrorEnvelope] becomes
+ * [NetworkError.Api] carrying the server's typed [org.example.project.shared.common.ApiError];
+ * anything else (5xx, non-JSON, or a parse failure) falls back to [NetworkError.Http]. The
+ * HttpClient's `ContentNegotiation` Json — built from the same seam multibinding as the server —
+ * deserializes the polymorphic error, so an unknown code degrades to `UnknownApiError` (ADR-0005).
+ */
+suspend fun HttpResponse.toNetworkError(): NetworkError {
+    val apiError =
+        if (status.value in CLIENT_ERROR_RANGE) {
+            catch({ body<ErrorEnvelope>().error }) { null }
+        } else {
+            null
+        }
+    return apiError?.let { NetworkError.Api(it) } ?: NetworkError.Http(status.value)
+}
+
+private val CLIENT_ERROR_RANGE = 400..499
 
 /** Executes a request and deserializes the response body to [T]. */
 suspend inline fun <reified T> safeRequest(

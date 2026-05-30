@@ -1,4 +1,4 @@
-package org.example.project.server.web
+package org.example.project.core.network
 
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
@@ -10,17 +10,18 @@ import kotlinx.serialization.modules.SerializersModule
 import org.example.project.shared.common.buildSeamJson
 
 @ContributesTo(AppScope::class)
-interface WebProviders {
+interface NetworkProviders {
     /**
-     * Per-domain `ApiError` [SerializersModule]s, each contributed by a `:server:feature:*:impl`
-     * via `@ContributesIntoSet`. Empty until the first domain ships errors (ADR-0005).
+     * Per-domain `ApiError` [SerializersModule]s, each contributed by a `:client:feature:*:impl`
+     * via `@ContributesIntoSet` — the mirror of the server's set. Empty until a domain ships
+     * errors.
      */
     @Multibinds(allowEmpty = true) fun serializersModules(): Set<SerializersModule>
 
     /**
-     * The single server-side [Json] — the multibound domain modules folded onto the cross-cutting
-     * base via [buildSeamJson], the same builder the client uses, so the wire format matches
-     * exactly.
+     * The client [Json] (used by the HttpClient's `ContentNegotiation`), built with [buildSeamJson]
+     * — the exact same builder + base module the server uses — so a 4xx `ErrorEnvelope` parses back
+     * into the typed `ApiError`, with unknown codes degrading to `UnknownApiError` (ADR-0005).
      */
     @Provides
     @SingleIn(AppScope::class)

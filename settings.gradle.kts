@@ -105,6 +105,9 @@ include(":client:core:testing:public")
 
 include(":client:core:screenshot-testing:public")
 
+// ===================== :shared umbrella (the Seam — contracts) =====================
+include(":shared:common")
+
 // ===================== :server umbrella (Ktor server) =====================
 include(":server:app")
 

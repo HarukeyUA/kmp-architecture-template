@@ -12,17 +12,20 @@ import org.gradle.api.tasks.TaskAction
 
 /**
  * Validates that every declared project dependency on this module obeys the rules in
- * ARCHITECTURE.md. The task reads only its own project's state, so it is compatible with Gradle's
- * project isolation.
+ * ARCHITECTURE.md / ARCHITECTURE_SERVER.md. The task reads only its own project's state, so it is
+ * compatible with Gradle's project isolation.
  *
  * Rules enforced (derived from module path):
- * - `:public` may depend only on `:public`.
- * - `:impl` may depend only on `:public`.
- * - `:testing` may depend only on its sibling `:public` (e.g. `:client:feature:x:testing` ->
- *   `:client:feature:x:public`).
- * - Anything else (`:client:composeApp`, `:client:androidApp`, ...) is unrestricted.
- * - In addition, no `:client:core:*` module may depend on a `:client:feature:*` module (layering
- *   rule).
+ * - The umbrella law: `:client` -> `:client`/`:shared`, `:server` -> `:server`/`:shared`, `:shared`
+ *   -> `:shared` only; `:client` <-> `:server` is forbidden (ADR-0001).
+ * - `:public` may depend only on `:public` or a `:shared` contract.
+ * - `:impl` may depend only on `:public` or a `:shared` contract.
+ * - `:testing` may depend only on its sibling `:public`.
+ * - No `:client:core:*` module may depend on a `:client:feature:*` module (layering rule).
+ * - A `:shared:*` module's **external** dependency surface is rationed to [ALLOWED_SHARED_EXTERNAL]
+ *   so the Seam can't rot into a god module (ADR-0001, ADR-0003).
+ * - Anything else (`:client:composeApp`, `:server:app`, ...) is unrestricted within the umbrella
+ *   law.
  */
 @CacheableTask
 abstract class AssertModuleDependenciesTask : DefaultTask() {
@@ -30,18 +33,27 @@ abstract class AssertModuleDependenciesTask : DefaultTask() {
 
     @get:Input abstract val dependencyPaths: SetProperty<String>
 
+    /** Declared external dependency coordinates (`group:name`); only populated for `:shared:*`. */
+    @get:Input abstract val externalDependencyCoordinates: SetProperty<String>
+
     @get:OutputFile abstract val stampFile: RegularFileProperty
 
     @TaskAction
     fun check() {
         val source = sourcePath.get()
-        val violations = dependencyPaths.get().mapNotNull { target -> violation(source, target) }
+        val violations =
+            dependencyPaths.get().mapNotNull { target -> violation(source, target) } +
+                externalDependencyCoordinates.get().mapNotNull { coord ->
+                    sharedSurfaceViolation(source, coord)
+                }
         if (violations.isNotEmpty()) {
             throw GradleException(
                 buildString {
                     appendLine("Module dependency rule violations in $source:")
                     violations.sorted().forEach { appendLine("  - $it") }
-                    append("See ARCHITECTURE.md § Module Dependency Rules.")
+                    append(
+                        "See ARCHITECTURE.md / ARCHITECTURE_SERVER.md § Module Dependency Rules."
+                    )
                 }
             )
         }
@@ -111,3 +123,30 @@ private fun umbrellaOf(path: String): String? =
         path.startsWith(":shared:") -> "shared"
         else -> null
     }
+
+/**
+ * The Seam's rationed external surface (ADR-0001, ADR-0003): only kotlinx.serialization,
+ * ktor-resources, arrow-core, and kotlinx.datetime (plus the Kotlin stdlib/test). Anything else in
+ * a `:shared:*` module's declared dependencies is a violation — that single rule keeps the Seam
+ * from accreting Compose, Ktor engines, Exposed, DataStore, etc.
+ */
+private fun sharedSurfaceViolation(sourcePath: String, coordinate: String): String? {
+    if (!sourcePath.startsWith(":shared:")) return null
+    if (isAllowedSharedExternal(coordinate)) return null
+    return "external dependency '$coordinate' not allowed — :shared is rationed to " +
+        "kotlinx.serialization, ktor-resources, arrow-core, kotlinx.datetime"
+}
+
+private fun isAllowedSharedExternal(coordinate: String): Boolean {
+    val group = coordinate.substringBefore(':')
+    val name = coordinate.substringAfter(':', missingDelimiterValue = "")
+    return when {
+        group == "org.jetbrains.kotlin" -> true // Kotlin stdlib / kotlin-test
+        group == "org.jetbrains.kotlinx" &&
+            (name.startsWith("kotlinx-serialization") || name.startsWith("kotlinx-datetime")) ->
+            true
+        coordinate == "io.ktor:ktor-resources" -> true
+        coordinate == "io.arrow-kt:arrow-core" -> true
+        else -> false
+    }
+}
