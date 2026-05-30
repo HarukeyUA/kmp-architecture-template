@@ -53,19 +53,31 @@ abstract class AssertModuleDependenciesTask : DefaultTask() {
 }
 
 private fun violation(sourcePath: String, targetPath: String): String? {
+    // 1. Umbrella dependency law (ADR-0001): the umbrella name *is* the rule.
+    //    :client -> :client | :shared ; :server -> :server | :shared ; :shared -> :shared only.
+    //    :client <-> :server is forbidden.
+    umbrellaViolation(sourcePath, targetPath)?.let {
+        return it
+    }
+
+    // 2. Client layering: core is the foundation, features sit on top.
     if (sourcePath.startsWith(":client:core:") && targetPath.startsWith(":client:feature:")) {
         return "'$targetPath' not allowed — :core modules may not depend on :feature modules"
     }
+
+    // 3. public/impl/testing rules. A `:shared:*` module is a flat contract (all-public by nature)
+    //    and counts as a valid dependency target for both :public and :impl modules.
+    val targetIsContract = targetPath.startsWith(":shared:")
     val targetType = moduleTypeOf(targetPath)
     return when (moduleTypeOf(sourcePath)) {
         ModuleType.UNKNOWN -> null
         ModuleType.PUBLIC ->
-            if (targetType != ModuleType.PUBLIC) {
-                "'$targetPath' not allowed — :public may only depend on :public"
+            if (targetType != ModuleType.PUBLIC && !targetIsContract) {
+                "'$targetPath' not allowed — :public may only depend on :public or a :shared contract"
             } else null
         ModuleType.IMPL ->
-            if (targetType != ModuleType.PUBLIC) {
-                "'$targetPath' not allowed — :impl may only depend on :public"
+            if (targetType != ModuleType.PUBLIC && !targetIsContract) {
+                "'$targetPath' not allowed — :impl may only depend on :public or a :shared contract"
             } else null
         ModuleType.TESTING -> {
             val sibling = sourcePath.removeSuffix(":testing") + ":public"
@@ -75,3 +87,27 @@ private fun violation(sourcePath: String, targetPath: String): String? {
         }
     }
 }
+
+private fun umbrellaViolation(sourcePath: String, targetPath: String): String? {
+    val source = umbrellaOf(sourcePath) ?: return null
+    val target = umbrellaOf(targetPath) ?: return null
+    val allowed =
+        when (source) {
+            "client" -> setOf("client", "shared")
+            "server" -> setOf("server", "shared")
+            "shared" -> setOf("shared")
+            else -> emptySet()
+        }
+    return if (target !in allowed) {
+        "'$targetPath' not allowed — :$source modules may depend only on " +
+            allowed.sorted().joinToString(", ") { ":$it" }
+    } else null
+}
+
+private fun umbrellaOf(path: String): String? =
+    when {
+        path.startsWith(":client:") -> "client"
+        path.startsWith(":server:") -> "server"
+        path.startsWith(":shared:") -> "shared"
+        else -> null
+    }

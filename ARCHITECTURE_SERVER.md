@@ -2,7 +2,7 @@
 
 > **Companion to [`ARCHITECTURE.md`](ARCHITECTURE.md)**, which documents the client. This file covers the server, the shared **Seam**, and the fullstack module topology that joins them.
 >
-> **Status: target design — not yet implemented.** The repository is currently the client-only template. This document describes the agreed shape to apply when the server is scaffolded. Rationale and rejected alternatives live in [`docs/adr/`](docs/adr/README.md); vocabulary lives in [`CONTEXT.md`](CONTEXT.md).
+> **Status: in progress** (see [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) for the phased plan). **Landed:** Phase 1 — client modules under `:client:*`; Phase 2 — the `:server:app` skeleton (boots against Postgres, `/health` + `/metrics`, Flyway, Metro-on-JVM graph, migration drift test). **Pending:** the seam + error pipeline (Phase 3), the auth tracer bullet (Phase 4), and beyond. Rationale and rejected alternatives live in [`docs/adr/`](docs/adr/README.md); vocabulary lives in [`CONTEXT.md`](CONTEXT.md).
 
 The goal: a Compose Multiplatform client and a Ktor server in **one Gradle build**, joined by a shared contract so the two halves feel like "one whole thing" — while staying changeable and not foreclosing horizontal scale. The unity comes from the **type-safe Seam**, not from interleaving code.
 
@@ -180,10 +180,12 @@ sealed interface NetworkError : AppError {
 
 | Module | `public` | `impl` |
 |--------|----------|--------|
-| `:server:core:database` | transaction helpers, repository base | Hikari + Flyway + Exposed wiring |
-| `:server:core:web` | `ApiError→status`, `Either`-fold responder | base Ktor plugins, ContentNegotiation, `Json` provider |
+| `:server:core:database` | `dbTransaction` helper, `TableSet`, `DatabaseConfig` | Hikari + Flyway + Exposed wiring, DB `HealthIndicator` |
+| `:server:core:web` | `RouteRegistrar` / `PluginInstaller` contracts; `ApiError→status`, `Either`-fold responder | base Ktor plugins, ContentNegotiation, `Json` provider |
 | `:server:core:auth` | `Principal`, session-store interface, `authenticate{}` | Session validation, middleware, cache |
-| `:server:core:observability` | — | MDC logging, Micrometer/metrics |
+| `:server:core:observability` | `HealthIndicator` contract, correlation-id key | CallId + MDC logging, Micrometer/metrics, `/health` + `/metrics` routes |
+
+> **Implementation note (Phase 2):** the original design left `:server:core:observability` `public`-less, but the public/impl structure law requires every `:impl` to expose a contract — and a `HealthIndicator` multibinding (each infra/domain module contributes one; `/health` aggregates the set) is a genuinely useful one, so observability gained a small `:public`. The self-registration contracts (`RouteRegistrar` / `PluginInstaller`) live in `:server:core:web:public`.
 
 ### A domain slice (`:server:feature:<domain>`)
 
@@ -223,14 +225,23 @@ class DefaultNotesService(private val repo: NotesRepository) : NotesService {
 
 ### Self-registration (`:server:app` stays thin)
 
-Routes and Exposed table sets self-register via Metro `@ContributesIntoSet`, exactly like the client's `implAggregator`. Adding a domain touches **zero lines** in `:server:app`.
+Routes, Ktor plugins, and Exposed table sets self-register via Metro `@ContributesIntoSet`, exactly like the client's `implAggregator` — the `convention.impl-aggregator` plugin (umbrella-scoped: `:server:*:impl` → `:server:app`) puts every impl on the app's classpath so Metro can merge the contributions. Adding a domain touches **zero lines** in `:server:app`.
+
+A route is a `RouteRegistrar` (a `fun interface` with an `Application` receiver) that takes its service via constructor injection and opens its own `routing { }` / `authenticate { }` — cleaner than passing a bare `Route.() -> Unit`, and confirmed against a real Metro-on-Ktor setup. Plugins are ordered `PluginInstaller`s.
 
 ```kotlin
 // :server:feature:notes:impl
-@ContributesIntoSet(AppScope::class) @Provides fun notesRoutes(): RouteRegistration = RouteRegistration(Route::notesRoutes)
+@Inject @ContributesIntoSet(AppScope::class)
+class NotesRoutes(private val service: NotesService) : RouteRegistrar {
+    override fun Application.register() = routing {
+        authenticate { post<NotesResource> { /* call service, respondEither */ } }
+    }
+}
 @ContributesIntoSet(AppScope::class) @Provides fun notesTables(): TableSet = TableSet(Notes)
 @ContributesIntoSet(AppScope::class) @Provides fun notesErrors(): SerializersModule = notesErrorModule
 ```
+
+`main()` builds the Metro graph, runs `databaseBootstrap.start()` (Flyway migrate → Exposed connect), then installs the multibound `Set<PluginInstaller>` (sorted) and `Set<RouteRegistrar>` before starting Netty.
 
 ---
 

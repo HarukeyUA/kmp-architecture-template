@@ -57,6 +57,26 @@ class ModuleGraphAssertConventionPlugin : Plugin<Project> {
                 }
             }
 
+            // Plain-JVM server modules (`:server:*`) declare deps on the standard non-test main
+            // configurations rather than KMP source sets.
+            pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+                assertTask.configure {
+                    dependencyPaths.addAll(
+                        provider {
+                            sequenceOf("api", "implementation", "compileOnly", "runtimeOnly")
+                                .mapNotNull { configurations.findByName(it) }
+                                .flatMap {
+                                    it.dependencies
+                                        .withType(ProjectDependency::class.java)
+                                        .asSequence()
+                                        .map(ProjectDependency::getPath)
+                                }
+                                .toSet()
+                        }
+                    )
+                }
+            }
+
             tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME).configure { dependsOn(assertTask) }
             tasks.withType<KotlinCompilationTask<*>>().configureEach { dependsOn(assertTask) }
         }

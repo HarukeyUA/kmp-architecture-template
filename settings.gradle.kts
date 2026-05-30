@@ -36,7 +36,10 @@ plugins {
 
 rootProject.name = "MyApplication"
 
-implAggregator { aggregatorProjectPath.set(":client:composeApp") }
+implAggregator {
+    aggregator(":client:composeApp")
+    aggregator(":server:app")
+}
 
 // ===================== :client umbrella (Compose Multiplatform app) =====================
 // App modules
@@ -101,3 +104,19 @@ include(":client:feature:user-data:testing")
 include(":client:core:testing:public")
 
 include(":client:core:screenshot-testing:public")
+
+// ===================== :server umbrella (Ktor server) =====================
+include(":server:app")
+
+// Server core modules
+include(":server:core:database:public")
+
+include(":server:core:database:impl")
+
+include(":server:core:web:public")
+
+include(":server:core:web:impl")
+
+include(":server:core:observability:public")
+
+include(":server:core:observability:impl")

@@ -1,0 +1,19 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- reqId is the per-request correlation id put into the MDC by CallLogging. -->
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} [reqId=%X{requestId:-}] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <logger name="io.netty" level="INFO"/>
+    <logger name="com.zaxxer.hikari" level="INFO"/>
+    <logger name="org.flywaydb" level="INFO"/>
+    <!-- Silences the orphaned LoggingMeterRegistry that Ktor's MicrometerMetrics config
+         instantiates as its default before we swap in the Prometheus registry. -->
+    <logger name="io.micrometer.core.instrument.push.PushMeterRegistry" level="WARN"/>
+</configuration>

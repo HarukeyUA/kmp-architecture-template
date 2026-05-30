@@ -21,6 +21,11 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
             val allowedList = ALLOWED_LEAF_NAMES.sorted().joinToString(", ")
 
             target.rootProject.leafDescendants().forEach { leaf ->
+                // `:shared:*` modules are flat, all-public contracts named after their domain
+                // (`:shared:common`, `:shared:auth`), so the leaf-name and sibling-public rules
+                // below — which police the public/impl split — do not apply to them (ADR-0003).
+                if (leaf.path.startsWith(":shared:")) return@forEach
+
                 if (leaf.name !in ALLOWED_LEAF_NAMES) {
                     violations +=
                         "Leaf module '${leaf.path}' has unrecognized name '${leaf.name}'. " +
@@ -49,6 +54,6 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
 
     private companion object {
         val ALLOWED_LEAF_NAMES =
-            setOf("public", "impl", "testing", "composeApp", "androidApp", "desktopApp")
+            setOf("public", "impl", "testing", "composeApp", "androidApp", "desktopApp", "app")
     }
 }

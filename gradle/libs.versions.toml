@@ -41,6 +41,17 @@ turbine = "1.2.1"
 spotless = "8.5.1"
 ktfmt = "0.62"
 
+# Server
+exposed = "1.3.0"
+hikari = "7.0.2"
+postgresql = "42.7.11"
+flyway = "12.7.0"
+micrometer = "1.16.5"
+logback = "1.5.33"
+caffeine = "3.2.4"
+argon2 = "2.12"
+testcontainers = "1.21.4"
+
 [libraries]
 # Gradle plugins for build-logic
 android-gradlePlugin = { module = "com.android.tools.build:gradle-api", version.ref = "agp" }
@@ -103,6 +114,41 @@ ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "kto
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 
+# Ktor server
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
+ktor-server-call-id = { module = "io.ktor:ktor-server-call-id", version.ref = "ktor" }
+ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
+ktor-server-metrics-micrometer = { module = "io.ktor:ktor-server-metrics-micrometer", version.ref = "ktor" }
+ktor-server-resources = { module = "io.ktor:ktor-server-resources", version.ref = "ktor" }
+ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+
+# Exposed (SQL framework)
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-kotlin-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
+exposed-migration-jdbc = { module = "org.jetbrains.exposed:exposed-migration-jdbc", version.ref = "exposed" }
+
+# Persistence infra
+hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+
+# Caching & password hashing (server)
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+argon2 = { module = "de.mkammerer:argon2-jvm", version.ref = "argon2" }
+
+# Observability (server)
+micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+
+# Server testing
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+
 ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
 
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
@@ -152,3 +198,10 @@ convention-impl-aggregator = { id = "convention.impl-aggregator" }
 convention-spotless = { id = "convention.spotless" }
 convention-detekt = { id = "convention.detekt" }
 convention-module-graph-assert = { id = "convention.module-graph-assert" }
+
+# Server convention plugins
+convention-server-core-public = { id = "convention.server.core.public" }
+convention-server-core-impl = { id = "convention.server.core.impl" }
+convention-server-feature-public = { id = "convention.server.feature.public" }
+convention-server-feature-impl = { id = "convention.server.feature.impl" }
+convention-server-app = { id = "convention.server.app" }

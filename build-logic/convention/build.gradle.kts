@@ -83,5 +83,25 @@ gradlePlugin {
             id = "convention.detekt"
             implementationClass = "DetektConventionPlugin"
         }
+        register("serverCorePublic") {
+            id = "convention.server.core.public"
+            implementationClass = "ServerCorePublicConventionPlugin"
+        }
+        register("serverCoreImpl") {
+            id = "convention.server.core.impl"
+            implementationClass = "ServerCoreImplConventionPlugin"
+        }
+        register("serverFeaturePublic") {
+            id = "convention.server.feature.public"
+            implementationClass = "ServerFeaturePublicConventionPlugin"
+        }
+        register("serverFeatureImpl") {
+            id = "convention.server.feature.impl"
+            implementationClass = "ServerFeatureImplConventionPlugin"
+        }
+        register("serverApp") {
+            id = "convention.server.app"
+            implementationClass = "ServerAppConventionPlugin"
+        }
     }
 }
