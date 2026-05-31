@@ -9,9 +9,12 @@ import org.example.project.server.auth.AccountId
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.charLength
 import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.sum
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 
 /**
@@ -41,10 +44,13 @@ class DefaultNoteRepository : NoteRepository {
             .orderBy(Notes.createdAt to SortOrder.DESC)
             .map { it.toNote() }
 
-    override suspend fun byteTotal(accountId: AccountId): Int =
-        Notes.selectAll()
+    override suspend fun byteTotal(accountId: AccountId): Int {
+        // SUM(char_length(text)) on the DB: one scalar back, no text blobs loaded into the app.
+        val totalChars = Notes.text.charLength().sum()
+        return Notes.select(totalChars)
             .where { Notes.accountId eq accountId.value }
-            .sumOf { it[Notes.text].length }
+            .single()[totalChars] ?: 0
+    }
 
     override suspend fun insert(accountId: AccountId, text: String): Note {
         val id = UUID.randomUUID()

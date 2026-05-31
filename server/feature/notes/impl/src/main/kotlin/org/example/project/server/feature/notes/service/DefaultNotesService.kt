@@ -7,6 +7,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import org.example.project.server.auth.Principal
+import org.example.project.server.database.advisoryXactLock
 import org.example.project.server.database.dbTransaction
 import org.example.project.server.feature.auth.AuthService
 import org.example.project.server.feature.notes.NotesService
@@ -44,8 +45,12 @@ class DefaultNotesService(private val repo: NoteRepository, private val authServ
         // Shared shape check first; the stateful quota check is server-only (ADR-0004).
         val text = NoteText.of(request.text).mapLeft { Validation(listOf(it)) }.bind()
         val authorEmail = authorEmail(principal).bind()
-        // The service owns the transaction; the quota read and insert are atomic (ADR-0006).
+        // The service owns the transaction so the quota read and the insert commit together. But
+        // atomicity isn't isolation: under READ COMMITTED the SUM takes no row locks, so two
+        // concurrent creates for this account could both read an under-limit total and both insert
+        // past the quota. The per-account advisory lock serializes them (ADR-0006, ADR-0010).
         dbTransaction {
+            advisoryXactLock(QUOTA_LOCK_NAMESPACE, principal.accountId.value.hashCode())
             val used = repo.byteTotal(principal.accountId)
             ensure(used + text.value.length <= NotesService.QUOTA) {
                 NotesQuotaExceeded(quota = NotesService.QUOTA, used = used)
@@ -71,4 +76,9 @@ class DefaultNotesService(private val repo: NoteRepository, private val authServ
 
     private fun Note.toResponse(authorEmail: String): NoteResponse =
         NoteResponse(id = id, text = text, authorEmail = authorEmail, createdAt = createdAt)
+
+    private companion object {
+        /** Advisory-lock namespace for the per-account quota gate; distinct from other locks. */
+        const val QUOTA_LOCK_NAMESPACE = 0x4E_0735 // "NOTES"
+    }
 }
