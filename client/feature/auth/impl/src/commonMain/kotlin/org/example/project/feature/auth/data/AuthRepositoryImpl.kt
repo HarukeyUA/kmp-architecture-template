@@ -32,7 +32,6 @@ class AuthRepositoryImpl(
         val session =
             executeSafe({
                     client.post(AuthResource.Login()) {
-                        contentType(ContentType.Application.Json)
                         setBody(LoginRequest(email.trim(), password))
                     }
                 }) {
@@ -46,7 +45,6 @@ class AuthRepositoryImpl(
         val session =
             executeSafe({
                     client.post(AuthResource.Signup()) {
-                        contentType(ContentType.Application.Json)
                         setBody(SignupRequest(email.trim(), password))
                     }
                 }) {

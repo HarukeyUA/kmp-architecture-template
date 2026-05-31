@@ -13,16 +13,12 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.resources.Resources
 import io.ktor.client.request.accept
-import io.ktor.client.request.url
 import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.example.project.core.secure.storage.SecureSessionStore
 
-/**
- * The platform HTTP engine (OkHttp on Android/JVM, Darwin on iOS) — the no-engine `HttpClient { }`
- * factory isn't available in commonMain.
- */
 internal expect fun httpClientEngine(): HttpClientEngineFactory<*>
 
 @ContributesTo(AppScope::class)
@@ -49,15 +45,6 @@ interface HttpClientGraph {
             install(Resources)
             install(Auth) {
                 bearer {
-                    // Ktor caches the first non-null BearerTokens for the client's whole lifetime
-                    // and only refreshes them on a 401. Left on, a logout + re-login within one
-                    // process keeps sending the *previous* (now-revoked) token; its 401 trips the
-                    // interceptor below, which clears the freshly-stored session — silently logging
-                    // the user straight back out. Off, [loadTokens] re-reads [SecureSessionStore]
-                    // on
-                    // every request (the opaque Session has no refresh token, so there is nothing
-                    // to
-                    // cache anyway).
                     cacheTokens = false
                     sendWithoutRequest { true }
                     loadTokens {
@@ -72,6 +59,7 @@ interface HttpClientGraph {
             defaultRequest {
                 url(apiConfig.baseUrl)
                 accept(ContentType.Application.Json)
+                contentType(ContentType.Application.Json)
             }
         }
 }

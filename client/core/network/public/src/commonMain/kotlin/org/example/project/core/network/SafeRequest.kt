@@ -2,6 +2,7 @@ package org.example.project.core.network
 
 import arrow.core.Either
 import arrow.core.raise.catch
+import arrow.core.raise.context.raise
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import io.ktor.client.call.body
@@ -30,12 +31,12 @@ suspend inline fun <T> executeSafe(
  * [NetworkError.Api] carrying the server's typed [org.example.project.shared.common.ApiError];
  * anything else (5xx, non-JSON, or a parse failure) falls back to [NetworkError.Http]. The
  * HttpClient's `ContentNegotiation` Json — built from the same seam multibinding as the server —
- * deserializes the polymorphic error, so an unknown code degrades to `UnknownApiError` (ADR-0005).
+ * deserializes the polymorphic error, so an unknown code degrades to `UnknownApiError`.
  */
 suspend fun HttpResponse.toNetworkError(): NetworkError {
     val apiError =
         if (status.value in CLIENT_ERROR_RANGE) {
-            catch({ body<ErrorEnvelope>().error }) { null }
+            catch({ body<ErrorEnvelope>().error }) { e -> return NetworkError.Serialization(e) }
         } else {
             null
         }
