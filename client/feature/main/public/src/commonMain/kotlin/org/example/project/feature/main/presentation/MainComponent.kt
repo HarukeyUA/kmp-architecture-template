@@ -19,7 +19,7 @@ interface MainComponent : EventComponent<MainComponent.Event> {
     sealed interface Tab {
         @Serializable data object Home : Tab
 
-        @Serializable data object Search : Tab
+        @Serializable data object Notes : Tab
 
         @Serializable data object Profile : Tab
     }
@@ -27,7 +27,7 @@ interface MainComponent : EventComponent<MainComponent.Event> {
     sealed interface Event : UiEvent {
         object HomeTabClick : Event
 
-        object SearchTabClick : Event
+        object NotesTabClick : Event
 
         object ProfileTabClick : Event
     }

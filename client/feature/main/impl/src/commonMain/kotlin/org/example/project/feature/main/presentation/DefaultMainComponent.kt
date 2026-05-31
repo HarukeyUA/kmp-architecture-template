@@ -16,20 +16,20 @@ import org.example.project.core.ui.navigation.ScreenChild
 import org.example.project.core.ui.navigation.asChild
 import org.example.project.feature.home.host.presentation.HomeComponent
 import org.example.project.feature.home.host.presentation.HomeScreen
+import org.example.project.feature.notes.NotesComponent
+import org.example.project.feature.notes.NotesScreen
 import org.example.project.feature.profile.presentation.ProfileComponent
 import org.example.project.feature.profile.presentation.ProfileScreen
-import org.example.project.feature.search.presentation.SearchComponent
-import org.example.project.feature.search.presentation.SearchScreen
 
 @AssistedInject
 class DefaultMainComponent(
     @Assisted componentContext: AppComponentContext,
     @Assisted private val onLogout: () -> Unit,
     private val homeComponentFactory: HomeComponent.Factory,
-    private val searchComponentFactory: SearchComponent.Factory,
+    private val notesComponentFactory: NotesComponent.Factory,
     private val profileComponentFactory: ProfileComponent.Factory,
     private val homeScreen: HomeScreen,
-    private val searchScreen: SearchScreen,
+    private val notesScreen: NotesScreen,
     private val profileScreen: ProfileScreen,
 ) : MainComponent, AppComponentContext by componentContext {
 
@@ -52,7 +52,7 @@ class DefaultMainComponent(
             MainComponent.Event.HomeTabClick -> navigation.bringToFront(MainComponent.Tab.Home)
             MainComponent.Event.ProfileTabClick ->
                 navigation.bringToFront(MainComponent.Tab.Profile)
-            MainComponent.Event.SearchTabClick -> navigation.bringToFront(MainComponent.Tab.Search)
+            MainComponent.Event.NotesTabClick -> navigation.bringToFront(MainComponent.Tab.Notes)
         }
     }
 
@@ -66,10 +66,10 @@ class DefaultMainComponent(
                     .create(componentContext = componentContext)
                     .asChild(homeScreen::Content)
 
-            MainComponent.Tab.Search ->
-                searchComponentFactory
+            MainComponent.Tab.Notes ->
+                notesComponentFactory
                     .create(componentContext = componentContext)
-                    .asChild(searchScreen::Content)
+                    .asChild(notesScreen::Content)
 
             MainComponent.Tab.Profile ->
                 profileComponentFactory

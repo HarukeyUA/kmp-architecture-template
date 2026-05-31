@@ -42,10 +42,10 @@ class DefaultMainScreen : MainScreen {
                         label = { Text(TabItem.Home.title) },
                     )
                     NavigationBarItem(
-                        selected = activeTab is MainComponent.Tab.Search,
-                        onClick = { component.onEvent(MainComponent.Event.SearchTabClick) },
-                        icon = { Text(TabItem.Search.icon) },
-                        label = { Text(TabItem.Search.title) },
+                        selected = activeTab is MainComponent.Tab.Notes,
+                        onClick = { component.onEvent(MainComponent.Event.NotesTabClick) },
+                        icon = { Text(TabItem.Notes.icon) },
+                        label = { Text(TabItem.Notes.title) },
                     )
                     NavigationBarItem(
                         selected = activeTab is MainComponent.Tab.Profile,
@@ -70,6 +70,6 @@ class DefaultMainScreen : MainScreen {
 
 private enum class TabItem(val title: String, val icon: String) {
     Home("Home", "\uD83C\uDFE0"),
-    Search("Search", "\uD83D\uDD0D"),
+    Notes("Notes", "\uD83D\uDCDD"),
     Profile("Profile", "\uD83D\uDC64"),
 }

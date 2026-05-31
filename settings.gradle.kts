@@ -83,9 +83,9 @@ include(":client:feature:home:public")
 
 include(":client:feature:home:impl")
 
-include(":client:feature:search:public")
+include(":client:feature:notes:public")
 
-include(":client:feature:search:impl")
+include(":client:feature:notes:impl")
 
 include(":client:feature:splash:public")
 
@@ -114,6 +114,8 @@ include(":shared:common")
 
 include(":shared:auth")
 
+include(":shared:notes")
+
 // ===================== :server umbrella (Ktor server) =====================
 include(":server:app")
 
@@ -138,3 +140,7 @@ include(":server:core:auth:impl")
 include(":server:feature:auth:public")
 
 include(":server:feature:auth:impl")
+
+include(":server:feature:notes:public")
+
+include(":server:feature:notes:impl")
