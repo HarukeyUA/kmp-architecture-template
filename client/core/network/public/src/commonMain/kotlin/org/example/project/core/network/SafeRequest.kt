@@ -3,6 +3,7 @@ package org.example.project.core.network
 import arrow.core.Either
 import arrow.core.raise.catch
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.isSuccess
@@ -20,11 +21,8 @@ suspend inline fun <T> executeSafe(
     crossinline transform: suspend (HttpResponse) -> T,
 ): Either<NetworkError, T> = either {
     val response = catch({ block() }) { e -> raise(NetworkError.Connection(e)) }
-    if (response.status.isSuccess()) {
-        catch({ transform(response) }) { e -> raise(NetworkError.Serialization(e)) }
-    } else {
-        raise(response.toNetworkError())
-    }
+    ensure(response.status.isSuccess()) { response.toNetworkError() }
+    catch({ transform(response) }) { e -> raise(NetworkError.Serialization(e)) }
 }
 
 /**
