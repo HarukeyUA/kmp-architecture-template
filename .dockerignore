@@ -1,0 +1,4 @@
+# The image only needs the pre-built server distribution; keep the build context to just that so
+# `docker build` doesn't ship the whole monorepo (sources, .git, .gradle, node_modules, other builds).
+*
+!server/app/build/install/server

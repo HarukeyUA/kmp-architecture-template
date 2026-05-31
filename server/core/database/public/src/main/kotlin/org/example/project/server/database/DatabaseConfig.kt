@@ -6,4 +6,9 @@ data class DatabaseConfig(
     val username: String,
     val password: String,
     val maxPoolSize: Int = 10,
-)
+) {
+    // Redact the password so it can't leak into a log line or crash report via the data-class
+    // default.
+    override fun toString(): String =
+        "DatabaseConfig(jdbcUrl=$jdbcUrl, username=$username, password=***, maxPoolSize=$maxPoolSize)"
+}

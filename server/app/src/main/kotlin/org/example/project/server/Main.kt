@@ -13,7 +13,8 @@ val ServerGraphKey: AttributeKey<ServerGraph> = AttributeKey("ServerGraph")
 
 fun main() {
     val config = ServerConfig.load()
-    val graph = createGraphFactory<ServerGraph.Factory>().create(config, config.database)
+    val graph =
+        createGraphFactory<ServerGraph.Factory>().create(config, config.database, config.storage)
     graph.databaseBootstrap.start()
     embeddedServer(Netty, port = config.port, host = config.host) { configureServer(graph) }
         .start(wait = true)

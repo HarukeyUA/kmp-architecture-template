@@ -136,6 +136,14 @@ include(":server:core:auth:public")
 
 include(":server:core:auth:impl")
 
+include(":server:core:storage:public")
+
+include(":server:core:storage:impl")
+
+include(":server:core:scheduler:public")
+
+include(":server:core:scheduler:impl")
+
 // Server domain modules
 include(":server:feature:auth:public")
 

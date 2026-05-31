@@ -41,11 +41,20 @@ class AuthIntegrationTest {
             postgres.start()
             val databaseConfig =
                 DatabaseConfig(postgres.jdbcUrl, postgres.username, postgres.password)
+            // Object storage is unused here; the lazy S3 client is never built, so any value works.
+            val storageConfig = testStorageConfig()
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
                     .create(
-                        ServerConfig("localhost", port = 0, version = "test", databaseConfig),
+                        ServerConfig(
+                            "localhost",
+                            port = 0,
+                            version = "test",
+                            databaseConfig,
+                            storageConfig,
+                        ),
                         databaseConfig,
+                        storageConfig,
                     )
             graph.databaseBootstrap.start()
 

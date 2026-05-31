@@ -17,6 +17,8 @@ interface PluginInstaller {
  * Deterministic install order for [PluginInstaller]s (sorted by declaration order). Correlation id
  * must precede logging so the request id is in the MDC; content negotiation must precede routes;
  * the status-pages safety net wraps everything; auth is installed last before routes run.
+ * `SCHEDULER` runs last — it installs no Ktor plugin, it just launches background job loops on the
+ * application scope once everything else is wired.
  */
 enum class PluginOrder {
     CALL_ID,
@@ -26,4 +28,5 @@ enum class PluginOrder {
     RESOURCES,
     STATUS_PAGES,
     AUTHENTICATION,
+    SCHEDULER,
 }

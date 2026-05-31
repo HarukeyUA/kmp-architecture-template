@@ -7,6 +7,8 @@ import dev.zacsweers.metro.Provides
 import org.example.project.server.database.DatabaseBootstrap
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.database.TableSet
+import org.example.project.server.storage.BlobStore
+import org.example.project.server.storage.StorageConfig
 import org.example.project.server.web.PluginInstaller
 import org.example.project.server.web.RouteRegistrar
 
@@ -24,6 +26,13 @@ interface ServerGraph {
     val config: ServerConfig
     val databaseBootstrap: DatabaseBootstrap
 
+    /**
+     * The object-storage primitive (ADR-0010), exposed so the storage chain is validated at graph
+     * build even before a domain injects it. Lazy like every Metro accessor — a blob-less server
+     * never builds the S3 client, so this is not a boot-time dependency.
+     */
+    val blobStore: BlobStore
+
     @Multibinds(allowEmpty = true) val pluginInstallers: Set<PluginInstaller>
 
     @Multibinds(allowEmpty = true) val routeRegistrars: Set<RouteRegistrar>
@@ -35,6 +44,7 @@ interface ServerGraph {
         fun create(
             @Provides config: ServerConfig,
             @Provides databaseConfig: DatabaseConfig,
+            @Provides storageConfig: StorageConfig,
         ): ServerGraph
     }
 }

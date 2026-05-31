@@ -32,15 +32,19 @@ class MigrationDriftTest {
                     username = postgres.username,
                     password = postgres.password,
                 )
+            val storageConfig = testStorageConfig()
             val config =
                 ServerConfig(
                     host = "localhost",
                     port = 0,
                     version = "test",
                     database = databaseConfig,
+                    storage = storageConfig,
                 )
 
-            val graph = createGraphFactory<ServerGraph.Factory>().create(config, databaseConfig)
+            val graph =
+                createGraphFactory<ServerGraph.Factory>()
+                    .create(config, databaseConfig, storageConfig)
             // Applies Flyway migrations and connects Exposed against the container.
             graph.databaseBootstrap.start()
 

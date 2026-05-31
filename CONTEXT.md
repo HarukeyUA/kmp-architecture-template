@@ -40,6 +40,14 @@ _Avoid_: bare "token", JWT, cookie
 The authenticated identity attached to a request once a Session is validated.
 _Avoid_: bare "user", bare "account", subject
 
+**Blob** (via **BlobStore**):
+A binary object (image, file) kept in S3-compatible object storage under an opaque key — **never on an instance's local disk**. The `BlobStore` is the interface; the client transfers bytes **directly** to/from storage through short-lived presigned URLs, so blobs never stream through the app.
+_Avoid_: file, attachment, upload (for the stored object)
+
+**Scheduled job**:
+A periodic, **idempotent** unit of background work that at most one instance runs per tick, coordinated by a Postgres advisory lock — so it is safe the moment a second instance exists.
+_Avoid_: cron, task, worker, sweeper (use for the specific job, not the concept)
+
 ## Relationships
 
 - A **Contract** lives in the **Seam**; both **Client** and **Server** depend on it, never on each other.

@@ -2,7 +2,7 @@
 
 > **Companion to [`ARCHITECTURE.md`](ARCHITECTURE.md)**, which documents the client. This file covers the server, the shared **Seam**, and the fullstack module topology that joins them.
 >
-> **Status: in progress** (see [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) for the phased plan). **Landed:** Phase 1 — client modules under `:client:*`; Phase 2 — the `:server:app` skeleton (boots against Postgres, `/health` + `/metrics`, Flyway, Metro-on-JVM graph, migration drift test); Phase 3 — the `:shared:common` seam + the polymorphic `ApiError` error pipeline end-to-end (stop-gap: no sealed grouping yet); Phase 4 — the **auth tracer bullet** (the validation gate): credential/session seam, Argon2id, opaque sessions + Caffeine cache, secure client token storage (KSafe), the 401→Login interceptor, and the platform `ApiConfig` — proven by a server Testcontainers integration test and a client MockEngine test; Phase 5 — the **notes** domain (this section's running example, now real): cheap replication of the slice shape plus a **cross-domain** `NotesService → AuthService` call (resolving each note's author through auth's `:public`, never its tables) and the per-account `notes.quota_exceeded` budget — added with **zero lines** in `:server:app`, and the module-assert task rejects a deliberate reach into another domain's `:impl`. **Pending:** hardening + deploy (Phase 6) and beyond. Rationale and rejected alternatives live in [`docs/adr/`](docs/adr/README.md); vocabulary lives in [`CONTEXT.md`](CONTEXT.md).
+> **Status: in progress** (see [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) for the phased plan). **Landed:** Phase 1 — client modules under `:client:*`; Phase 2 — the `:server:app` skeleton (boots against Postgres, `/health` + `/metrics`, Flyway, Metro-on-JVM graph, migration drift test); Phase 3 — the `:shared:common` seam + the polymorphic `ApiError` error pipeline end-to-end (stop-gap: no sealed grouping yet); Phase 4 — the **auth tracer bullet** (the validation gate): credential/session seam, Argon2id, opaque sessions + Caffeine cache, secure client token storage (KSafe), the 401→Login interceptor, and the platform `ApiConfig` — proven by a server Testcontainers integration test and a client MockEngine test; Phase 5 — the **notes** domain (this section's running example, now real): cheap replication of the slice shape plus a **cross-domain** `NotesService → AuthService` call (resolving each note's author through auth's `:public`, never its tables) and the per-account `notes.quota_exceeded` budget — added with **zero lines** in `:server:app`, and the module-assert task rejects a deliberate reach into another domain's `:impl`; Phase 6 — **hardening**: the `BlobStore` object-storage primitive (`:server:core:storage`, presigned-URL transfer model, aws-sdk-kotlin against MinIO/S3, **never local disk**), the advisory-lock `ScheduledJob` runner (`:server:core:scheduler`, `pg_try_advisory_lock` → exactly-once across instances) with an idempotent expired-session sweeper, and a target-agnostic `installDist`→JRE `Dockerfile` — all self-registering, still **zero lines** added to the app graph's `main()`/routes, proven by MinIO + two-instance-Postgres Testcontainers tests. **Pending:** Phase 7 — revisit the deferred (sealed `ApiError` grouping; real-time SSE/WS); live deploy provisioning is left to the deployer. Rationale and rejected alternatives live in [`docs/adr/`](docs/adr/README.md); vocabulary lives in [`CONTEXT.md`](CONTEXT.md).
 
 The goal: a Compose Multiplatform client and a Ktor server in **one Gradle build**, joined by a shared contract so the two halves feel like "one whole thing" — while staying changeable and not foreclosing horizontal scale. The unity comes from the **type-safe Seam**, not from interleaving code.
 
@@ -52,6 +52,8 @@ Extends the existing settings/build assertions (see `ARCHITECTURE.md` → Module
 :server:core:web:public|impl
 :server:core:auth:public|impl
 :server:core:observability:public|impl
+:server:core:storage:public|impl        BlobStore (object storage; presigned URLs, never local disk)
+:server:core:scheduler:public|impl      ScheduledJob + advisory-lock runner (multi-node-safe)
 :server:feature:<domain>:public|impl
 :server:feature:<domain>:testing      (shared fakes, optional)
 :server:app              composition root: Metro graph + main() + Ktor install + Flyway + route mounting
@@ -184,8 +186,10 @@ sealed interface NetworkError : AppError {
 |--------|----------|--------|
 | `:server:core:database` | `dbTransaction` helper, `TableSet`, `DatabaseConfig` | Hikari + Flyway + Exposed wiring, DB `HealthIndicator` |
 | `:server:core:web` | `RouteRegistrar` / `PluginInstaller` contracts; `ApiError→status`, `Either`-fold responder | base Ktor plugins, ContentNegotiation, `Json` provider |
-| `:server:core:auth` | `Principal`, session-store interface, `authenticate{}` | Session validation, middleware, cache |
+| `:server:core:auth` | `Principal`, session-store interface, `authenticate{}` | Session validation, middleware, cache, expired-session sweeper (`ScheduledJob`) |
 | `:server:core:observability` | `HealthIndicator` contract, correlation-id key | CallId + MDC logging, Micrometer/metrics, `/health` + `/metrics` routes |
+| `:server:core:storage` | `BlobStore` (presigned PUT/GET, head, delete), `StorageConfig` | aws-sdk-kotlin S3 client (MinIO/S3), lazy-built so it's never a boot dependency |
+| `:server:core:scheduler` | `ScheduledJob` contract (name + interval + `run()`) | advisory-lock runner + self-registering startup hook |
 
 > **Implementation note (Phase 2):** the original design left `:server:core:observability` `public`-less, but the public/impl structure law requires every `:impl` to expose a contract — and a `HealthIndicator` multibinding (each infra/domain module contributes one; `/health` aggregates the set) is a genuinely useful one, so observability gained a small `:public`. The self-registration contracts (`RouteRegistrar` / `PluginInstaller`) live in `:server:core:web:public`.
 
@@ -292,13 +296,13 @@ Baseline (no standalone ADR — it's the obvious baseline):
 
 ## 11. Scale posture
 
-([ADR-0010](docs/adr/0010-scale-posture.md)) The template targets **"don't foreclose,"** not "scale now."
+([ADR-0010](docs/adr/0010-scale-posture.md)) The template targets **"don't foreclose,"** not "scale now." All three rules are **implemented (Phase 6)**:
 
 1. **Per-instance state behind an interface, tolerably-stale default** — session cache short TTL (≈30–60s), Redis swappable later. Rate limiting is per-node (note global needs a shared backing).
-2. **Stateless app** — opaque-session-via-DB + blobs via a `BlobStore` interface, **never local disk**.
-3. **Multi-node-safe background jobs from day one** — a scheduled-task primitive in `:server:core` using a Postgres advisory lock (`pg_try_advisory_lock`); jobs idempotent. Full deferred-job queue (outbox + worker) deferred.
+2. **Stateless app** — opaque-session-via-DB + blobs via the `BlobStore` interface (`:server:core:storage`), **never local disk**. The S3-compatible impl (aws-sdk-kotlin) uses the **presigned-URL** transfer model: the client `PUT`s/`GET`s bytes straight to object storage, so blobs never stream through the app and memory stays flat regardless of size.
+3. **Multi-node-safe background jobs from day one** — the `ScheduledJob` + advisory-lock runner (`:server:core:scheduler`) uses `pg_try_advisory_lock` so exactly one node runs each job per tick (no queue, no leader election). The worked example is the expired-session sweeper; jobs are written idempotently. Full deferred-job queue (outbox + worker) still deferred.
 
-Connection pool configurable; `instances × poolSize ≤ Postgres max_connections` (PgBouncer if ever hit). Result: going multi-node is config + an interface swap, never a rewrite, and never a silent correctness regression.
+Connection pool configurable; `instances × poolSize ≤ Postgres max_connections` (PgBouncer if ever hit) — count the few scheduled jobs too, since each holds one pooled connection for the lock while it runs. Result: going multi-node is config + an interface swap, never a rewrite, and never a silent correctness regression.
 
 ---
 
@@ -306,10 +310,10 @@ Connection pool configurable; `instances × poolSize ≤ Postgres max_connection
 
 ### Infrastructure
 
-A root `docker-compose.yml` brings up **Postgres + MinIO** (S3-compatible, so the `BlobStore` works locally exactly as in prod). Testcontainers remains for the test suite.
+A root `docker-compose.yml` brings up **Postgres + MinIO** (S3-compatible, so the `BlobStore` works locally exactly as in prod). A throwaway `minio-init` container creates the default bucket once MinIO is healthy — the app never creates buckets (that's an infra/ops concern), so blobs work with zero manual setup. Testcontainers remains for the test suite.
 
 ```
-docker compose up -d            # Postgres + MinIO
+docker compose up -d            # Postgres + MinIO (+ bucket auto-created)
 ./gradlew :server:app:run       # auto-runs Flyway; works with ZERO config via localhost defaults
 ```
 
@@ -317,7 +321,11 @@ Ktor dev-mode auto-reload is enabled for the server.
 
 ### Config — one typed, fail-fast `ServerConfig`
 
-Loaded once at startup: **localhost dev defaults** (runs out-of-the-box) and **fail-fast** if a required prod secret is missing. `.env.example` is committed; `.env` is gitignored; prod overrides via real env vars (Railway). No scattered `System.getenv` calls.
+Loaded once at startup: **localhost dev defaults** (runs out-of-the-box against the compose Postgres + MinIO) and **fail-fast** if a required prod secret is missing — both the `DATABASE_*` and the `S3_*` object-storage secrets are required when `APP_ENV=production`. `.env.example` is committed; `.env` is gitignored; prod overrides via real env vars. No scattered `System.getenv` calls.
+
+### Packaging & deploy
+
+`./gradlew :server:app:installDist` produces a self-contained `bin/` + `lib/` distribution (no Gradle at runtime); the root `Dockerfile` packages it into an `eclipse-temurin:21-jre` image (ADR-0010). The image is target-agnostic — it serves `/health` and `/metrics` for liveness/scrape and reads all config from env vars, so it runs unchanged on Railway, Fly, Cloud Run, k8s, etc. (live provisioning is left to the deployer).
 
 ### Client → server base URL — DI-provided `ApiConfig`
 

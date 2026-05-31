@@ -52,11 +52,19 @@ class NotesIntegrationTest {
             postgres.start()
             val databaseConfig =
                 DatabaseConfig(postgres.jdbcUrl, postgres.username, postgres.password)
+            val storageConfig = testStorageConfig()
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
                     .create(
-                        ServerConfig("localhost", port = 0, version = "test", databaseConfig),
+                        ServerConfig(
+                            "localhost",
+                            port = 0,
+                            version = "test",
+                            databaseConfig,
+                            storageConfig,
+                        ),
                         databaseConfig,
+                        storageConfig,
                     )
             graph.databaseBootstrap.start()
 
