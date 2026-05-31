@@ -11,6 +11,7 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.example.project.core.component.AppComponentContext
@@ -46,8 +47,9 @@ class DefaultRootComponent(
     private val splashComponentFactory: SplashComponent.Factory,
     private val loginComponentFactory: LoginComponent.Factory,
     private val mainComponentFactory: MainComponent.Factory,
-    userRepository: UserRepository,
+    private val userRepository: UserRepository,
 ) : RootComponent, AppComponentContext by componentContext {
+    private val scope = lifecycleAwareScope()
 
     override val snackbarHostState = snackbarHost()
 
@@ -64,11 +66,13 @@ class DefaultRootComponent(
     override val stack: Value<ChildStack<*, RootComponent.Child>> = _stack
 
     init {
-        // Bounce to Login whenever the session is lost while signed in — covers both an explicit
-        // logout and the HttpClient's global 401 interceptor clearing a revoked session (ADR-0009).
-        lifecycleAwareScope().launch {
-            userRepository.isLoggedIn.collect { loggedIn ->
-                if (!loggedIn && _stack.value.active.configuration is Config.Main) {
+        observeSignedInState()
+    }
+
+    private fun observeSignedInState() {
+        scope.launch {
+            userRepository.isLoggedIn.drop(1).collect { loggedIn ->
+                if (!loggedIn) {
                     navigateToLogin()
                 }
             }
