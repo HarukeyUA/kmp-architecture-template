@@ -65,20 +65,14 @@ abstract class AssertModuleDependenciesTask : DefaultTask() {
 }
 
 private fun violation(sourcePath: String, targetPath: String): String? {
-    // 1. Umbrella dependency law (ADR-0001): the umbrella name *is* the rule.
-    //    :client -> :client | :shared ; :server -> :server | :shared ; :shared -> :shared only.
-    //    :client <-> :server is forbidden.
     umbrellaViolation(sourcePath, targetPath)?.let {
         return it
     }
 
-    // 2. Client layering: core is the foundation, features sit on top.
     if (sourcePath.startsWith(":client:core:") && targetPath.startsWith(":client:feature:")) {
         return "'$targetPath' not allowed — :core modules may not depend on :feature modules"
     }
 
-    // 3. public/impl/testing rules. A `:shared:*` module is a flat contract (all-public by nature)
-    //    and counts as a valid dependency target for both :public and :impl modules.
     val targetIsContract = targetPath.startsWith(":shared:")
     val targetType = moduleTypeOf(targetPath)
     return when (moduleTypeOf(sourcePath)) {
@@ -124,12 +118,6 @@ private fun umbrellaOf(path: String): String? =
         else -> null
     }
 
-/**
- * The Seam's rationed external surface (ADR-0001, ADR-0003): only kotlinx.serialization,
- * ktor-resources, arrow-core, and kotlinx.datetime (plus the Kotlin stdlib/test). Anything else in
- * a `:shared:*` module's declared dependencies is a violation — that single rule keeps the Seam
- * from accreting Compose, Ktor engines, Exposed, DataStore, etc.
- */
 private fun sharedSurfaceViolation(sourcePath: String, coordinate: String): String? {
     if (!sourcePath.startsWith(":shared:")) return null
     if (isAllowedSharedExternal(coordinate)) return null

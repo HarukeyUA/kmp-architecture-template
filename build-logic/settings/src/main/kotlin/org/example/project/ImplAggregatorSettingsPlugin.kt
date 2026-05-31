@@ -15,7 +15,7 @@ abstract class ImplAggregatorSettingsExtension {
      * Register an aggregator. It collects every leaf `:impl` module **within its own umbrella** —
      * the umbrella is the aggregator path's first segment (`:client:composeApp` → `:client:*:impl`,
      * `:server:app` → `:server:*:impl`). This keeps client and server contributions from leaking
-     * across the umbrella boundary (ADR-0001).
+     * across the umbrella boundary.
      */
     fun aggregator(path: String) {
         aggregatorProjectPaths.add(path)

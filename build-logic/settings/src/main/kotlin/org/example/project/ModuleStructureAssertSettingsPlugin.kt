@@ -23,7 +23,7 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
             target.rootProject.leafDescendants().forEach { leaf ->
                 // `:shared:*` modules are flat, all-public contracts named after their domain
                 // (`:shared:common`, `:shared:auth`), so the leaf-name and sibling-public rules
-                // below — which police the public/impl split — do not apply to them (ADR-0003).
+                // below — which police the public/impl split — do not apply to them.
                 if (leaf.path.startsWith(":shared:")) return@forEach
 
                 if (leaf.name !in ALLOWED_LEAF_NAMES) {

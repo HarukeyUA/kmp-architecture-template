@@ -15,8 +15,7 @@ sealed interface NetworkError : AppError {
 
     /**
      * A typed [ApiError] parsed from a 4xx error envelope. Keeps the pure shared error out of the
-     * client's `AppError` hierarchy (umbrella law) while still carrying it to the renderer
-     * (ADR-0005).
+     * client's `AppError` hierarchy while still carrying it to the renderer.
      */
     data class Api(val error: ApiError) : NetworkError
 }
