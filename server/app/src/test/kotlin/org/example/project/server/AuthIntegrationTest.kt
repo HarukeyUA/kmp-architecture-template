@@ -16,6 +16,8 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.testing.testApplication
 import kotlin.test.Test
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.shared.auth.AccountResponse
 import org.example.project.shared.auth.AuthResource
@@ -24,7 +26,9 @@ import org.example.project.shared.auth.LoginRequest
 import org.example.project.shared.auth.SessionResponse
 import org.example.project.shared.auth.SignupRequest
 import org.example.project.shared.auth.authErrorSerializersModule
+import org.example.project.shared.common.BadRequest
 import org.example.project.shared.common.ErrorEnvelope
+import org.example.project.shared.common.Unauthorized
 import org.example.project.shared.common.buildSeamJson
 import org.testcontainers.containers.PostgreSQLContainer
 
@@ -83,8 +87,9 @@ class AuthIntegrationTest {
                 assertThat(me.body<AccountResponse>().email).isEqualTo("alice@example.com")
 
                 // No token → 401.
-                assertThat(client.get(AuthResource.Me()).status)
-                    .isEqualTo(HttpStatusCode.Unauthorized)
+                val missingToken = client.get(AuthResource.Me())
+                assertThat(missingToken.status).isEqualTo(HttpStatusCode.Unauthorized)
+                assertThat(missingToken.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
 
                 // Log in with the same credentials → 200 (a second valid session).
                 val login =
@@ -99,8 +104,9 @@ class AuthIntegrationTest {
                     .isEqualTo(HttpStatusCode.NoContent)
 
                 // The revoked token now resolves to nothing → 401.
-                assertThat(client.get(AuthResource.Me()) { bearerAuth(token) }.status)
-                    .isEqualTo(HttpStatusCode.Unauthorized)
+                val revoked = client.get(AuthResource.Me()) { bearerAuth(token) }
+                assertThat(revoked.status).isEqualTo(HttpStatusCode.Unauthorized)
+                assertThat(revoked.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
 
                 // Signing up the same email again → the typed domain error round-trips back.
                 val duplicate =
@@ -108,7 +114,76 @@ class AuthIntegrationTest {
                         contentType(ContentType.Application.Json)
                         setBody(credentials)
                     }
+                assertThat(duplicate.status).isEqualTo(HttpStatusCode.Conflict)
                 assertThat(duplicate.body<ErrorEnvelope>().error).isEqualTo(EmailTaken)
+
+                // Malformed JSON is a typed 400, not a leaked 500 from the catch-all StatusPages
+                // hook.
+                val malformed =
+                    client.post(AuthResource.Signup()) {
+                        contentType(ContentType.Application.Json)
+                        setBody("""{"email":""")
+                    }
+                assertThat(malformed.status).isEqualTo(HttpStatusCode.BadRequest)
+                assertThat(malformed.body<ErrorEnvelope>().error)
+                    .isEqualTo(BadRequest("malformed_body"))
+            }
+        }
+    }
+
+    @Test
+    fun `concurrent signup of the same email yields one account and one typed conflict`() {
+        PostgreSQLContainer("postgres:17-alpine").use { postgres ->
+            postgres.start()
+            val databaseConfig =
+                DatabaseConfig(postgres.jdbcUrl, postgres.username, postgres.password)
+            val storageConfig = testStorageConfig()
+            val graph =
+                createGraphFactory<ServerGraph.Factory>()
+                    .create(
+                        ServerConfig(
+                            "localhost",
+                            port = 0,
+                            version = "test",
+                            databaseConfig,
+                            storageConfig,
+                        ),
+                        databaseConfig,
+                        storageConfig,
+                    )
+            graph.databaseBootstrap.start()
+
+            testApplication {
+                application { configureServer(graph) }
+                val client = createClient {
+                    install(ContentNegotiation) {
+                        json(buildSeamJson(setOf(authErrorSerializersModule)))
+                    }
+                    install(Resources)
+                }
+                val credentials = SignupRequest("race@example.com", "hunter2hunter2")
+
+                val responses = coroutineScope {
+                    val first = async {
+                        client.post(AuthResource.Signup()) {
+                            contentType(ContentType.Application.Json)
+                            setBody(credentials)
+                        }
+                    }
+                    val second = async {
+                        client.post(AuthResource.Signup()) {
+                            contentType(ContentType.Application.Json)
+                            setBody(credentials)
+                        }
+                    }
+                    listOf(first.await(), second.await())
+                }
+
+                val statuses = responses.map { it.status }.sortedBy { it.value }
+                assertThat(statuses)
+                    .isEqualTo(listOf(HttpStatusCode.Created, HttpStatusCode.Conflict))
+                val conflict = responses.single { it.status == HttpStatusCode.Conflict }
+                assertThat(conflict.body<ErrorEnvelope>().error).isEqualTo(EmailTaken)
             }
         }
     }

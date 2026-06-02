@@ -4,9 +4,12 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.IntoSet
 import dev.zacsweers.metro.Provides
+import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.modules.SerializersModule
 import org.example.project.server.database.TableSet
 import org.example.project.server.feature.notes.data.Notes
+import org.example.project.server.web.ApiErrorStatusMapper
+import org.example.project.shared.notes.NotesQuotaExceeded
 import org.example.project.shared.notes.notesErrorSerializersModule
 
 /**
@@ -22,4 +25,14 @@ interface NotesFeatureBindings {
 
     /** Joins the notes `ApiError` serializers into the `Json`-building `Set<SerializersModule>`. */
     @Provides @IntoSet fun notesErrorModule(): SerializersModule = notesErrorSerializersModule
+
+    /** `notes.quota_exceeded` is a conflict with the account's current quota state. */
+    @Provides
+    @IntoSet
+    fun notesErrorStatusMapper(): ApiErrorStatusMapper = ApiErrorStatusMapper { error ->
+        when (error) {
+            is NotesQuotaExceeded -> HttpStatusCode.Conflict
+            else -> null
+        }
+    }
 }

@@ -5,6 +5,8 @@ plugins { alias(libs.plugins.convention.server.app) }
 // Adding a domain touches zero lines here.
 
 dependencies {
+    implementation(project(":server:core:lifecycle:public"))
+
     // Migration drift test: diff the aggregated Exposed schema (graph.tableSets) against a
     // Testcontainers Postgres with all migrations applied. Lives here because only the app graph
     // assembles every domain's tables (ADR-0007).

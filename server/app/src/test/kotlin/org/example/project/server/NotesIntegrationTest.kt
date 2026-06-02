@@ -26,6 +26,7 @@ import org.example.project.shared.auth.SessionResponse
 import org.example.project.shared.auth.SignupRequest
 import org.example.project.shared.auth.authErrorSerializersModule
 import org.example.project.shared.common.ErrorEnvelope
+import org.example.project.shared.common.Unauthorized
 import org.example.project.shared.common.buildSeamJson
 import org.example.project.shared.notes.CreateNoteRequest
 import org.example.project.shared.notes.NoteListResponse
@@ -92,8 +93,9 @@ class NotesIntegrationTest {
                         .token
 
                 // Unauthenticated access is rejected by the session middleware.
-                assertThat(client.get(NotesResource()).status)
-                    .isEqualTo(HttpStatusCode.Unauthorized)
+                val unauthenticated = client.get(NotesResource())
+                assertThat(unauthenticated.status).isEqualTo(HttpStatusCode.Unauthorized)
+                assertThat(unauthenticated.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
 
                 // Create → 201, and the author email came from the cross-domain AuthService call.
                 val created = client.createNote(token, "Milk, eggs")
@@ -121,6 +123,7 @@ class NotesIntegrationTest {
                 val notesToFill = NotesService.QUOTA / NoteText.MAX_LENGTH
                 repeat(notesToFill) { client.createNote(token, "a".repeat(NoteText.MAX_LENGTH)) }
                 val capped = client.createNote(token, "one over budget")
+                assertThat(capped.status).isEqualTo(HttpStatusCode.Conflict)
                 assertThat(capped.body<ErrorEnvelope>().error)
                     .isEqualTo(
                         NotesQuotaExceeded(NotesService.QUOTA, notesToFill * NoteText.MAX_LENGTH)

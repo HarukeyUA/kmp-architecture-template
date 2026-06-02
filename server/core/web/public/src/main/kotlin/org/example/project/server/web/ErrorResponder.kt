@@ -2,10 +2,13 @@ package org.example.project.server.web
 
 import arrow.core.Either
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.plugins.callid.callId
 import io.ktor.server.response.respond
+import io.ktor.util.AttributeKey
 import org.example.project.shared.common.ApiError
+import org.example.project.shared.common.BadRequest
 import org.example.project.shared.common.Conflict
 import org.example.project.shared.common.ErrorEnvelope
 import org.example.project.shared.common.Forbidden
@@ -16,17 +19,32 @@ import org.example.project.shared.common.Unauthorized
 import org.example.project.shared.common.UnknownApiError
 import org.example.project.shared.common.Validation
 
+fun interface ApiErrorStatusMapper {
+    fun statusFor(error: ApiError): HttpStatusCode?
+}
+
+private val ApiErrorStatusMappersKey: AttributeKey<Set<ApiErrorStatusMapper>> =
+    AttributeKey("ApiErrorStatusMappers")
+
+fun Application.installApiErrorStatusMappers(mappers: Set<ApiErrorStatusMapper>) {
+    attributes.put(ApiErrorStatusMappersKey, mappers)
+}
+
 /**
  * The ONE place an [ApiError] meets HTTP (ADR-0005). Services return `Either<ApiError, T>` and stay
  * HTTP-agnostic; the route maps the semantic error to a status here. Domain-specific errors that
- * don't reuse a cross-cutting variant fall to `400` — the precise variant still rides in the body,
- * which is what the client matches on.
+ * don't reuse a cross-cutting variant may contribute an [ApiErrorStatusMapper]; otherwise they fall
+ * to `400` — the precise variant still rides in the body, which is what the client matches on.
  */
-fun ApiError.toStatus(): HttpStatusCode =
+fun ApiError.toStatus(mappers: Set<ApiErrorStatusMapper> = emptySet()): HttpStatusCode =
+    mappers.firstNotNullOfOrNull { it.statusFor(this) } ?: toDefaultStatus()
+
+private fun ApiError.toDefaultStatus(): HttpStatusCode =
     when (this) {
         is Validation -> HttpStatusCode.UnprocessableEntity
         Unauthorized -> HttpStatusCode.Unauthorized
         Forbidden -> HttpStatusCode.Forbidden
+        is BadRequest -> HttpStatusCode.BadRequest
         is NotFound -> HttpStatusCode.NotFound
         is Conflict -> HttpStatusCode.Conflict
         is RateLimited -> HttpStatusCode.TooManyRequests
@@ -40,7 +58,8 @@ fun ApiError.toStatus(): HttpStatusCode =
  * id.
  */
 suspend fun ApplicationCall.respondError(error: ApiError) {
-    respond(error.toStatus(), ErrorEnvelope(error = error, requestId = callId))
+    val mappers = application.attributes.getOrNull(ApiErrorStatusMappersKey).orEmpty()
+    respond(error.toStatus(mappers), ErrorEnvelope(error = error, requestId = callId))
 }
 
 /**

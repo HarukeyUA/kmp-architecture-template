@@ -7,6 +7,7 @@ import dev.zacsweers.metro.Provides
 import org.example.project.server.database.DatabaseBootstrap
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.database.TableSet
+import org.example.project.server.lifecycle.ServerResource
 import org.example.project.server.storage.BlobStore
 import org.example.project.server.storage.StorageConfig
 import org.example.project.server.web.PluginInstaller
@@ -38,6 +39,8 @@ interface ServerGraph {
     @Multibinds(allowEmpty = true) val routeRegistrars: Set<RouteRegistrar>
 
     @Multibinds(allowEmpty = true) val tableSets: Set<TableSet>
+
+    @Multibinds(allowEmpty = true) val serverResources: Set<ServerResource>
 
     @DependencyGraph.Factory
     fun interface Factory {

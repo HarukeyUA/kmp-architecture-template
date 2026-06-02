@@ -3,8 +3,10 @@ package org.example.project.server.storage
 import aws.sdk.kotlin.services.s3.S3Client
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.IntoSet
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
+import org.example.project.server.lifecycle.ServerResource
 
 @ContributesTo(AppScope::class)
 interface StorageProviders {
@@ -16,5 +18,8 @@ interface StorageProviders {
      */
     @Provides
     @SingleIn(AppScope::class)
-    fun provideS3Client(config: StorageConfig): S3Client = buildS3Client(config)
+    fun provideS3Client(resource: S3ClientResource): S3Client = resource.get()
+
+    /** Registered eagerly, but closing it is a no-op unless the lazy client was actually built. */
+    @Provides @IntoSet fun s3ClientResource(resource: S3ClientResource): ServerResource = resource
 }

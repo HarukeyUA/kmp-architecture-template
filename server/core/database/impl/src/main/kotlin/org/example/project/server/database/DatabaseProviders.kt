@@ -4,9 +4,11 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
+import dev.zacsweers.metro.IntoSet
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import javax.sql.DataSource
+import org.example.project.server.lifecycle.ServerResource
 
 @ContributesTo(AppScope::class)
 interface DatabaseProviders {
@@ -27,4 +29,11 @@ interface DatabaseProviders {
                 driverClassName = "org.postgresql.Driver"
             }
         )
+
+    /** Releases the app's single connection pool when the server resource scope exits. */
+    @Provides
+    @IntoSet
+    fun dataSourceResource(dataSource: DataSource): ServerResource = ServerResource {
+        (dataSource as? HikariDataSource)?.close() ?: (dataSource as? AutoCloseable)?.close()
+    }
 }

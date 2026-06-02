@@ -4,9 +4,12 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.IntoSet
 import dev.zacsweers.metro.Provides
+import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.modules.SerializersModule
 import org.example.project.server.database.TableSet
 import org.example.project.server.feature.auth.data.Accounts
+import org.example.project.server.web.ApiErrorStatusMapper
+import org.example.project.shared.auth.EmailTaken
 import org.example.project.shared.auth.authErrorSerializersModule
 
 /**
@@ -20,4 +23,14 @@ interface AuthFeatureBindings {
 
     /** Joins the auth `ApiError` serializers into the `Json`-building `Set<SerializersModule>`. */
     @Provides @IntoSet fun authErrorModule(): SerializersModule = authErrorSerializersModule
+
+    /** `auth.email_taken` is a state conflict, not a generic bad request. */
+    @Provides
+    @IntoSet
+    fun authErrorStatusMapper(): ApiErrorStatusMapper = ApiErrorStatusMapper { error ->
+        when (error) {
+            EmailTaken -> HttpStatusCode.Conflict
+            else -> null
+        }
+    }
 }

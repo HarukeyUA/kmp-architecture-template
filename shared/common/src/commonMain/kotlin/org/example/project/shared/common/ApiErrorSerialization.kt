@@ -23,6 +23,7 @@ val commonApiErrorSerializersModule: SerializersModule = SerializersModule {
     polymorphic(ApiError::class) {
         subclass(Unauthorized::class)
         subclass(Forbidden::class)
+        subclass(BadRequest::class)
         subclass(NotFound::class)
         subclass(Conflict::class)
         subclass(Validation::class)

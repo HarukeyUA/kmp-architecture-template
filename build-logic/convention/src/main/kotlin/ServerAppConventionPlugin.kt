@@ -48,6 +48,7 @@ class ServerAppConventionPlugin : Plugin<Project> {
                 add("implementation", libs.library("kotlinx-serialization-json"))
                 add("implementation", libs.library("micrometer-registry-prometheus"))
                 add("implementation", libs.library("arrow-core"))
+                add("implementation", libs.library("arrow-fx-coroutines"))
                 add("implementation", libs.library("kotlinx-coroutines-core"))
                 add("runtimeOnly", libs.library("logback-classic"))
                 add("testImplementation", libs.library("ktor-server-test-host"))

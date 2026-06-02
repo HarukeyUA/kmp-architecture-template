@@ -20,6 +20,7 @@ class ApiErrorSerialNameGoldenTest {
             mapOf(
                 serializer<Unauthorized>().descriptor.serialName to "common.unauthorized",
                 serializer<Forbidden>().descriptor.serialName to "common.forbidden",
+                serializer<BadRequest>().descriptor.serialName to "common.bad_request",
                 serializer<NotFound>().descriptor.serialName to "common.not_found",
                 serializer<Conflict>().descriptor.serialName to "common.conflict",
                 serializer<Validation>().descriptor.serialName to "common.validation",

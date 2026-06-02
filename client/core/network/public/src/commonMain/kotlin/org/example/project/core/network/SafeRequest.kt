@@ -36,7 +36,9 @@ suspend inline fun <T> executeSafe(
 suspend fun HttpResponse.toNetworkError(): NetworkError {
     val apiError =
         if (status.value in CLIENT_ERROR_RANGE) {
-            catch({ body<ErrorEnvelope>().error }) { e -> return NetworkError.Serialization(e) }
+            catch({ body<ErrorEnvelope>().error }) { e ->
+                return NetworkError.Serialization(e)
+            }
         } else {
             null
         }

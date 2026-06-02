@@ -124,6 +124,8 @@ include(":server:core:database:public")
 
 include(":server:core:database:impl")
 
+include(":server:core:lifecycle:public")
+
 include(":server:core:web:public")
 
 include(":server:core:web:impl")

@@ -11,7 +11,7 @@ import org.example.project.server.observability.HealthStatus
 @Inject
 @ContributesIntoSet(AppScope::class)
 class DatabaseHealthIndicator : HealthIndicator {
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("SwallowedException", "TooGenericExceptionCaught")
     override suspend fun check(): HealthStatus =
         try {
             dbTransaction { exec("SELECT 1") }
@@ -19,6 +19,6 @@ class DatabaseHealthIndicator : HealthIndicator {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            HealthStatus(name = "database", healthy = false, detail = e.message)
+            HealthStatus(name = "database", healthy = false)
         }
 }

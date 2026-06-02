@@ -18,6 +18,11 @@ interface WebProviders {
     @Multibinds(allowEmpty = true) fun serializersModules(): Set<SerializersModule>
 
     /**
+     * Per-domain status mappings for domain-specific [org.example.project.shared.common.ApiError]s.
+     */
+    @Multibinds(allowEmpty = true) fun apiErrorStatusMappers(): Set<ApiErrorStatusMapper>
+
+    /**
      * The single server-side [Json] — the multibound domain modules folded onto the cross-cutting
      * base via [buildSeamJson], the same builder the client uses, so the wire format matches
      * exactly.

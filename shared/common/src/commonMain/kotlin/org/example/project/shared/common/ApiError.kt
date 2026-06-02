@@ -21,6 +21,10 @@ interface ApiError
 
 @Serializable @SerialName("common.forbidden") data object Forbidden : ApiError
 
+@Serializable
+@SerialName("common.bad_request")
+data class BadRequest(val reason: String? = null) : ApiError
+
 @Serializable @SerialName("common.not_found") data class NotFound(val resource: String) : ApiError
 
 @Serializable

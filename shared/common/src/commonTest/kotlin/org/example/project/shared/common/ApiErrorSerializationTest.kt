@@ -27,6 +27,7 @@ class ApiErrorSerializationTest {
             listOf(
                 Unauthorized,
                 Forbidden,
+                BadRequest("malformed_body"),
                 NotFound("note"),
                 Conflict("already exists"),
                 Validation(listOf(FieldError("email", "format"))),

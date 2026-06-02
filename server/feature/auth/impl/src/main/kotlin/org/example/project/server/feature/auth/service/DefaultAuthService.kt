@@ -1,11 +1,13 @@
 package org.example.project.server.feature.auth.service
 
 import arrow.core.Either
+import arrow.core.raise.catch
 import arrow.core.raise.either
 import arrow.core.raise.ensure
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
+import java.sql.SQLException
 import org.example.project.server.auth.Principal
 import org.example.project.server.auth.Session
 import org.example.project.server.auth.SessionStore
@@ -35,24 +37,29 @@ class DefaultAuthService(
     override suspend fun signup(request: SignupRequest): Either<ApiError, SessionResponse> =
         either {
             val email = validateCredentials(request.email, request.password).bind()
+            val passwordHash = hasher.hash(request.password)
             // The service owns the transaction; the uniqueness check and insert are atomic
             // (ADR-0006).
-            dbTransaction {
-                ensure(repo.findByEmail(email.value) == null) { EmailTaken }
-                val account = repo.insert(email.value, hasher.hash(request.password))
-                sessionStore.issue(account.id).toSessionResponse()
-            }
+            val account =
+                catch({
+                    dbTransaction {
+                        ensure(repo.findByEmail(email.value) == null) { EmailTaken }
+                        repo.insert(email.value, passwordHash)
+                    }
+                }) { e: SQLException ->
+                    ensure(e.sqlState != UNIQUE_VIOLATION) { EmailTaken }
+                    throw e
+                }
+            sessionStore.issue(account.id).toSessionResponse()
         }
 
     override suspend fun login(request: LoginRequest): Either<ApiError, SessionResponse> = either {
         // Any credential problem collapses to Unauthorized — the information-disclosure boundary
         // (no distinguishing unknown-user from wrong-password).
         val email = Email.of(request.email).getOrNull()?.value ?: raise(Unauthorized)
-        dbTransaction {
-            val account = repo.findByEmail(email) ?: raise(Unauthorized)
-            ensure(hasher.verify(request.password, account.passwordHash)) { Unauthorized }
-            sessionStore.issue(account.id).toSessionResponse()
-        }
+        val account = dbTransaction { repo.findByEmail(email) } ?: raise(Unauthorized)
+        ensure(hasher.verify(request.password, account.passwordHash)) { Unauthorized }
+        sessionStore.issue(account.id).toSessionResponse()
     }
 
     override suspend fun logout(token: String): Either<ApiError, Unit> = either {
@@ -68,14 +75,15 @@ class DefaultAuthService(
      * Shape-validates both fields and accumulates the failures into one [Validation] (ADR-0004).
      */
     private fun validateCredentials(email: String, password: String): Either<ApiError, Email> =
-        either {
-            val emailResult = Email.of(email)
-            val passwordResult = Password.of(password)
-            val errors = listOfNotNull(emailResult.leftOrNull(), passwordResult.leftOrNull())
-            ensure(errors.isEmpty()) { Validation(errors) }
-            emailResult.getOrNull() ?: raise(Validation(errors))
-        }
+        Either.zipOrAccumulate(Email.of(email), Password.of(password)) { validEmail, _ ->
+                validEmail
+            }
+            .mapLeft { errors -> Validation(errors.toList()) }
 
     private fun Session.toSessionResponse(): SessionResponse =
         SessionResponse(token = token, expiresAt = expiresAt)
+
+    private companion object {
+        const val UNIQUE_VIOLATION = "23505"
+    }
 }
