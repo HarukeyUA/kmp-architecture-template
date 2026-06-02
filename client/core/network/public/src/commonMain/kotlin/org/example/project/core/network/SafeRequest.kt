@@ -5,10 +5,16 @@ import arrow.core.raise.catch
 import arrow.core.raise.context.raise
 import arrow.core.raise.either
 import arrow.core.raise.ensure
+import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.resources.request
+import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import org.example.project.core.error.NetworkError
+import org.example.project.shared.common.Endpoint
 import org.example.project.shared.common.ErrorEnvelope
 
 /**
@@ -51,3 +57,33 @@ private val CLIENT_ERROR_RANGE = 400..499
 suspend inline fun <reified T> safeRequest(
     crossinline block: suspend () -> HttpResponse
 ): Either<NetworkError, T> = executeSafe(block) { it.body<T>() }
+
+/**
+ * Calls a typed [Endpoint] with a request [body]: builds the URL from [resource], dispatches the
+ * endpoint's method, sends a JSON body only when the endpoint declares one, and decodes the
+ * response to [Res] (or [Unit] when it declares none). The body and return types are checked
+ * against the same [Endpoint] the server binds, so the two ends can't drift; failures map to
+ * [NetworkError] exactly as [executeSafe] does.
+ */
+suspend inline fun <reified R : Any, reified Req : Any, reified Res : Any> HttpClient.call(
+    endpoint: Endpoint<R, Req, Res>,
+    resource: R,
+    body: Req,
+): Either<NetworkError, Res> =
+    executeSafe({
+        request(resource) {
+            method = endpoint.method
+            if (endpoint.request != null) {
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            }
+        }
+    }) { response ->
+        if (endpoint.response != null) response.body<Res>() else Unit as Res
+    }
+
+/** [call] for an endpoint that takes no request body. */
+suspend inline fun <reified R : Any, reified Res : Any> HttpClient.call(
+    endpoint: Endpoint<R, Unit, Res>,
+    resource: R,
+): Either<NetworkError, Res> = call(endpoint, resource, Unit)

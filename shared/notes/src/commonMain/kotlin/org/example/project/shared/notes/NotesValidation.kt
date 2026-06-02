@@ -8,10 +8,10 @@ import org.example.project.shared.common.FieldError
 import org.example.project.shared.common.ValidationError
 
 /**
- * Pure **shape** validation reused on both sides (ADR-0004): the client runs it for instant
- * feedback, the server runs the same code as its security boundary. The per-account character
- * **quota** is deliberately *not* here — it needs the DB, so it's server-only (the `NotesService`
- * raises [NotesQuotaExceeded]).
+ * Pure **shape** validation reused on both sides: the client runs it for instant feedback, the
+ * server runs the same code as its security boundary. The per-account character **quota** is
+ * deliberately *not* here — it needs the DB, so it's server-only (the `NotesService` raises
+ * [NotesQuotaExceeded]).
  */
 @JvmInline
 value class NoteText private constructor(val value: String) {

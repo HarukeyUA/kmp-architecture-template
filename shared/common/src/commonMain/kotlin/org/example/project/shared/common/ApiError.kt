@@ -7,13 +7,12 @@ import kotlinx.serialization.json.JsonObject
 /**
  * The wire error taxonomy crossing the Seam — an **open polymorphic** base so a newer server's
  * error variant degrades to [UnknownApiError] on an older, un-updatable client instead of crashing
- * it (ADR-0005).
+ * it.
  *
  * Cross-cutting variants live here in `:shared:common`; per-domain variants are declared directly
- * as `: ApiError` in their own `:shared:<domain>` (interim stop-gap — no sealed grouping yet, see
- * ADR-0005). Each `@SerialName` is namespaced (`common.*`, `notes.*`, …) and frozen by a golden-set
- * test. `ApiError` is the information-disclosure boundary: e.g. unknown-user and wrong-password
- * both collapse to [Unauthorized].
+ * as `: ApiError` in their own `:shared:<domain>`. Each `@SerialName` is namespaced (`common.*`,
+ * `notes.*`, …) and frozen by a golden-set test. `ApiError` is the information-disclosure boundary:
+ * e.g. unknown-user and wrong-password both collapse to [Unauthorized].
  */
 interface ApiError
 
@@ -23,21 +22,24 @@ interface ApiError
 
 @Serializable
 @SerialName("common.bad_request")
-data class BadRequest(val reason: String? = null) : ApiError
+data class BadRequest(@SerialName("reason") val reason: String? = null) : ApiError
 
-@Serializable @SerialName("common.not_found") data class NotFound(val resource: String) : ApiError
+@Serializable
+@SerialName("common.not_found")
+data class NotFound(@SerialName("resource") val resource: String) : ApiError
 
 @Serializable
 @SerialName("common.conflict")
-data class Conflict(val reason: String? = null) : ApiError
+data class Conflict(@SerialName("reason") val reason: String? = null) : ApiError
 
 @Serializable
 @SerialName("common.validation")
-data class Validation(val fields: List<FieldError>) : ApiError
+data class Validation(@SerialName("fields") val fields: List<FieldError>) : ApiError
 
 @Serializable
 @SerialName("common.rate_limited")
-data class RateLimited(val retryAfterSeconds: Long? = null) : ApiError
+data class RateLimited(@SerialName("retryAfterSeconds") val retryAfterSeconds: Long? = null) :
+    ApiError
 
 @Serializable @SerialName("common.internal") data object Internal : ApiError
 

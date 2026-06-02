@@ -16,8 +16,8 @@ import kotlinx.serialization.modules.subclass
  *
  * Each `:shared:<domain>` exposes its own module registering its variants; each side's `:impl`
  * contributes it via Metro `@ContributesIntoSet`, and `:client:core:network` / `:server:core:web`
- * fold the multibound `Set<SerializersModule>` + this base into one `Json` (ADR-0005). kotlinx
- * throws on a duplicate `@SerialName` when modules are combined, giving global uniqueness for free.
+ * fold the multibound `Set<SerializersModule>` + this base into one `Json`. kotlinx throws on a
+ * duplicate `@SerialName` when modules are combined, giving global uniqueness for free.
  */
 val commonApiErrorSerializersModule: SerializersModule = SerializersModule {
     polymorphic(ApiError::class) {

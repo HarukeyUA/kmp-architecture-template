@@ -9,7 +9,7 @@ import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.json.Json
 
 /**
- * Proves the polymorphic `ApiError` mechanism the whole error pipeline rides on (ADR-0005).
+ * Proves the polymorphic `ApiError` mechanism the whole error pipeline rides on.
  *
  * Uses [PolymorphicSerializer] explicitly rather than the reified `serializer<ApiError>()`: on
  * Kotlin/Native (the client's iOS target) an interface serializer can't be resolved at runtime, so

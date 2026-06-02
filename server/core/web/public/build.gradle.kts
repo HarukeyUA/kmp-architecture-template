@@ -7,4 +7,6 @@ dependencies {
     api(project(":shared:common"))
     // callId supplies the requestId echoed in the ErrorEnvelope.
     implementation(libs.ktor.server.call.id)
+    // `Route.serve(Endpoint, …)` registers the typed `@Resource` route it inlines into callers.
+    api(libs.ktor.server.resources)
 }
