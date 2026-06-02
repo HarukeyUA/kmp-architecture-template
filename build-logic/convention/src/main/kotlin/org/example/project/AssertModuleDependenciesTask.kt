@@ -23,7 +23,7 @@ import org.gradle.api.tasks.TaskAction
  * - `:testing` may depend only on its sibling `:public`.
  * - No `:client:core:*` module may depend on a `:client:feature:*` module (layering rule).
  * - A `:shared:*` module's **external** dependency surface is rationed to [ALLOWED_SHARED_EXTERNAL]
- *   so the Seam can't rot into a god module (ADR-0001, ADR-0003).
+ *   so the Seam can't rot into a god module.
  * - Anything else (`:client:composeApp`, `:server:app`, ...) is unrestricted within the umbrella
  *   law.
  */

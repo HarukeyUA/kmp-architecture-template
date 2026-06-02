@@ -6,8 +6,7 @@ import org.gradle.api.Project
 import org.gradle.kotlin.dsl.dependencies
 
 /**
- * Base for a server-core `:public` module (`:server:core:*:public`). Plain Kotlin/JVM — the server
- * is JVM-only, so this does not touch the KMP/Android machinery the client uses. Module-specific
+ * Base for a server-core `:public` module (`:server:core:*:public`). Module-specific
  * dependencies (Ktor, Exposed, `:shared:*`) are declared per-module; only the baseline every server
  * contract uses (Arrow `Either`, coroutines) is provided here.
  */

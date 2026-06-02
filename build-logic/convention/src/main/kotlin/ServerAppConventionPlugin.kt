@@ -10,9 +10,7 @@ import org.gradle.kotlin.dsl.dependencies
 /**
  * The server composition root (`:server:app`): the Gradle `application` plugin + Metro graph + Ktor
  * engine. Like the client's `:client:composeApp`, it applies `convention.impl-aggregator` so every
- * `:server:*:impl` module is wired in automatically — that is what lets Metro merge the
- * `@ContributesIntoSet` route/table/error contributions into the server graph without a
- * hand-maintained registry (ADR-0006, ADR-0008).
+ * `:server:*:impl` module is wired in automatically.
  */
 class ServerAppConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
