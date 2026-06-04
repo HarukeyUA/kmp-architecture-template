@@ -28,10 +28,10 @@ class AuthRoutes(private val service: AuthService) : RouteRegistrar {
             serve(AuthApi.signup, HttpStatusCode.Created) { _, body -> service.signup(body) }
             serve(AuthApi.login, HttpStatusCode.OK) { _, body -> service.login(body) }
             authenticatedRoutes {
-                serve(AuthApi.logout, HttpStatusCode.NoContent) { _, _ ->
+                serve(AuthApi.logout, HttpStatusCode.NoContent) { _ ->
                     service.logout(call.sessionToken().orEmpty())
                 }
-                serve(AuthApi.me, HttpStatusCode.OK) { _, _ -> service.me(principal()) }
+                serve(AuthApi.me, HttpStatusCode.OK) { _ -> service.me(principal()) }
             }
         }
     }

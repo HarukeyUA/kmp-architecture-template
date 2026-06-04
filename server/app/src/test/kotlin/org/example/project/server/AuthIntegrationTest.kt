@@ -99,6 +99,17 @@ class AuthIntegrationTest {
                     }
                 assertThat(login.status).isEqualTo(HttpStatusCode.OK)
 
+                // Wrong password → the service raises Unauthorized, so the route already envelopes
+                // the 401 (unlike the body-less auth *challenge* above). The StatusPages 401 hook
+                // must leave this enveloped response alone rather than rebuilding/clobbering it.
+                val wrongPassword =
+                    client.post(AuthResource.Login()) {
+                        contentType(ContentType.Application.Json)
+                        setBody(LoginRequest("alice@example.com", "wrongpassword99"))
+                    }
+                assertThat(wrongPassword.status).isEqualTo(HttpStatusCode.Unauthorized)
+                assertThat(wrongPassword.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+
                 // Log out (server-side revoke) → 204.
                 assertThat(client.post(AuthResource.Logout()) { bearerAuth(token) }.status)
                     .isEqualTo(HttpStatusCode.NoContent)

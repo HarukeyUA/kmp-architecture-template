@@ -4,6 +4,7 @@ import arrow.core.Either
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.log
 import io.ktor.server.plugins.callid.callId
 import io.ktor.server.response.respond
 import io.ktor.util.AttributeKey
@@ -31,15 +32,24 @@ fun Application.installApiErrorStatusMappers(mappers: Set<ApiErrorStatusMapper>)
 }
 
 /**
- * The ONE place an [ApiError] meets HTTP (ADR-0005). Services return `Either<ApiError, T>` and stay
+ * The ONE place an [ApiError] meets HTTP. Services return `Either<ApiError, T>` and stay
  * HTTP-agnostic; the route maps the semantic error to a status here. Domain-specific errors that
- * don't reuse a cross-cutting variant may contribute an [ApiErrorStatusMapper]; otherwise they fall
- * to `400` — the precise variant still rides in the body, which is what the client matches on.
+ * don't reuse a cross-cutting variant contribute an [ApiErrorStatusMapper]; an error that *no*
+ * mapper and *no* cross-cutting default claims is by definition unanticipated, so it defaults to
+ * `500` — a server fault — not `400`. Defaulting to a 4xx would mislabel a server-side failure as
+ * the client's fault, and the client (which only reads the error body on 4xx) would surface it as
+ * one.
  */
 fun ApiError.toStatus(mappers: Set<ApiErrorStatusMapper> = emptySet()): HttpStatusCode =
+    resolveStatus(mappers) ?: HttpStatusCode.InternalServerError
+
+/**
+ * The mapped status, or `null` when neither [mappers] nor a cross-cutting default claims [this].
+ */
+private fun ApiError.resolveStatus(mappers: Set<ApiErrorStatusMapper>): HttpStatusCode? =
     mappers.firstNotNullOfOrNull { it.statusFor(this) } ?: toDefaultStatus()
 
-private fun ApiError.toDefaultStatus(): HttpStatusCode =
+private fun ApiError.toDefaultStatus(): HttpStatusCode? =
     when (this) {
         is Validation -> HttpStatusCode.UnprocessableEntity
         Unauthorized -> HttpStatusCode.Unauthorized
@@ -50,15 +60,24 @@ private fun ApiError.toDefaultStatus(): HttpStatusCode =
         is RateLimited -> HttpStatusCode.TooManyRequests
         Internal,
         is UnknownApiError -> HttpStatusCode.InternalServerError
-        else -> HttpStatusCode.BadRequest
+        else -> null
     }
 
 /**
  * Responds with [error] mapped to its status, wrapped in an [ErrorEnvelope] carrying the request
- * id.
+ * id. An unmapped error is logged at WARN (and answered with `500`) so the missing
+ * [ApiErrorStatusMapper] is discoverable rather than the error silently degrading to a default.
  */
 suspend fun ApplicationCall.respondError(error: ApiError) {
     val mappers = application.attributes.getOrNull(ApiErrorStatusMappersKey).orEmpty()
+    if (error.resolveStatus(mappers) == null) {
+        application.log.warn(
+            "ApiError {} has no status mapping; defaulting to {}. Contribute an " +
+                "ApiErrorStatusMapper if this is not a server fault.",
+            error::class.simpleName,
+            HttpStatusCode.InternalServerError,
+        )
+    }
     respond(error.toStatus(mappers), ErrorEnvelope(error = error, requestId = callId))
 }
 

@@ -26,13 +26,13 @@ class NotesRoutes(private val service: NotesService) : RouteRegistrar {
     override fun Application.register() {
         routing {
             authenticatedRoutes {
-                serve(NotesApi.list, HttpStatusCode.OK) { _, _ ->
+                serve(NotesApi.list, HttpStatusCode.OK) { _ ->
                     service.list(principal()).map(::NoteListResponse)
                 }
                 serve(NotesApi.create, HttpStatusCode.Created) { _, body ->
                     service.create(principal(), body)
                 }
-                serve(NotesApi.delete, HttpStatusCode.NoContent) { resource, _ ->
+                serve(NotesApi.delete, HttpStatusCode.NoContent) { resource ->
                     service.delete(principal(), resource.id)
                 }
             }
