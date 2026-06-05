@@ -1,17 +1,27 @@
 package org.example.project.server.database
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.jetbrains.exposed.v1.core.IntegerColumnType
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 
 /**
  * Runs [block] in a suspending database transaction against the application's default datasource.
  *
- * The **service layer owns the transaction**; repositories assume an ambient one (the
- * [JdbcTransaction] receiver) and never open their own — fixing the prior server experiment's
- * per-query `transaction { }` wrapping (ADR-0006).
+ * Exposed's [suspendTransaction] runs its blocking JDBC calls on **the caller's** dispatcher (unlike
+ * the deprecated `newSuspendedTransaction`, it takes no context). The callers here are Ktor request
+ * handlers, so this hop to [Dispatchers.IO] keeps the blocking driver work — including a connection
+ * parked on [advisoryXactLock] — off the request-dispatch threads, matching `AdvisoryLockScheduler`.
+ * That dispatcher boundary is the one thing this wrapper owns; it is the single seam to widen later
+ * (isolation level, retry, metrics) without touching call sites.
+ *
+ * Orthogonally, the **service layer owns the transaction** (ADR-0006): repositories assume the
+ * ambient [JdbcTransaction] receiver and never open their own. That discipline is enforced by the
+ * module split, not by this function.
  */
 suspend fun <T> dbTransaction(block: suspend JdbcTransaction.() -> T): T =
-    suspendTransaction(statement = block)
+    withContext(Dispatchers.IO) { suspendTransaction(statement = block) }
 
 /**
  * Takes a Postgres **transaction-scoped** advisory lock on the `(namespace, key)` pair: any other
@@ -24,5 +34,8 @@ suspend fun <T> dbTransaction(block: suspend JdbcTransaction.() -> T): T =
  * per-account hash). Both are `Int`, matching `pg_advisory_xact_lock(int4, int4)`.
  */
 fun JdbcTransaction.advisoryXactLock(namespace: Int, key: Int) {
-    exec("SELECT pg_advisory_xact_lock($namespace, $key)")
+    exec(
+        "SELECT pg_advisory_xact_lock(?, ?)",
+        args = listOf(IntegerColumnType() to namespace, IntegerColumnType() to key),
+    )
 }
