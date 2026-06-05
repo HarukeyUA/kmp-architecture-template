@@ -21,11 +21,7 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
 
             extensions.configure<KotlinMultiplatformExtension> {
                 compilerOptions {
-                    freeCompilerArgs.addAll(
-                        "-Xannotation-default-target=param-property",
-                        "-Xcontext-parameters",
-                        "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-                    )
+                    freeCompilerArgs.addAll("-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi")
                 }
 
                 iosArm64()
