@@ -1,16 +1,16 @@
 package org.example.project.server.feature.auth.data
 
 import org.example.project.server.auth.AccountId
-import org.example.project.server.database.instantTimestampTz
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.java.javaUUID
+import org.jetbrains.exposed.v1.datetime.timestamp
 
 /** The credential store: one row per account, holding the Argon2id password hash. */
 internal object Accounts : Table("accounts") {
     val id = javaUUID("id")
     val email = text("email")
     val passwordHash = text("password_hash")
-    val createdAt = instantTimestampTz("created_at")
+    val createdAt = timestamp("created_at")
     override val primaryKey = PrimaryKey(id)
 
     init {

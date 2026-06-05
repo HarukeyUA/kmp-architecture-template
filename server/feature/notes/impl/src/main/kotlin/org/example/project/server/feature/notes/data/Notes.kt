@@ -2,9 +2,9 @@ package org.example.project.server.feature.notes.data
 
 import kotlin.time.Instant
 import org.example.project.server.auth.AccountId
-import org.example.project.server.database.instantTimestampTz
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.java.javaUUID
+import org.jetbrains.exposed.v1.datetime.timestamp
 
 /**
  * One row per note. `account_id` is intentionally **not** a FK to `accounts`: that table lives in
@@ -15,7 +15,7 @@ internal object Notes : Table("notes") {
     val id = javaUUID("id")
     val accountId = javaUUID("account_id")
     val text = text("text")
-    val createdAt = instantTimestampTz("created_at")
+    val createdAt = timestamp("created_at")
     override val primaryKey = PrimaryKey(id)
 
     init {
