@@ -15,6 +15,8 @@ Exposed + Postgres + HikariCP + Flyway.
 - A **Testcontainers drift test** applies all migrations to a throwaway database and **fails the build** if `MigrationUtils` reports any diff versus the Exposed schema. "Forgot a migration" becomes a red build, not a production surprise.
 - Schema is **split per domain** (not one `Schema.kt`), each domain owning its tables in its `:impl`.
 - Migrations are **timestamp-versioned** (`V20260530__add_notes.sql`) and **co-located** in each domain `:impl`'s resources, with Flyway scanning all locations.
+- Flyway runs with `outOfOrder=false`. PR-added migrations must have a timestamp newer than the target branch's latest migration; CI enforces this with `checkMigrationOrder`.
+- Flyway validates migration file names at startup so a typo is a boot failure, not a skipped migration.
 
 ## Considered options
 
@@ -25,4 +27,4 @@ Exposed + Postgres + HikariCP + Flyway.
 ## Consequences
 
 - Timestamp versions let each domain add migrations independently with no shared counter to coordinate.
-- Ordering relies on chronological authoring (correct for cross-domain FKs in practice); the drift test is the safety net.
+- Ordering relies on chronological authoring (correct for cross-domain FKs in practice); the drift test and migration-order check are the safety nets.

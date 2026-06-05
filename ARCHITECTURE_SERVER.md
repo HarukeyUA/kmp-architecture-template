@@ -259,6 +259,7 @@ class NotesRoutes(private val service: NotesService) : RouteRegistrar {
 - **Drift test** (Testcontainers): apply all migrations to a throwaway DB, fail the build if `MigrationUtils` reports a diff vs the Exposed schema (collected from the `@ContributesIntoSet` `TableSet` multibinding). "Forgot a migration" → red build.
 - Schema **split per domain** (no single `Schema.kt`).
 - Migrations **timestamp-versioned** (`V20260530__add_notes.sql`), **co-located** in each domain `:impl`'s resources; Flyway scans all locations. (Timestamps avoid the single global integer sequence colliding with per-domain co-location.)
+- Flyway is strict: invalid migration file names fail startup, `outOfOrder=false`, and CI's `checkMigrationOrder` rejects PR-added migrations older than the target branch's latest migration.
 
 ---
 

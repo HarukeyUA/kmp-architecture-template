@@ -13,7 +13,13 @@ import org.flywaydb.core.Flyway
 @Inject
 class FlywayMigrator(private val dataSource: DataSource) {
     fun migrate() {
-        Flyway.configure().dataSource(dataSource).locations(MIGRATIONS_LOCATION).load().migrate()
+        Flyway.configure()
+            .dataSource(dataSource)
+            .locations(MIGRATIONS_LOCATION)
+            .validateMigrationNaming(true)
+            .outOfOrder(false)
+            .load()
+            .migrate()
     }
 
     private companion object {

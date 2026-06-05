@@ -9,12 +9,12 @@ import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 /**
  * Runs [block] in a suspending database transaction against the application's default datasource.
  *
- * Exposed's [suspendTransaction] runs its blocking JDBC calls on **the caller's** dispatcher (unlike
- * the deprecated `newSuspendedTransaction`, it takes no context). The callers here are Ktor request
- * handlers, so this hop to [Dispatchers.IO] keeps the blocking driver work — including a connection
- * parked on [advisoryXactLock] — off the request-dispatch threads, matching `AdvisoryLockScheduler`.
- * That dispatcher boundary is the one thing this wrapper owns; it is the single seam to widen later
- * (isolation level, retry, metrics) without touching call sites.
+ * Exposed's [suspendTransaction] runs its blocking JDBC calls on **the caller's** dispatcher
+ * (unlike the deprecated `newSuspendedTransaction`, it takes no context). The callers here are Ktor
+ * request handlers, so this hop to [Dispatchers.IO] keeps the blocking driver work — including a
+ * connection parked on [advisoryXactLock] — off the request-dispatch threads, matching
+ * `AdvisoryLockScheduler`. That dispatcher boundary is the one thing this wrapper owns; it is the
+ * single seam to widen later (isolation level, retry, metrics) without touching call sites.
  *
  * Orthogonally, the **service layer owns the transaction** (ADR-0006): repositories assume the
  * ambient [JdbcTransaction] receiver and never open their own. That discipline is enforced by the
