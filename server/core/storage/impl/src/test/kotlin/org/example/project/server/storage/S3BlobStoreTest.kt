@@ -37,7 +37,10 @@ class S3BlobStoreTest {
 
     @BeforeTest
     fun setUp(): Unit = runBlocking {
-        minio = MinIOContainer("minio/minio:latest")
+        // Pinned (not `:latest`) so the storage gate is reproducible — a new MinIO release can't
+        // silently change presign/HEAD behavior and break or falsely pass CI, matching the
+        // `postgres:17-alpine` pinning the rest of the suite uses.
+        minio = MinIOContainer("minio/minio:RELEASE.2025-09-07T16-13-09Z")
         minio.start()
         val config =
             StorageConfig(
