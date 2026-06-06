@@ -43,13 +43,17 @@ class DefaultSessionStore(private val cache: SessionCache) : SessionStore {
     override suspend fun resolve(token: String): Principal? =
         cache.resolve(hashToken(token), ::loadPrincipal)
 
-    private suspend fun loadPrincipal(tokenHash: String): Principal? = dbTransaction {
+    private suspend fun loadPrincipal(tokenHash: String): CachedSession? = dbTransaction {
         Sessions.selectAll()
             .where { Sessions.tokenHash eq tokenHash }
             .singleOrNull()
             ?.let { row ->
-                if (row[Sessions.expiresAt] > Clock.System.now()) {
-                    Principal(AccountId(row[Sessions.accountId]))
+                val expiresAt = row[Sessions.expiresAt]
+                if (expiresAt > Clock.System.now()) {
+                    CachedSession(
+                        principal = Principal(AccountId(row[Sessions.accountId])),
+                        expiresAt = expiresAt,
+                    )
                 } else {
                     null
                 }

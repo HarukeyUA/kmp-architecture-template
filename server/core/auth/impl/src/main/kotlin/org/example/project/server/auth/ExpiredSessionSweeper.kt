@@ -11,6 +11,7 @@ import org.example.project.server.database.dbTransaction
 import org.example.project.server.scheduler.ScheduledJob
 import org.jetbrains.exposed.v1.core.less
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.slf4j.LoggerFactory
 
 /**
  * The worked example of a [ScheduledJob] (ADR-0010): periodically deletes sessions past their
@@ -24,10 +25,21 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 @Inject
 @ContributesIntoSet(AppScope::class)
 class ExpiredSessionSweeper : ScheduledJob {
+    private val logger = LoggerFactory.getLogger(ExpiredSessionSweeper::class.java)
+
     override val name: String = "auth.expired-session-sweep"
     override val interval: Duration = 1.hours
 
     override suspend fun run() {
-        dbTransaction { Sessions.deleteWhere { Sessions.expiresAt less Clock.System.now() } }
+        val deleted = dbTransaction {
+            Sessions.deleteWhere { Sessions.expiresAt less Clock.System.now() }
+        }
+        // Surface real cleanups at INFO so a sweeper that silently stops doing work is noticeable;
+        // keep the common no-op tick at DEBUG to avoid hourly log noise.
+        if (deleted > 0) {
+            logger.info("Swept {} expired session(s)", deleted)
+        } else {
+            logger.debug("No expired sessions to sweep")
+        }
     }
 }
