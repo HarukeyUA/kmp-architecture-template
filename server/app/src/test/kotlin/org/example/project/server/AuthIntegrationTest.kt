@@ -19,6 +19,7 @@ import kotlin.test.Test
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.example.project.server.database.DatabaseConfig
+import org.example.project.server.database.dbTransaction
 import org.example.project.shared.auth.AccountResponse
 import org.example.project.shared.auth.AuthResource
 import org.example.project.shared.auth.EmailTaken
@@ -80,6 +81,17 @@ class AuthIntegrationTest {
                     }
                 assertThat(signup.status).isEqualTo(HttpStatusCode.Created)
                 val token = signup.body<SessionResponse>().token
+                val storedSessionKeys = dbTransaction {
+                    val keys = mutableListOf<String>()
+                    exec("SELECT token_hash FROM sessions") { rs ->
+                        while (rs.next()) {
+                            keys += rs.getString("token_hash")
+                        }
+                    }
+                    keys
+                }
+                assertThat(storedSessionKeys.size).isEqualTo(1)
+                assertThat(storedSessionKeys.single() == token).isEqualTo(false)
 
                 // Authenticated call → 200 + the Principal's account.
                 val me = client.get(AuthResource.Me()) { bearerAuth(token) }

@@ -4,6 +4,8 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
 import kotlin.time.Clock
@@ -20,14 +22,16 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 @ContributesBinding(AppScope::class)
 class DefaultSessionStore(private val cache: SessionCache) : SessionStore {
     private val secureRandom = SecureRandom()
+    private val base64Url = Base64.getUrlEncoder().withoutPadding()
 
     override suspend fun issue(accountId: AccountId): Session {
         val token = generateToken()
+        val tokenHash = hashToken(token)
         val now = Clock.System.now()
         val expiresAt = now + SESSION_TTL
         dbTransaction {
             Sessions.insert {
-                it[Sessions.token] = token
+                it[Sessions.tokenHash] = tokenHash
                 it[Sessions.accountId] = accountId.value
                 it[createdAt] = now
                 it[Sessions.expiresAt] = expiresAt
@@ -36,11 +40,12 @@ class DefaultSessionStore(private val cache: SessionCache) : SessionStore {
         return Session(token = token, accountId = accountId, expiresAt = expiresAt)
     }
 
-    override suspend fun resolve(token: String): Principal? = cache.resolve(token, ::loadPrincipal)
+    override suspend fun resolve(token: String): Principal? =
+        cache.resolve(hashToken(token), ::loadPrincipal)
 
-    private suspend fun loadPrincipal(token: String): Principal? = dbTransaction {
+    private suspend fun loadPrincipal(tokenHash: String): Principal? = dbTransaction {
         Sessions.selectAll()
-            .where { Sessions.token eq token }
+            .where { Sessions.tokenHash eq tokenHash }
             .singleOrNull()
             ?.let { row ->
                 if (row[Sessions.expiresAt] > Clock.System.now()) {
@@ -52,18 +57,27 @@ class DefaultSessionStore(private val cache: SessionCache) : SessionStore {
     }
 
     override suspend fun revoke(token: String) {
-        dbTransaction { Sessions.deleteWhere { Sessions.token eq token } }
-        cache.invalidate(token)
+        val tokenHash = hashToken(token)
+        dbTransaction { Sessions.deleteWhere { Sessions.tokenHash eq tokenHash } }
+        cache.invalidate(tokenHash)
     }
 
     private fun generateToken(): String {
         val bytes = ByteArray(TOKEN_BYTES)
         secureRandom.nextBytes(bytes)
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+        return base64Url.encodeToString(bytes)
+    }
+
+    private fun hashToken(token: String): String {
+        val bytes =
+            MessageDigest.getInstance(TOKEN_HASH_ALGORITHM)
+                .digest(token.toByteArray(StandardCharsets.UTF_8))
+        return base64Url.encodeToString(bytes)
     }
 
     private companion object {
         val SESSION_TTL = 30.days
         const val TOKEN_BYTES = 32
+        const val TOKEN_HASH_ALGORITHM = "SHA-256"
     }
 }

@@ -11,18 +11,18 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 
 /**
- * Per-instance cache in front of the session table so resolving a token on every authenticated
- * request isn't a DB round-trip. Behind an interface so a shared backing (Redis) can replace it
- * without touching call sites (ADR-0010).
+ * Per-instance cache in front of the session table so resolving a token digest on every
+ * authenticated request isn't a DB round-trip. Behind an interface so a shared backing (Redis) can
+ * replace it without touching call sites (ADR-0010).
  *
  * Freshness model: a revoked session keeps resolving for at most the TTL; [invalidate] closes that
  * window to zero on the current node (effectively immediate single-node; ≤TTL stale on other
  * nodes).
  */
 interface SessionCache {
-    suspend fun resolve(token: String, loader: suspend (String) -> Principal?): Principal?
+    suspend fun resolve(tokenHash: String, loader: suspend (String) -> Principal?): Principal?
 
-    fun invalidate(token: String)
+    fun invalidate(tokenHash: String)
 }
 
 @Inject
@@ -34,21 +34,21 @@ class CaffeineSessionCache(ttl: Duration = DEFAULT_TTL, maxSize: Long = DEFAULT_
         Caffeine.newBuilder().expireAfterWrite(ttl.toJavaDuration()).maximumSize(maxSize).build()
 
     override suspend fun resolve(
-        token: String,
+        tokenHash: String,
         loader: suspend (String) -> Principal?,
     ): Principal? {
         // Misses are cached as [Lookup.Absent] so a flood of fabricated tokens can't chain into a
         // flood of DB lookups.
-        cache.getIfPresent(token)?.let { cached ->
+        cache.getIfPresent(tokenHash)?.let { cached ->
             return (cached as? Lookup.Present)?.principal
         }
-        val principal = loader(token)
-        cache.put(token, principal?.let(Lookup::Present) ?: Lookup.Absent)
+        val principal = loader(tokenHash)
+        cache.put(tokenHash, principal?.let(Lookup::Present) ?: Lookup.Absent)
         return principal
     }
 
-    override fun invalidate(token: String) {
-        cache.invalidate(token)
+    override fun invalidate(tokenHash: String) {
+        cache.invalidate(tokenHash)
     }
 
     private sealed interface Lookup {
