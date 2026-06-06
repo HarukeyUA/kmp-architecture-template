@@ -4,6 +4,7 @@ import arrow.fx.coroutines.ResourceScope
 import arrow.fx.coroutines.resourceScope
 import dev.zacsweers.metro.createGraphFactory
 import io.ktor.server.application.Application
+import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.util.AttributeKey
@@ -18,13 +19,30 @@ suspend fun main(): Unit = resourceScope {
     val config = ServerConfig.load()
     val graph = installServerGraph(config)
     graph.databaseBootstrap.start()
-    embeddedServer(Netty, port = config.port, host = config.host) { configureServer(graph) }
+    embeddedServer(
+            Netty,
+            configure = {
+                // Public application port (mapped to the public domain/ingress).
+                connector {
+                    host = config.host
+                    port = config.port
+                }
+                // Metrics port — kept off the public surface; only an in-network Prometheus reaches
+                // it. `MetricsRoute` 404s `/metrics` requests that arrive on any other connector.
+                connector {
+                    host = config.host
+                    port = config.metrics.port
+                }
+            },
+            module = { configureServer(graph) },
+        )
         .start(wait = true)
 }
 
 private suspend fun ResourceScope.installServerGraph(config: ServerConfig): ServerGraph =
     install({
-        createGraphFactory<ServerGraph.Factory>().create(config, config.database, config.storage)
+        createGraphFactory<ServerGraph.Factory>()
+            .create(config, config.database, config.storage, config.metrics)
     }) { graph, _ ->
         graph.serverResources.closeAll()
     }

@@ -20,6 +20,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.database.dbTransaction
+import org.example.project.server.observability.MetricsConfig
 import org.example.project.shared.auth.AccountResponse
 import org.example.project.shared.auth.AuthResource
 import org.example.project.shared.auth.EmailTaken
@@ -48,6 +49,7 @@ class AuthIntegrationTest {
                 DatabaseConfig(postgres.jdbcUrl, postgres.username, postgres.password)
             // Object storage is unused here; the lazy S3 client is never built, so any value works.
             val storageConfig = testStorageConfig()
+            val metricsConfig = MetricsConfig(port = 0)
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
                     .create(
@@ -57,9 +59,11 @@ class AuthIntegrationTest {
                             version = "test",
                             databaseConfig,
                             storageConfig,
+                            metricsConfig,
                         ),
                         databaseConfig,
                         storageConfig,
+                        metricsConfig,
                     )
             graph.databaseBootstrap.start()
 
@@ -161,6 +165,7 @@ class AuthIntegrationTest {
             val databaseConfig =
                 DatabaseConfig(postgres.jdbcUrl, postgres.username, postgres.password)
             val storageConfig = testStorageConfig()
+            val metricsConfig = MetricsConfig(port = 0)
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
                     .create(
@@ -170,9 +175,11 @@ class AuthIntegrationTest {
                             version = "test",
                             databaseConfig,
                             storageConfig,
+                            metricsConfig,
                         ),
                         databaseConfig,
                         storageConfig,
+                        metricsConfig,
                     )
             graph.databaseBootstrap.start()
 

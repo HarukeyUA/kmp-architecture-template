@@ -7,6 +7,7 @@ import kotlin.test.Test
 import kotlinx.coroutines.runBlocking
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.database.dbTransaction
+import org.example.project.server.observability.MetricsConfig
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.testcontainers.containers.PostgreSQLContainer
 
@@ -40,11 +41,12 @@ class MigrationDriftTest {
                     version = "test",
                     database = databaseConfig,
                     storage = storageConfig,
+                    metrics = MetricsConfig(port = 0),
                 )
 
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
-                    .create(config, databaseConfig, storageConfig)
+                    .create(config, databaseConfig, storageConfig, config.metrics)
             // Applies Flyway migrations and connects Exposed against the container.
             graph.databaseBootstrap.start()
 

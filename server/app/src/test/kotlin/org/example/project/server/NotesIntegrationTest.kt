@@ -21,6 +21,7 @@ import io.ktor.server.testing.testApplication
 import kotlin.test.Test
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.feature.notes.NotesService
+import org.example.project.server.observability.MetricsConfig
 import org.example.project.shared.auth.AuthResource
 import org.example.project.shared.auth.SessionResponse
 import org.example.project.shared.auth.SignupRequest
@@ -54,6 +55,7 @@ class NotesIntegrationTest {
             val databaseConfig =
                 DatabaseConfig(postgres.jdbcUrl, postgres.username, postgres.password)
             val storageConfig = testStorageConfig()
+            val metricsConfig = MetricsConfig(port = 0)
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
                     .create(
@@ -63,9 +65,11 @@ class NotesIntegrationTest {
                             version = "test",
                             databaseConfig,
                             storageConfig,
+                            metricsConfig,
                         ),
                         databaseConfig,
                         storageConfig,
+                        metricsConfig,
                     )
             graph.databaseBootstrap.start()
 

@@ -10,6 +10,7 @@ import kotlin.io.path.writeText
 import kotlinx.coroutines.runBlocking
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.database.dbTransaction
+import org.example.project.server.observability.MetricsConfig
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.testcontainers.containers.PostgreSQLContainer
 
@@ -55,10 +56,12 @@ private fun generateMigrationStatements(): List<String> {
                 version = "migration-draft",
                 database = databaseConfig,
                 storage = storageConfig,
+                metrics = MetricsConfig(port = 0),
             )
 
         val graph =
-            createGraphFactory<ServerGraph.Factory>().create(config, databaseConfig, storageConfig)
+            createGraphFactory<ServerGraph.Factory>()
+                .create(config, databaseConfig, storageConfig, config.metrics)
 
         graph.databaseBootstrap.start()
 

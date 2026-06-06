@@ -8,6 +8,7 @@ import org.example.project.server.database.DatabaseBootstrap
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.database.TableSet
 import org.example.project.server.lifecycle.ServerResource
+import org.example.project.server.observability.MetricsConfig
 import org.example.project.server.storage.BlobStore
 import org.example.project.server.storage.StorageConfig
 import org.example.project.server.web.PluginInstaller
@@ -48,6 +49,7 @@ interface ServerGraph {
             @Provides config: ServerConfig,
             @Provides databaseConfig: DatabaseConfig,
             @Provides storageConfig: StorageConfig,
+            @Provides metricsConfig: MetricsConfig,
         ): ServerGraph
     }
 }

@@ -1,6 +1,7 @@
 package org.example.project.server
 
 import org.example.project.server.database.DatabaseConfig
+import org.example.project.server.observability.MetricsConfig
 import org.example.project.server.storage.StorageConfig
 
 /**
@@ -17,6 +18,7 @@ data class ServerConfig(
     val version: String,
     val database: DatabaseConfig,
     val storage: StorageConfig,
+    val metrics: MetricsConfig,
 ) {
     companion object {
         fun load(getenv: (String) -> String? = System::getenv): ServerConfig {
@@ -56,6 +58,10 @@ data class ServerConfig(
                         accessKey = required("S3_ACCESS_KEY", "minio"),
                         secretKey = required("S3_SECRET_KEY", "minio12345"),
                     ),
+                // Served on a dedicated port that is NOT mapped to a public domain/ingress, so only
+                // an in-network Prometheus can scrape it. Optional with a dev default like the
+                // port.
+                metrics = MetricsConfig(port = optional("METRICS_PORT", "8081").toInt()),
             )
         }
     }
