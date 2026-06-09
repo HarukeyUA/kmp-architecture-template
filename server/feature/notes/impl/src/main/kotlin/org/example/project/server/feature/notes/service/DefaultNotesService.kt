@@ -7,8 +7,6 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import org.example.project.server.auth.Principal
-import org.example.project.server.database.advisoryXactLock
-import org.example.project.server.database.dbTransaction
 import org.example.project.server.feature.auth.AuthService
 import org.example.project.server.feature.notes.NotesService
 import org.example.project.server.feature.notes.data.Note
@@ -19,13 +17,13 @@ import org.example.project.shared.common.Validation
 import org.example.project.shared.notes.CreateNoteRequest
 import org.example.project.shared.notes.NoteResponse
 import org.example.project.shared.notes.NoteText
-import org.example.project.shared.notes.NotesQuotaExceeded
 
 /**
- * The notes domain service. It owns the transaction (repositories assume an ambient one, ADR-0006)
- * and reaches the auth domain only through [AuthService] — its **public** contract — to resolve the
- * author's email. The accounts table is another domain's `:impl`; the module-assert task forbids
- * importing it, so this cross-domain call is the *only* legal coupling.
+ * The notes domain service. It owns use-case orchestration while [NoteRepository] owns Exposed,
+ * transactions, and persistence-backed invariants (ADR-0006). Cross-domain access still goes only
+ * through [AuthService] — its **public** contract — to resolve the author's email. The accounts
+ * table is another domain's `:impl`; the module-assert task forbids importing it, so this
+ * cross-domain call is the *only* legal coupling.
  */
 @Inject
 @ContributesBinding(AppScope::class)
@@ -34,7 +32,7 @@ class DefaultNotesService(private val repo: NoteRepository, private val authServ
 
     override suspend fun list(principal: Principal): Either<ApiError, List<NoteResponse>> = either {
         val authorEmail = authorEmail(principal).bind()
-        val notes = dbTransaction { repo.listFor(principal.accountId) }
+        val notes = repo.listFor(principal.accountId)
         notes.map { it.toResponse(authorEmail) }
     }
 
@@ -45,24 +43,16 @@ class DefaultNotesService(private val repo: NoteRepository, private val authServ
         // Shared shape check first; the stateful quota check is server-only (ADR-0004).
         val text = NoteText.of(request.text).mapLeft { Validation(listOf(it)) }.bind()
         val authorEmail = authorEmail(principal).bind()
-        // The service owns the transaction so the quota read and the insert commit together. But
-        // atomicity isn't isolation: under READ COMMITTED the SUM takes no row locks, so two
-        // concurrent creates for this account could both read an under-limit total and both insert
-        // past the quota. The per-account advisory lock serializes them (ADR-0006, ADR-0010).
-        dbTransaction {
-            advisoryXactLock(QUOTA_LOCK_NAMESPACE, principal.accountId.value.hashCode())
-            val used = repo.byteTotal(principal.accountId)
-            ensure(used + text.value.length <= NotesService.QUOTA) {
-                NotesQuotaExceeded(quota = NotesService.QUOTA, used = used)
-            }
-            repo.insert(principal.accountId, text.value).toResponse(authorEmail)
-        }
+        repo
+            .createWithinQuota(principal.accountId, text.value, NotesService.QUOTA)
+            .bind()
+            .toResponse(authorEmail)
     }
 
     override suspend fun delete(principal: Principal, noteId: String): Either<ApiError, Unit> =
         either {
             // Missing and not-yours collapse to the same NotFound — no existence disclosure.
-            val deleted = dbTransaction { repo.delete(principal.accountId, noteId) }
+            val deleted = repo.delete(principal.accountId, noteId)
             ensure(deleted) { NotFound("note") }
         }
 
@@ -76,9 +66,4 @@ class DefaultNotesService(private val repo: NoteRepository, private val authServ
 
     private fun Note.toResponse(authorEmail: String): NoteResponse =
         NoteResponse(id = id, text = text, authorEmail = authorEmail, createdAt = createdAt)
-
-    private companion object {
-        /** Advisory-lock namespace for the per-account quota gate; distinct from other locks. */
-        const val QUOTA_LOCK_NAMESPACE = 0x4E_0735 // "NOTES"
-    }
 }

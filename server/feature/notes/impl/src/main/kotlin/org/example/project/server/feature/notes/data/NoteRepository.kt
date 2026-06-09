@@ -1,11 +1,18 @@
 package org.example.project.server.feature.notes.data
 
+import arrow.core.Either
+import arrow.core.raise.either
+import arrow.core.raise.ensure
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import java.util.UUID
 import kotlin.time.Clock
 import org.example.project.server.auth.AccountId
+import org.example.project.server.database.advisoryXactLock
+import org.example.project.server.database.dbTransaction
+import org.example.project.shared.common.ApiError
+import org.example.project.shared.notes.NotesQuotaExceeded
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
@@ -20,16 +27,17 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 /**
  * Reads/writes notes, returning the domain [Note] (never a `ResultRow`) so the service is
  * unit-testable against a fake. Every query is scoped to the owning [AccountId] — that scoping *is*
- * the authorization boundary. Assumes an **ambient transaction** opened by the service — never
- * opens its own (ADR-0006).
+ * the authorization boundary. Repository methods are transaction-safe: they open a transaction when
+ * called alone and join the caller's transaction when one exists (ADR-0006).
  */
 interface NoteRepository {
     suspend fun listFor(accountId: AccountId): List<Note>
 
-    /** Total characters across the account's notes — the input to the per-account quota check. */
-    suspend fun byteTotal(accountId: AccountId): Int
-
-    suspend fun insert(accountId: AccountId, text: String): Note
+    suspend fun createWithinQuota(
+        accountId: AccountId,
+        text: String,
+        quota: Int,
+    ): Either<ApiError, Note>
 
     /** Deletes the note iff it exists *and* belongs to [accountId]; returns whether a row went. */
     suspend fun delete(accountId: AccountId, noteId: String): Boolean
@@ -38,13 +46,32 @@ interface NoteRepository {
 @Inject
 @ContributesBinding(AppScope::class)
 class DefaultNoteRepository : NoteRepository {
-    override suspend fun listFor(accountId: AccountId): List<Note> =
+    override suspend fun listFor(accountId: AccountId): List<Note> = dbTransaction {
         Notes.selectAll()
             .where { Notes.accountId eq accountId.value }
             .orderBy(Notes.createdAt to SortOrder.DESC)
             .map { it.toNote() }
+    }
 
-    override suspend fun byteTotal(accountId: AccountId): Int {
+    override suspend fun createWithinQuota(
+        accountId: AccountId,
+        text: String,
+        quota: Int,
+    ): Either<ApiError, Note> = either {
+        dbTransaction {
+            advisoryXactLock(QUOTA_LOCK_NAMESPACE, accountId.value.hashCode())
+            val used = byteTotal(accountId)
+            ensure(used + text.length <= quota) { NotesQuotaExceeded(quota = quota, used = used) }
+            insert(accountId, text)
+        }
+    }
+
+    override suspend fun delete(accountId: AccountId, noteId: String): Boolean = dbTransaction {
+        val uuid = runCatching { UUID.fromString(noteId) }.getOrNull() ?: return@dbTransaction false
+        Notes.deleteWhere { (Notes.id eq uuid) and (Notes.accountId eq accountId.value) } > 0
+    }
+
+    private fun byteTotal(accountId: AccountId): Int {
         // SUM(char_length(text)) on the DB: one scalar back, no text blobs loaded into the app.
         val totalChars = Notes.text.charLength().sum()
         return Notes.select(totalChars)
@@ -52,7 +79,7 @@ class DefaultNoteRepository : NoteRepository {
             .single()[totalChars] ?: 0
     }
 
-    override suspend fun insert(accountId: AccountId, text: String): Note {
+    private fun insert(accountId: AccountId, text: String): Note {
         val id = UUID.randomUUID()
         val now = Clock.System.now()
         Notes.insert {
@@ -64,11 +91,6 @@ class DefaultNoteRepository : NoteRepository {
         return Note(id = id.toString(), accountId = accountId, text = text, createdAt = now)
     }
 
-    override suspend fun delete(accountId: AccountId, noteId: String): Boolean {
-        val uuid = runCatching { UUID.fromString(noteId) }.getOrNull() ?: return false
-        return Notes.deleteWhere { (Notes.id eq uuid) and (Notes.accountId eq accountId.value) } > 0
-    }
-
     private fun ResultRow.toNote(): Note =
         Note(
             id = this[Notes.id].toString(),
@@ -76,4 +98,9 @@ class DefaultNoteRepository : NoteRepository {
             text = this[Notes.text],
             createdAt = this[Notes.createdAt],
         )
+
+    private companion object {
+        /** Advisory-lock namespace for the per-account quota gate; distinct from other locks. */
+        const val QUOTA_LOCK_NAMESPACE = 0x4E_0735 // "NOTES"
+    }
 }

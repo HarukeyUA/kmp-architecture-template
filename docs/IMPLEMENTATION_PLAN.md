@@ -55,7 +55,7 @@ Sequenced plan to build the server + shared seam described in [`ARCHITECTURE_SER
 - `convention.server.*` plugin family: `server.core.public|impl`, `server.feature.public|impl`, `server.app` (application plugin, main class, distribution).
 - Modules: `:server:core:database:public|impl`, `:server:core:web:public|impl`, `:server:core:observability:impl`, `:server:app`.
 - `:server:app`: Metro `@DependencyGraph(AppScope)`, `main()` → build graph → run Flyway → install Ktor (ContentNegotiation, StatusPages safety-net, structured logging + correlation id in MDC, MicrometerMetrics → `/metrics`, `/health`) → start Netty.
-- `:server:core:database`: Hikari pool (configurable size), Flyway runner, Exposed connect, the `newSuspendedTransaction` helper, the `TableSet` multibinding contract.
+- `:server:core:database`: Hikari pool (configurable size), Flyway runner, Exposed connect, the `dbTransaction` helper, the `TableSet` multibinding contract.
 - Typed `ServerConfig`: localhost dev defaults + fail-fast on missing prod secrets; `.env.example` committed, `.env` gitignored.
 - Root `docker-compose.yml`: Postgres + MinIO.
 - The drift-test harness wired (empty schema passes).
@@ -91,7 +91,7 @@ Sequenced plan to build the server + shared seam described in [`ARCHITECTURE_SER
 **Steps**
 - `:server:core:auth`: `Principal`, session-store interface, `Authentication` middleware + `authenticate{}`, session issuance/revocation, Caffeine cache (short TTL, behind the interface).
 - `:shared:auth`: `@Resource` routes (signup/login/logout) under `/v1`, request/response DTOs, shared shape validation (email/password rules), auth `ApiError`s + their `SerializersModule`.
-- `:server:feature:auth:public|impl`: Credential module (email + **Argon2id**) issuing a Session; `sessions` table + timestamp migration; service (owns the transaction) + repository (returns domain types); routes self-register via `@ContributesIntoSet`.
+- `:server:feature:auth:public|impl`: Credential module (email + **Argon2id**) issuing a Session; `sessions` table + timestamp migration; service (orchestrates use case) + transaction-safe repository/store operations (return domain types); routes self-register via `@ContributesIntoSet`.
 - Client: point the existing Splash → Login → Main flow at the real server; **platform-secure token storage** (Keychain / Keystore-backed / encrypted, not DataStore); global **401 → clear session → Login** interceptor; DI `ApiConfig` (base URL + `10.0.2.2` / cleartext-debug / iOS-localhost).
 - Tests: service unit test (fake repo); Testcontainers integration test for the routes; drift test now covers `sessions`; golden test covers auth errors.
 

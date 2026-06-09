@@ -201,7 +201,8 @@ sealed interface NetworkError : AppError {
 | `:impl` | `ServiceImpl`, `Repository`, Exposed tables, routes, stateful validation, Metro bindings — organized as `route/` `service/` `data/` **packages** |
 
 ```kotlin
-// :server:feature:notes:impl — route is dumb, service owns logic + the transaction
+// :server:feature:notes:impl — route is dumb, service owns orchestration,
+// repository owns persistence-backed invariants
 fun Route.notesRoutes(service: NotesService) = authenticate {
     post<NotesResource> {
         call.respondEither(service.create(call.principal().account, call.receive())) {
@@ -214,18 +215,15 @@ class DefaultNotesService(private val repo: NotesRepository) : NotesService {
     override suspend fun create(account: AccountId, req: CreateNoteRequest): Either<ApiError, NoteResponse> =
         either {
             val text = NoteText.of(req.text).mapLeft { Validation(listOf(it)) }.bind()  // shared shape check
-            newSuspendedTransaction {                                                    // service owns the tx
-                val used = repo.byteTotal(account)
-                ensure(used + text.value.length <= QUOTA) { NotesQuotaExceeded(QUOTA, used) }  // stateful
-                repo.insert(account, text).toResponse()                                  // repo returns domain type
-            }
+            repo.createWithinQuota(account, text.value, QUOTA).bind().toResponse()
         }
 }
 ```
 
 ### Disciplines
 
-- **Service owns the transaction** (`newSuspendedTransaction`); repositories assume an ambient one (fixes witchy's per-query `transaction { }`).
+- **Services own use-case orchestration, not transaction mechanics** — `service/` code must not import Exposed, `dbTransaction`, table objects, or SQL exceptions.
+- **Repositories/stores are transaction-safe** — they open a transaction when called alone and join the caller's transaction when one exists. A service introduces a higher-level unit of work only when one use case must be atomic across multiple persistence ports.
 - **Repositories return domain types, never Exposed `ResultRow`** — Exposed stays inside `data/`; services unit-test against fake repos.
 - **Cross-domain = service → service only** — depend on the other domain's `:public` (its Service interface), never its tables.
 

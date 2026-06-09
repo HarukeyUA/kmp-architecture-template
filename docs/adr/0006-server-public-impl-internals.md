@@ -18,8 +18,9 @@ Mirror the client's `public`/`impl` split on the server.
 
 Disciplines:
 
-- **The service owns the transaction** (`newSuspendedTransaction`); repositories assume an ambient transaction (fixes witchy's per-query `transaction { }` wrapping).
-- **Repositories return domain types, never Exposed `ResultRow`** — Exposed is contained in the `data` package, and services become unit-testable against fake repositories.
+- **Services own use-case orchestration, not transaction mechanics** — `service/` code must not import Exposed, `dbTransaction`, table objects, or SQL exceptions.
+- **Repositories/stores are transaction-safe** — they open a transaction when called alone and join the caller's transaction when one exists. A service introduces a higher-level unit of work only when one use case must be atomic across multiple persistence ports.
+- **Repositories return domain types, never Exposed `ResultRow`** — Exposed is contained in the `data` package, and services become unit-testable against fake repositories/stores.
 - **Cross-domain calls are service → service only** — a domain depends on another's `:public` (its Service interface), never its tables.
 - **Routes and Exposed table sets self-register** via Metro `@ContributesIntoSet`, so `:server:app` stays thin and adding a domain touches zero lines in `:app` (mirrors the client `implAggregator`).
 
