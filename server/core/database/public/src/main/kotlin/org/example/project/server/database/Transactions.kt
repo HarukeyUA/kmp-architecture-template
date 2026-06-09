@@ -20,7 +20,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
  * ambient [JdbcTransaction] receiver and never open their own. That discipline is enforced by the
  * module split, not by this function.
  */
-suspend fun <T> dbTransaction(block: suspend JdbcTransaction.() -> T): T =
+suspend inline fun <T> dbTransaction(noinline block: suspend JdbcTransaction.() -> T): T =
     withContext(Dispatchers.IO) { suspendTransaction(statement = block) }
 
 /**
