@@ -57,11 +57,12 @@ private fun generateMigrationStatements(): List<String> {
                 database = databaseConfig,
                 storage = storageConfig,
                 metrics = MetricsConfig(port = 0),
+                webLimits = testWebLimitsConfig(),
             )
 
         val graph =
             createGraphFactory<ServerGraph.Factory>()
-                .create(config, databaseConfig, storageConfig, config.metrics)
+                .create(config, databaseConfig, storageConfig, config.metrics, config.webLimits)
 
         graph.databaseBootstrap.start()
 

@@ -25,6 +25,7 @@ class ApiErrorSerialNameGoldenTest {
                 serializer<Conflict>().descriptor.serialName to "common.conflict",
                 serializer<Validation>().descriptor.serialName to "common.validation",
                 serializer<RateLimited>().descriptor.serialName to "common.rate_limited",
+                serializer<PayloadTooLarge>().descriptor.serialName to "common.payload_too_large",
                 serializer<Internal>().descriptor.serialName to "common.internal",
             )
 

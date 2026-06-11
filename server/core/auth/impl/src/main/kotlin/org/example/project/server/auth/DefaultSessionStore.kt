@@ -15,6 +15,7 @@ import org.example.project.server.database.dbTransaction
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.selectAll
 
 @Inject
@@ -64,6 +65,24 @@ class DefaultSessionStore(private val cache: SessionCache) : SessionStore {
         val tokenHash = hashToken(token)
         dbTransaction { Sessions.deleteWhere { Sessions.tokenHash eq tokenHash } }
         cache.invalidate(tokenHash)
+    }
+
+    override suspend fun revokeAllFor(accountId: AccountId) {
+        // Select the authoritative hash list inside the delete transaction, then tombstone each
+        // hash. Sweeping the cache's *resident* entries instead would miss a load already in
+        // flight for a not-yet-cached session of this account — it would publish the live
+        // principal after the sweep and stay resolvable for up to the TTL on this node. The
+        // per-hash tombstone serializes with such loads (set-after-delete guarantee), making
+        // same-node revoke-all immediate; other nodes stay ≤TTL stale, exactly as [revoke].
+        val hashes = dbTransaction {
+            val hashes =
+                Sessions.select(Sessions.tokenHash)
+                    .where { Sessions.accountId eq accountId.value }
+                    .map { it[Sessions.tokenHash] }
+            Sessions.deleteWhere { Sessions.accountId eq accountId.value }
+            hashes
+        }
+        hashes.forEach(cache::invalidate)
     }
 
     private fun generateToken(): String {

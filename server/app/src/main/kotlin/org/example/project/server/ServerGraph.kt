@@ -4,6 +4,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Multibinds
 import dev.zacsweers.metro.Provides
+import org.example.project.server.auth.SessionStore
 import org.example.project.server.database.DatabaseBootstrap
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.database.TableSet
@@ -13,6 +14,7 @@ import org.example.project.server.storage.BlobStore
 import org.example.project.server.storage.StorageConfig
 import org.example.project.server.web.PluginInstaller
 import org.example.project.server.web.RouteRegistrar
+import org.example.project.server.web.WebLimitsConfig
 
 /**
  * The server composition root (analogous to the client's `JvmAppGraph`). Metro merges every
@@ -35,6 +37,12 @@ interface ServerGraph {
      */
     val blobStore: BlobStore
 
+    /**
+     * The invariant session primitive (ADR-0009), exposed so revocation flows without a route yet
+     * (e.g. [SessionStore.revokeAllFor]) are exercisable by the integration suite.
+     */
+    val sessionStore: SessionStore
+
     @Multibinds(allowEmpty = true) val pluginInstallers: Set<PluginInstaller>
 
     @Multibinds(allowEmpty = true) val routeRegistrars: Set<RouteRegistrar>
@@ -50,6 +58,7 @@ interface ServerGraph {
             @Provides databaseConfig: DatabaseConfig,
             @Provides storageConfig: StorageConfig,
             @Provides metricsConfig: MetricsConfig,
+            @Provides webLimitsConfig: WebLimitsConfig,
         ): ServerGraph
     }
 }

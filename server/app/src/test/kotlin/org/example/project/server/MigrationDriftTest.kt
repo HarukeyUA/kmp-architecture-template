@@ -42,11 +42,12 @@ class MigrationDriftTest {
                     database = databaseConfig,
                     storage = storageConfig,
                     metrics = MetricsConfig(port = 0),
+                    webLimits = testWebLimitsConfig(),
                 )
 
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
-                    .create(config, databaseConfig, storageConfig, config.metrics)
+                    .create(config, databaseConfig, storageConfig, config.metrics, config.webLimits)
             // Applies Flyway migrations and connects Exposed against the container.
             graph.databaseBootstrap.start()
 

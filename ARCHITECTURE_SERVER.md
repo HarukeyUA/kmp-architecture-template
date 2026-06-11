@@ -256,6 +256,7 @@ class NotesRoutes(private val service: NotesService) : RouteRegistrar {
 - **Flyway SQL = DB source of truth; Exposed `Table` objects = code source of truth.**
 - **Drift test** (Testcontainers): apply all migrations to a throwaway DB, fail the build if `MigrationUtils` reports a diff vs the Exposed schema (collected from the `@ContributesIntoSet` `TableSet` multibinding). "Forgot a migration" → red build.
 - Schema **split per domain** (no single `Schema.kt`).
+- **All timestamp columns are `TIMESTAMPTZ`**, declared via the `Table.utcTimestamp` helper in `:server:core:database` and surfacing as `kotlin.time.Instant`. Exposed's plain `timestamp()` is banned: it writes the JVM's *wall-clock* to `TIMESTAMP WITHOUT TIME ZONE`, so two nodes in different timezones disagree on every stored instant (session expiry included) — exactly the silent single-node assumption ADR-0010 forbids. The JVM is additionally pinned to UTC (Dockerfile + run task) as non-load-bearing belt-and-braces for logs and SQL `now()` defaults.
 - Migrations **timestamp-versioned** (`V20260530__add_notes.sql`), **co-located** in each domain `:impl`'s resources; Flyway scans all locations. (Timestamps avoid the single global integer sequence colliding with per-domain co-location.)
 - Flyway is strict: invalid migration file names fail startup, `outOfOrder=false`, and CI's `checkMigrationOrder` rejects PR-added migrations older than the target branch's latest migration.
 
@@ -297,9 +298,14 @@ Baseline (no standalone ADR — it's the obvious baseline):
 
 ([ADR-0010](docs/adr/0010-scale-posture.md)) The template targets **"don't foreclose,"** not "scale now." All three rules are **implemented (Phase 6)**:
 
-1. **Per-instance state behind an interface, tolerably-stale default** — session cache short TTL (≈30–60s), Redis swappable later. Rate limiting is per-node (note global needs a shared backing).
+1. **Per-instance state behind an interface, tolerably-stale default** — session cache short TTL (≈30–60s), Redis swappable later. Rate limiting is **per-node** (global limits need a shared backing later): strict per-client-IP tiers on the credential endpoints only (`signup`/`login` — the pre-auth, Argon2-expensive surface), responding with the typed `RateLimited(retryAfterSeconds)` envelope, never a bare 429. No default tier on other endpoints — they're cheap reads behind the session cache, and a number picked without traffic data mostly punishes legitimate bursts. The client IP is the socket address unless `CLIENT_IP_HEADER` names a trusted proxy header (Railway: `X-Real-IP`; Cloudflare-fronted: `CF-Connecting-IP`); it's a header *name*, not a trust-the-proxy boolean, because **which** header is trustworthy is deployment-specific, and a missing header falls back to the socket address rather than a shared bucket.
 2. **Stateless app** — opaque-session-via-DB + blobs via the `BlobStore` interface (`:server:core:storage`), **never local disk**. The S3-compatible impl (aws-sdk-kotlin) uses the **presigned-URL** transfer model: the client `PUT`s/`GET`s bytes straight to object storage, so blobs never stream through the app and memory stays flat regardless of size.
 3. **Multi-node-safe background jobs from day one** — the `ScheduledJob` + advisory-lock runner (`:server:core:scheduler`) uses `pg_try_advisory_lock` so exactly one node runs each job per tick (no queue, no leader election). The worked example is the expired-session sweeper; jobs are written idempotently. Full deferred-job queue (outbox + worker) still deferred.
+
+**App-layer DoS hardening** (platform L4 protection — e.g. Railway's — explicitly does *not* cover the application layer):
+
+- **Request bodies are capped** (1 MiB default, `ServerConfig`-tunable) via Ktor's `RequestBodyLimit`, mapped to the typed `PayloadTooLarge` envelope (413) — Blobs bypass the app entirely via presigned URLs, so nothing legitimate comes close.
+- **Argon2 concurrency is bounded** inside `Argon2PasswordHasher` (`Dispatchers.Default.limitedParallelism(min(cores, 4))`), capping hashing at ≤256 MiB native memory. Saturation **queues, never sheds**: the per-IP rate limit upstream already rejects the abusive case, so whatever reaches the queue waits instead of failing. The bound is a code constant, not config — raising it safely requires redoing the memory math, which an env var invites skipping.
 
 Connection pool configurable; `instances × poolSize ≤ Postgres max_connections` (PgBouncer if ever hit) — count the few scheduled jobs too, since each holds one pooled connection for the lock while it runs. Result: going multi-node is config + an interface swap, never a rewrite, and never a silent correctness regression.
 

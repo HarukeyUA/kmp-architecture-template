@@ -41,6 +41,8 @@ data class Validation(@SerialName("fields") val fields: List<FieldError>) : ApiE
 data class RateLimited(@SerialName("retryAfterSeconds") val retryAfterSeconds: Long? = null) :
     ApiError
 
+@Serializable @SerialName("common.payload_too_large") data object PayloadTooLarge : ApiError
+
 @Serializable @SerialName("common.internal") data object Internal : ApiError
 
 /**

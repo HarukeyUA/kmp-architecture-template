@@ -15,9 +15,11 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.testing.testApplication
+import java.util.UUID
 import kotlin.test.Test
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import org.example.project.server.auth.AccountId
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.database.dbTransaction
 import org.example.project.server.observability.MetricsConfig
@@ -50,6 +52,7 @@ class AuthIntegrationTest {
             // Object storage is unused here; the lazy S3 client is never built, so any value works.
             val storageConfig = testStorageConfig()
             val metricsConfig = MetricsConfig(port = 0)
+            val webLimitsConfig = testWebLimitsConfig()
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
                     .create(
@@ -60,10 +63,12 @@ class AuthIntegrationTest {
                             databaseConfig,
                             storageConfig,
                             metricsConfig,
+                            webLimitsConfig,
                         ),
                         databaseConfig,
                         storageConfig,
                         metricsConfig,
+                        webLimitsConfig,
                     )
             graph.databaseBootstrap.start()
 
@@ -159,13 +164,14 @@ class AuthIntegrationTest {
     }
 
     @Test
-    fun `concurrent signup of the same email yields one account and one typed conflict`() {
+    fun `revokeAllFor kills every session for the account immediately, including cached ones`() {
         PostgreSQLContainer("postgres:17-alpine").use { postgres ->
             postgres.start()
             val databaseConfig =
                 DatabaseConfig(postgres.jdbcUrl, postgres.username, postgres.password)
             val storageConfig = testStorageConfig()
             val metricsConfig = MetricsConfig(port = 0)
+            val webLimitsConfig = testWebLimitsConfig()
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
                     .create(
@@ -176,10 +182,94 @@ class AuthIntegrationTest {
                             databaseConfig,
                             storageConfig,
                             metricsConfig,
+                            webLimitsConfig,
                         ),
                         databaseConfig,
                         storageConfig,
                         metricsConfig,
+                        webLimitsConfig,
+                    )
+            graph.databaseBootstrap.start()
+
+            testApplication {
+                application { configureServer(graph) }
+                val client = createClient {
+                    install(ContentNegotiation) {
+                        json(buildSeamJson(setOf(authErrorSerializersModule)))
+                    }
+                    install(Resources)
+                }
+                val credentials = SignupRequest("bob@example.com", "hunter2hunter2")
+
+                // Two independent sessions for the same account: signup + a separate login.
+                val signup =
+                    client.post(AuthResource.Signup()) {
+                        contentType(ContentType.Application.Json)
+                        setBody(credentials)
+                    }
+                assertThat(signup.status).isEqualTo(HttpStatusCode.Created)
+                val firstToken = signup.body<SessionResponse>().token
+                val login =
+                    client.post(AuthResource.Login()) {
+                        contentType(ContentType.Application.Json)
+                        setBody(LoginRequest("bob@example.com", "hunter2hunter2"))
+                    }
+                assertThat(login.status).isEqualTo(HttpStatusCode.OK)
+                val secondToken = login.body<SessionResponse>().token
+
+                // Resolve both so they are *cached* — revoke-all must defeat the cache, not just
+                // the table.
+                val me = client.get(AuthResource.Me()) { bearerAuth(firstToken) }
+                assertThat(me.status).isEqualTo(HttpStatusCode.OK)
+                val accountId = AccountId(UUID.fromString(me.body<AccountResponse>().id))
+                assertThat(client.get(AuthResource.Me()) { bearerAuth(secondToken) }.status)
+                    .isEqualTo(HttpStatusCode.OK)
+
+                graph.sessionStore.revokeAllFor(accountId)
+
+                // Both sessions 401 immediately on this node — no TTL wait.
+                for (token in listOf(firstToken, secondToken)) {
+                    val revoked = client.get(AuthResource.Me()) { bearerAuth(token) }
+                    assertThat(revoked.status).isEqualTo(HttpStatusCode.Unauthorized)
+                    assertThat(revoked.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+                }
+
+                // A fresh login afterwards works — revocation is not a lockout.
+                val relogin =
+                    client.post(AuthResource.Login()) {
+                        contentType(ContentType.Application.Json)
+                        setBody(LoginRequest("bob@example.com", "hunter2hunter2"))
+                    }
+                assertThat(relogin.status).isEqualTo(HttpStatusCode.OK)
+            }
+        }
+    }
+
+    @Test
+    fun `concurrent signup of the same email yields one account and one typed conflict`() {
+        PostgreSQLContainer("postgres:17-alpine").use { postgres ->
+            postgres.start()
+            val databaseConfig =
+                DatabaseConfig(postgres.jdbcUrl, postgres.username, postgres.password)
+            val storageConfig = testStorageConfig()
+            val metricsConfig = MetricsConfig(port = 0)
+            val webLimitsConfig = testWebLimitsConfig()
+            val graph =
+                createGraphFactory<ServerGraph.Factory>()
+                    .create(
+                        ServerConfig(
+                            "localhost",
+                            port = 0,
+                            version = "test",
+                            databaseConfig,
+                            storageConfig,
+                            metricsConfig,
+                            webLimitsConfig,
+                        ),
+                        databaseConfig,
+                        storageConfig,
+                        metricsConfig,
+                        webLimitsConfig,
                     )
             graph.databaseBootstrap.start()
 

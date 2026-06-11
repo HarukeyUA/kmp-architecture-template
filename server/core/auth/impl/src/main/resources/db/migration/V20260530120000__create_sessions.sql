@@ -1,8 +1,8 @@
 CREATE TABLE sessions (
     token_hash TEXT PRIMARY KEY,
     account_id UUID NOT NULL,
-    created_at TIMESTAMP NOT NULL,
-    expires_at TIMESTAMP NOT NULL
+    created_at TIMESTAMPTZ NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL
 );
 
 CREATE INDEX sessions_account_idx ON sessions (account_id);

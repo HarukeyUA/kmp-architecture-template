@@ -56,6 +56,7 @@ class NotesIntegrationTest {
                 DatabaseConfig(postgres.jdbcUrl, postgres.username, postgres.password)
             val storageConfig = testStorageConfig()
             val metricsConfig = MetricsConfig(port = 0)
+            val webLimitsConfig = testWebLimitsConfig()
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
                     .create(
@@ -66,10 +67,12 @@ class NotesIntegrationTest {
                             databaseConfig,
                             storageConfig,
                             metricsConfig,
+                            webLimitsConfig,
                         ),
                         databaseConfig,
                         storageConfig,
                         metricsConfig,
+                        webLimitsConfig,
                     )
             graph.databaseBootstrap.start()
 

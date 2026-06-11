@@ -1,8 +1,8 @@
 package org.example.project.server.auth.data
 
+import org.example.project.server.database.utcTimestamp
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.java.javaUUID
-import org.jetbrains.exposed.v1.datetime.timestamp
 
 /**
  * The opaque session store table. `account_id` is intentionally **not** a FK to `accounts`: that
@@ -16,8 +16,8 @@ import org.jetbrains.exposed.v1.datetime.timestamp
 internal object Sessions : Table("sessions") {
     val tokenHash = text("token_hash")
     val accountId = javaUUID("account_id")
-    val createdAt = timestamp("created_at")
-    val expiresAt = timestamp("expires_at")
+    val createdAt = utcTimestamp("created_at")
+    val expiresAt = utcTimestamp("expires_at")
     override val primaryKey = PrimaryKey(tokenHash)
 
     init {

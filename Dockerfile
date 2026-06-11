@@ -15,8 +15,11 @@ WORKDIR /app
 COPY server/app/build/install/server/ /app/
 
 # Config is env-driven (DATABASE_*, S3_*, APP_ENV=production); see .env.example. No secrets baked in.
+# TZ is belt-and-braces only (all timestamp columns are TIMESTAMPTZ; the bin/server launcher also
+# pins -Duser.timezone=UTC via applicationDefaultJvmArgs).
 ENV SERVER_HOST=0.0.0.0 \
-    SERVER_PORT=8080
+    SERVER_PORT=8080 \
+    TZ=UTC
 EXPOSE 8080
 
 # /metrics (Prometheus) and /health are served by the app for scrape/liveness probes.

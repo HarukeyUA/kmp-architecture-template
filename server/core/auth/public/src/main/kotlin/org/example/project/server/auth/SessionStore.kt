@@ -15,4 +15,11 @@ interface SessionStore {
 
     /** Revokes the session for [token] (row delete + cache invalidation). */
     suspend fun revoke(token: String)
+
+    /**
+     * Revokes **every** session for [accountId] — the password-change / compromise / account-
+     * deletion primitive. Same staleness contract as [revoke]: immediate on the current node (every
+     * existing token hash is tombstoned), bounded by the cache TTL on other nodes (ADR-0010).
+     */
+    suspend fun revokeAllFor(accountId: AccountId)
 }

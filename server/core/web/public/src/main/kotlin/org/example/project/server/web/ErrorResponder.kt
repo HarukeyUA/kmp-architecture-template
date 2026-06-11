@@ -15,6 +15,7 @@ import org.example.project.shared.common.ErrorEnvelope
 import org.example.project.shared.common.Forbidden
 import org.example.project.shared.common.Internal
 import org.example.project.shared.common.NotFound
+import org.example.project.shared.common.PayloadTooLarge
 import org.example.project.shared.common.RateLimited
 import org.example.project.shared.common.Unauthorized
 import org.example.project.shared.common.UnknownApiError
@@ -58,6 +59,7 @@ private fun ApiError.toDefaultStatus(): HttpStatusCode? =
         is NotFound -> HttpStatusCode.NotFound
         is Conflict -> HttpStatusCode.Conflict
         is RateLimited -> HttpStatusCode.TooManyRequests
+        PayloadTooLarge -> HttpStatusCode.PayloadTooLarge
         Internal,
         is UnknownApiError -> HttpStatusCode.InternalServerError
         else -> null

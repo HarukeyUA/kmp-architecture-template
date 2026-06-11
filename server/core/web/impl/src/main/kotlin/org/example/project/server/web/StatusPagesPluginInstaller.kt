@@ -3,6 +3,7 @@ package org.example.project.server.web
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoSet
 import dev.zacsweers.metro.Inject
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.OutgoingContent
 import io.ktor.serialization.JsonConvertException
@@ -12,6 +13,7 @@ import io.ktor.server.application.install
 import io.ktor.server.application.log
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.ContentTransformationException
+import io.ktor.server.plugins.PayloadTooLargeException
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.contentType
 import io.ktor.server.request.httpMethod
@@ -19,6 +21,8 @@ import io.ktor.server.request.path
 import kotlinx.coroutines.CancellationException
 import org.example.project.shared.common.BadRequest as ApiBadRequest
 import org.example.project.shared.common.Internal
+import org.example.project.shared.common.PayloadTooLarge
+import org.example.project.shared.common.RateLimited
 import org.example.project.shared.common.Unauthorized
 
 /**
@@ -42,7 +46,30 @@ class StatusPagesPluginInstaller(private val statusMappers: Set<ApiErrorStatusMa
             status(HttpStatusCode.Unauthorized) {
                 if (content is OutgoingContent.NoContent) call.respondError(Unauthorized)
             }
+            // The RateLimit plugin rejects with a body-less 429 after stamping Retry-After (its
+            // default modifyResponse); normalise that into the typed envelope, lifting the header
+            // into the actionable field. Same leave-enveloped-responses-alone rule as the 401.
+            status(HttpStatusCode.TooManyRequests) {
+                if (content is OutgoingContent.NoContent) {
+                    val retryAfterSeconds =
+                        call.response.headers[HttpHeaders.RetryAfter]?.toLongOrNull()
+                    call.respondError(RateLimited(retryAfterSeconds))
+                }
+            }
             exception<CancellationException> { _, cause -> throw cause }
+            // Must be handled explicitly: PayloadTooLargeException *is* a
+            // ContentTransformationException, and the generic handler below would mislabel an
+            // over-limit body as a 400 "malformed_body". StatusPages dispatches on the most
+            // specific registered type, so this wins for over-limit bodies.
+            exception<PayloadTooLargeException> { call, cause ->
+                call.application.log.debug(
+                    "Rejected over-limit request body on {} {}: {}",
+                    call.request.httpMethod.value,
+                    call.request.path(),
+                    cause.message,
+                )
+                call.respondError(PayloadTooLarge)
+            }
             exception<BadRequestException> { call, cause -> call.rejectMalformedBody(cause) }
             exception<ContentTransformationException> { call, cause ->
                 call.rejectMalformedBody(cause)

@@ -28,6 +28,7 @@ val commonApiErrorSerializersModule: SerializersModule = SerializersModule {
         subclass(Conflict::class)
         subclass(Validation::class)
         subclass(RateLimited::class)
+        subclass(PayloadTooLarge::class)
         subclass(Internal::class)
         defaultDeserializer { discriminator -> UnknownApiErrorDeserializer(discriminator) }
     }

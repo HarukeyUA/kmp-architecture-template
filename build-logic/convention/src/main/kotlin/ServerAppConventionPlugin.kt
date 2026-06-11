@@ -30,6 +30,10 @@ class ServerAppConventionPlugin : Plugin<Project> {
             extensions.configure<JavaApplication> {
                 applicationName = "server"
                 mainClass.set("org.example.project.server.MainKt")
+                // Belt-and-braces UTC pin (not load-bearing: all timestamp columns are
+                // TIMESTAMPTZ via utcTimestamp). Keeps logs and SQL now() defaults consistent
+                // for `./gradlew run` and the installDist launcher the Dockerfile ships.
+                applicationDefaultJvmArgs = listOf("-Duser.timezone=UTC")
             }
 
             dependencies {

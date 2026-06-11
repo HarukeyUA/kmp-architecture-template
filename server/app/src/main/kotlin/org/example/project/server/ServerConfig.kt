@@ -3,6 +3,7 @@ package org.example.project.server
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.observability.MetricsConfig
 import org.example.project.server.storage.StorageConfig
+import org.example.project.server.web.WebLimitsConfig
 
 /**
  * The one typed, fail-fast configuration, loaded once at startup (ADR — § Local dev & config).
@@ -19,6 +20,7 @@ data class ServerConfig(
     val database: DatabaseConfig,
     val storage: StorageConfig,
     val metrics: MetricsConfig,
+    val webLimits: WebLimitsConfig,
 ) {
     companion object {
         fun load(getenv: (String) -> String? = System::getenv): ServerConfig {
@@ -62,6 +64,18 @@ data class ServerConfig(
                 // an in-network Prometheus can scrape it. Optional with a dev default like the
                 // port.
                 metrics = MetricsConfig(port = optional("METRICS_PORT", "8081").toInt()),
+                webLimits =
+                    WebLimitsConfig(
+                        maxRequestBodyBytes =
+                            optional("MAX_REQUEST_BODY_BYTES", "1048576").toLong(),
+                        // Deliberately defaults to unset (socket address): behind a proxy that
+                        // fails *loudly* (shared bucket → visible 429s), whereas trusting a
+                        // client-forgeable header by default would fail *silently* (limiter
+                        // bypassable per request). See WebLimitsConfig.
+                        clientIpHeader = getenv("CLIENT_IP_HEADER")?.takeIf { it.isNotBlank() },
+                        credentialRateLimit =
+                            optional("CREDENTIAL_RATE_LIMIT_PER_MINUTE", "10").toInt(),
+                    ),
             )
         }
     }
