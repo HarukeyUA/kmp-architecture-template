@@ -17,6 +17,15 @@ interface PasswordHasher {
     suspend fun hash(password: String): String
 
     suspend fun verify(password: String, hash: String): Boolean
+
+    /**
+     * Burns one [verify]-equivalent of work against a throwaway credential, discarding the result.
+     * For timing-equalizing failure paths that have no real hash to check (unknown email): without
+     * it, response time would distinguish "no such user" (fast) from "wrong password" (one verify),
+     * piercing the collapse-to-Unauthorized boundary. Lives on the interface because only the
+     * implementation knows what a cost-identical dummy looks like for its algorithm and parameters.
+     */
+    suspend fun verifyDummy(password: String)
 }
 
 /**
@@ -38,6 +47,13 @@ class Argon2PasswordHasher : PasswordHasher {
     private val argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id)
     private val hashDispatcher = Dispatchers.Default.limitedParallelism(MAX_CONCURRENT_HASHES)
 
+    /**
+     * [verifyDummy]'s target, computed once at startup with the live parameters — a hardcoded hash
+     * string would silently stop being cost-identical the day [ITERATIONS]/[MEMORY_KIB] change.
+     */
+    private val dummyHash: String =
+        argon2.hash(ITERATIONS, MEMORY_KIB, PARALLELISM, "dummy".toCharArray())
+
     override suspend fun hash(password: String): String =
         withContext(hashDispatcher) {
             val chars = password.toCharArray()
@@ -57,6 +73,13 @@ class Argon2PasswordHasher : PasswordHasher {
                 argon2.wipeArray(chars)
             }
         }
+
+    override suspend fun verifyDummy(password: String) {
+        // Routed through verify (and so through hashDispatcher): if the dummy skipped the
+        // concurrency bound, queue depth under load would itself become the timing signal the
+        // dummy exists to remove.
+        verify(password, dummyHash)
+    }
 
     private companion object {
         const val ITERATIONS = 3

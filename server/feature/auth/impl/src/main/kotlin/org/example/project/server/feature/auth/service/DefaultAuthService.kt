@@ -38,9 +38,17 @@ class DefaultAuthService(
     override suspend fun login(email: String, password: String): Either<ApiError, Session> =
         either {
             // Any credential problem collapses to Unauthorized — the information-disclosure
-            // boundary (no distinguishing unknown-user from wrong-password).
+            // boundary (no distinguishing unknown-user from wrong-password). The boundary covers
+            // timing too: the unknown-email path burns a dummy verify so both failures cost one
+            // Argon2 verify. The malformed-email fast-fail below is deliberately exempt — it
+            // reveals only that the input isn't an email, which the caller already knows.
             val validEmail = Email.of(email).getOrNull()?.value ?: raise(Unauthorized)
-            val credential = repo.findCredentialByEmail(validEmail) ?: raise(Unauthorized)
+            val credential =
+                repo.findCredentialByEmail(validEmail)
+                    ?: run {
+                        hasher.verifyDummy(password)
+                        raise(Unauthorized)
+                    }
             ensure(hasher.verify(password, credential.passwordHash)) { Unauthorized }
             sessionStore.issue(credential.accountId)
         }

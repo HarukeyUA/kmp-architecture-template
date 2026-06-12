@@ -131,6 +131,18 @@ class AuthIntegrationTest {
                 assertThat(wrongPassword.status).isEqualTo(HttpStatusCode.Unauthorized)
                 assertThat(wrongPassword.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
 
+                // Unknown email → byte-identical envelope to wrong-password: the collapse to
+                // Unauthorized is the information-disclosure boundary, and the service burns a
+                // dummy Argon2 verify on this path so timing doesn't pierce it either (the
+                // dummy-verify contract itself is pinned in DefaultAuthServiceTest).
+                val unknownEmail =
+                    client.post(AuthResource.Login()) {
+                        contentType(ContentType.Application.Json)
+                        setBody(LoginRequest("nobody@example.com", "hunter2hunter2"))
+                    }
+                assertThat(unknownEmail.status).isEqualTo(HttpStatusCode.Unauthorized)
+                assertThat(unknownEmail.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+
                 // Log out (server-side revoke) → 204.
                 assertThat(client.post(AuthResource.Logout()) { bearerAuth(token) }.status)
                     .isEqualTo(HttpStatusCode.NoContent)
