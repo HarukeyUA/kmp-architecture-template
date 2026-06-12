@@ -45,7 +45,7 @@ A binary object (image, file) kept in S3-compatible object storage under an opaq
 _Avoid_: file, attachment, upload (for the stored object)
 
 **Scheduled job**:
-A periodic, **idempotent** unit of background work that at most one instance runs per tick, coordinated by a Postgres advisory lock — so it is safe the moment a second instance exists.
+A periodic, **idempotent** unit of background work that never runs concurrently on two instances, coordinated by a Postgres advisory lock. The lock bounds concurrency, not frequency — idempotency is what makes cross-node re-runs safe.
 _Avoid_: cron, task, worker, sweeper (use for the specific job, not the concept)
 
 ## Relationships
