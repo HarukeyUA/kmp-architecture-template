@@ -19,8 +19,10 @@ internal object Accounts : Table("accounts") {
 }
 
 /**
- * The server's account domain model — never the Exposed `ResultRow` (ADR-0006). Visible across the
- * `:impl` module (the repository returns it, the service consumes it); encapsulation comes from the
- * module boundary — only `:server:app` depends on `:impl`.
+ * Proof-of-identity material for the login path (ADR-0009): the account's id paired with its
+ * Argon2id hash. Stays inside this `:impl` (the module boundary is the encapsulation — only
+ * `:server:app` depends on `:impl`); the cross-module account model is the hash-free
+ * [org.example.project.server.feature.auth.Account] in `:public`, so the hash's entire lifetime is
+ * `login`'s verify step.
  */
-data class Account(val id: AccountId, val email: String, val passwordHash: String)
+data class Credential(val accountId: AccountId, val passwordHash: String)

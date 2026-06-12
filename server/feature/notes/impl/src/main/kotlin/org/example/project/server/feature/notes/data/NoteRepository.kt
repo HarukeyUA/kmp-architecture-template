@@ -11,6 +11,7 @@ import kotlin.time.Clock
 import org.example.project.server.auth.AccountId
 import org.example.project.server.database.advisoryXactLock
 import org.example.project.server.database.dbTransaction
+import org.example.project.server.feature.notes.Note
 import org.example.project.shared.common.ApiError
 import org.example.project.shared.notes.NotesQuotaExceeded
 import org.jetbrains.exposed.v1.core.ResultRow

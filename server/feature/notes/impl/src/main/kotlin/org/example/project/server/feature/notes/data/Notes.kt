@@ -1,7 +1,5 @@
 package org.example.project.server.feature.notes.data
 
-import kotlin.time.Instant
-import org.example.project.server.auth.AccountId
 import org.example.project.server.database.utcTimestamp
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.java.javaUUID
@@ -22,10 +20,3 @@ internal object Notes : Table("notes") {
         index("notes_account_idx", false, accountId)
     }
 }
-
-/**
- * The notes domain model — never the Exposed `ResultRow` (ADR-0006). Visible across the `:impl`
- * module (the repository returns it, the service consumes it); encapsulation comes from the module
- * boundary — only `:server:app` depends on `:impl`.
- */
-data class Note(val id: String, val accountId: AccountId, val text: String, val createdAt: Instant)

@@ -75,7 +75,7 @@ The Seam holds the **Wire** and nothing else. ([ADR-0003](docs/adr/0003-share-th
 - **`:shared:<domain>`** — one per Domain (`:shared:notes`, `:shared:account`, …). Flat module, all-public by nature, no `public`/`impl` split (it's pure contract).
 - **`:shared:common`** — cross-cutting wire types: the `ApiError` base + cross-cutting error variants, the `ErrorEnvelope`, shared value types.
 
-**Principle — share the wire, never the domain.** Each side maps Wire ↔ its own Domain model. On the client this is the existing `toModel()` extension-function convention (`ARCHITECTURE.md` → Model Mapping Pipeline); DTOs that live today in each client feature's `:public/data/models/` **relocate into `:shared:<domain>`**. On the server, the route layer maps Wire ↔ server domain.
+**Principle — share the wire, never the domain.** Each side maps Wire ↔ its own Domain model. On the client this is the existing `toModel()` extension-function convention (`ARCHITECTURE.md` → Model Mapping Pipeline); DTOs that live today in each client feature's `:public/data/models/` **relocate into `:shared:<domain>`**. On the server, the route layer is the Wire boundary (ADR-0003 as amended): routes unpack `*Request` fields into plain service parameters and map returned domain models to `*Response` DTOs, so Service interfaces — a domain's only cross-domain surface — speak domain types, never wire DTOs. One deliberate exception: the error channel stays the shared `Either<ApiError, T>` taxonomy (ADR-0005).
 
 ---
 
@@ -203,21 +203,25 @@ sealed interface NetworkError : AppError {
 | `:impl` | `ServiceImpl`, `Repository`, Exposed tables, routes, stateful validation, Metro bindings — organized as `route/` `service/` `data/` **packages** |
 
 ```kotlin
-// :server:feature:notes:impl — route is dumb, service owns orchestration,
-// repository owns persistence-backed invariants
-fun Route.notesRoutes(service: NotesService) = authenticate {
-    post<NotesResource> {
-        call.respondEither(service.create(call.principal().account, call.receive())) {
-            call.respond(HttpStatusCode.Created, it)
+// :server:feature:notes:impl — route is dumb and owns the Wire boundary (ADR-0003),
+// service owns orchestration over domain types, repository owns persistence-backed invariants
+class NotesRoutes(private val service: NotesService) : RouteRegistrar {
+    override fun Application.register() = routing {
+        authenticatedRoutes {
+            serve(NotesApi.create, HttpStatusCode.Created) { _, body ->
+                service.create(principal(), body.text).map { it.toResponse() }   // domain → wire
+            }
         }
     }
 }
 
-class DefaultNotesService(private val repo: NotesRepository) : NotesService {
-    override suspend fun create(account: AccountId, req: CreateNoteRequest): Either<ApiError, NoteResponse> =
+class DefaultNotesService(private val repo: NoteRepository, private val auth: AuthService) : NotesService {
+    override suspend fun create(principal: Principal, text: String): Either<ApiError, AuthoredNote> =
         either {
-            val text = NoteText.of(req.text).mapLeft { Validation(listOf(it)) }.bind()  // shared shape check
-            repo.createWithinQuota(account, text.value, QUOTA).bind().toResponse()
+            val noteText = NoteText.of(text).mapLeft { Validation(listOf(it)) }.bind() // shared shape check
+            val author = auth.me(principal).bind()                // cross-domain, domain-typed (never a DTO)
+            val note = repo.createWithinQuota(principal.accountId, noteText.value, QUOTA).bind()
+            AuthoredNote(note, author.email)
         }
 }
 ```
