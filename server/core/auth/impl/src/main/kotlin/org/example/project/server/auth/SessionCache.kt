@@ -31,39 +31,59 @@ interface SessionCache {
 
 data class CachedSession(val principal: Principal, val expiresAt: Instant)
 
+/**
+ * Two Caffeine caches split by **trust level**: [cache] holds only entries tied to real sessions
+ * ([Lookup.Present] and [Lookup.Revoked] tombstones — both bounded by legitimate activity), while
+ * unknown-token misses go to the separate, smaller [absent] cache. Unauthenticated input must never
+ * compete with authenticated state for cache space: with a shared cache, an attacker spraying
+ * fabricated bearer tokens could evict every live session and turn each real request into a DB
+ * round-trip.
+ */
 @Inject
 @SingleIn(AppScope::class)
 @ContributesBinding(AppScope::class)
 class CaffeineSessionCache(
     ttl: Duration = DEFAULT_TTL,
     maxSize: Long = DEFAULT_MAX_SIZE,
+    absentMaxSize: Long = DEFAULT_ABSENT_MAX_SIZE,
     private val now: () -> Instant = Clock.System::now,
 ) : SessionCache {
     private val cache: Cache<String, Lookup> =
         Caffeine.newBuilder().expireAfterWrite(ttl.toJavaDuration()).maximumSize(maxSize).build()
 
+    private val absent: Cache<String, Unit> =
+        Caffeine.newBuilder()
+            .expireAfterWrite(ttl.toJavaDuration())
+            .maximumSize(absentMaxSize)
+            .build()
+
     override suspend fun resolve(
         tokenHash: String,
         loader: suspend (String) -> CachedSession?,
     ): Principal? {
-        // Misses are cached as [Lookup.Absent] so a flood of fabricated tokens can't chain into a
-        // flood of DB lookups; a [Lookup.Revoked] tombstone short-circuits a revoked token with no
-        // DB round-trip.
         cache.getIfPresent(tokenHash)?.let { cached ->
             return when (cached) {
-                Lookup.Absent,
                 Lookup.Revoked -> null
                 is Lookup.Present -> cached.session.takeIfFresh(tokenHash)?.principal
             }
         }
-        val loaded =
-            loader(tokenHash)?.takeIf { it.isFresh() }?.let(Lookup::Present) ?: Lookup.Absent
+        if (absent.getIfPresent(tokenHash) != null) return null
+        val loaded = loader(tokenHash)?.takeIf { it.isFresh() }
+        if (loaded == null) {
+            // Remember the miss in the junk cache only. This shields the DB from a client
+            // re-sending the same dead token; a spray of *fabricated* tokens never repeats a key,
+            // so it gains nothing from any cache — here it can merely churn other junk. (A racing
+            // [invalidate] tombstone is not overwritten by this: it lives in [cache], and both
+            // entries independently resolve to null — fail closed either way.)
+            absent.put(tokenHash, Unit)
+            return null
+        }
         // Publish atomically: this `compute` and [invalidate]'s tombstone write serialize on the
         // per-key lock, so a load that began before a concurrent revoke can't overwrite the
         // tombstone. A surviving tombstone wins and this resolve fails closed (null).
         val published =
             cache.asMap().compute(tokenHash) { _, existing ->
-                existing as? Lookup.Revoked ?: loaded
+                existing as? Lookup.Revoked ?: Lookup.Present(loaded)
             }
         return (published as? Lookup.Present)?.session?.takeIfFresh(tokenHash)?.principal
     }
@@ -76,8 +96,6 @@ class CaffeineSessionCache(
     }
 
     private sealed interface Lookup {
-        data object Absent : Lookup
-
         data object Revoked : Lookup
 
         data class Present(val session: CachedSession) : Lookup
@@ -94,5 +112,8 @@ class CaffeineSessionCache(
     private companion object {
         val DEFAULT_TTL: Duration = 60.seconds
         const val DEFAULT_MAX_SIZE: Long = 10_000L
+
+        /** Sizing barely matters — junk evicting junk is fine; it only has to stay bounded. */
+        const val DEFAULT_ABSENT_MAX_SIZE: Long = 1_000L
     }
 }

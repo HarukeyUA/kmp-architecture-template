@@ -308,6 +308,7 @@ Baseline (no standalone ADR — it's the obvious baseline):
 
 - **Request bodies are capped** (1 MiB default, `ServerConfig`-tunable) via Ktor's `RequestBodyLimit`, mapped to the typed `PayloadTooLarge` envelope (413) — Blobs bypass the app entirely via presigned URLs, so nothing legitimate comes close.
 - **Argon2 concurrency is bounded** inside `Argon2PasswordHasher` (`Dispatchers.Default.limitedParallelism(min(cores, 4))`), capping hashing at ≤256 MiB native memory. Saturation **queues, never sheds**: the per-IP rate limit upstream already rejects the abusive case, so whatever reaches the queue waits instead of failing. The bound is a code constant, not config — raising it safely requires redoing the memory math, which an env var invites skipping.
+- **Forged bearer tokens can't evict live sessions** — the session cache is split by trust level: unknown-token misses are remembered in a separate, smaller cache, so unauthenticated input never competes with `Present`/`Revoked` entries (both tied to real sessions) for space. A spray of fabricated tokens churns only other junk; each unique forged token still costs one cheap indexed point-miss, same as with no negative cache at all.
 
 Connection pool configurable; `instances × poolSize ≤ Postgres max_connections` (PgBouncer if ever hit) — count the few scheduled jobs too, since each holds one pooled connection for the lock while it runs. Result: going multi-node is config + an interface swap, never a rewrite, and never a silent correctness regression.
 
