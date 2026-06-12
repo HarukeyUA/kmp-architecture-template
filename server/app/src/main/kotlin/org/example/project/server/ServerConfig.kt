@@ -26,10 +26,10 @@ data class ServerConfig(
         fun load(getenv: (String) -> String? = System::getenv): ServerConfig {
             val production = getenv("APP_ENV").equals("production", ignoreCase = true)
 
-            // Treat a blank value as missing: a present-but-empty secret (e.g. `S3_SECRET_KEY=`)
-            // must fail fast at boot like an absent one, not slip through and fail opaquely on
-            // first
-            // use.
+            // Treat a blank value as missing everywhere: a present-but-empty secret (e.g.
+            // `S3_SECRET_KEY=`) must fail fast at boot like an absent one, and a present-but-empty
+            // optional (e.g. `SERVER_PORT=` from an env-file stub) means "use the default", not
+            // `"".toInt()`.
             fun required(key: String, devDefault: String): String =
                 getenv(key)?.takeIf { it.isNotBlank() }
                     ?: if (production) {
@@ -38,18 +38,33 @@ data class ServerConfig(
                         devDefault
                     }
 
-            fun optional(key: String, default: String): String = getenv(key) ?: default
+            fun optional(key: String, default: String): String =
+                getenv(key)?.takeIf { it.isNotBlank() } ?: default
+
+            // Parse failures must name the offending key — a bare NumberFormatException at boot
+            // would undercut the fail-fast-with-a-clear-message contract above.
+            fun optionalInt(key: String, default: String): Int =
+                optional(key, default).let {
+                    it.toIntOrNull()
+                        ?: error("Configuration '$key' must be an integer, got '$it'")
+                }
+
+            fun optionalLong(key: String, default: String): Long =
+                optional(key, default).let {
+                    it.toLongOrNull()
+                        ?: error("Configuration '$key' must be an integer, got '$it'")
+                }
 
             return ServerConfig(
                 host = optional("SERVER_HOST", "0.0.0.0"),
-                port = optional("SERVER_PORT", "8080").toInt(),
+                port = optionalInt("SERVER_PORT", "8080"),
                 version = optional("APP_VERSION", "dev"),
                 database =
                     DatabaseConfig(
                         jdbcUrl = required("DATABASE_URL", "jdbc:postgresql://localhost:5432/app"),
                         username = required("DATABASE_USER", "app"),
                         password = required("DATABASE_PASSWORD", "app"),
-                        maxPoolSize = optional("DATABASE_MAX_POOL_SIZE", "10").toInt(),
+                        maxPoolSize = optionalInt("DATABASE_MAX_POOL_SIZE", "10"),
                     ),
                 storage =
                     StorageConfig(
@@ -63,18 +78,16 @@ data class ServerConfig(
                 // Served on a dedicated port that is NOT mapped to a public domain/ingress, so only
                 // an in-network Prometheus can scrape it. Optional with a dev default like the
                 // port.
-                metrics = MetricsConfig(port = optional("METRICS_PORT", "8081").toInt()),
+                metrics = MetricsConfig(port = optionalInt("METRICS_PORT", "8081")),
                 webLimits =
                     WebLimitsConfig(
-                        maxRequestBodyBytes =
-                            optional("MAX_REQUEST_BODY_BYTES", "1048576").toLong(),
+                        maxRequestBodyBytes = optionalLong("MAX_REQUEST_BODY_BYTES", "1048576"),
                         // Deliberately defaults to unset (socket address): behind a proxy that
                         // fails *loudly* (shared bucket → visible 429s), whereas trusting a
                         // client-forgeable header by default would fail *silently* (limiter
                         // bypassable per request). See WebLimitsConfig.
                         clientIpHeader = getenv("CLIENT_IP_HEADER")?.takeIf { it.isNotBlank() },
-                        credentialRateLimit =
-                            optional("CREDENTIAL_RATE_LIMIT_PER_MINUTE", "10").toInt(),
+                        credentialRateLimit = optionalInt("CREDENTIAL_RATE_LIMIT_PER_MINUTE", "10"),
                     ),
             )
         }
