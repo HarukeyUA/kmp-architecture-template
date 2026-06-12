@@ -295,7 +295,7 @@ Baseline (no standalone ADR — it's the obvious baseline):
 
 - **Structured logging with a request/correlation ID in MDC** (replaces basic CallLogging); the same `requestId` appears in `ErrorEnvelope`.
 - **Ktor MicrometerMetrics → `/metrics`** Prometheus endpoint.
-- **Health check** endpoint (DB + version), retained from witchy.
+- **Health check** endpoint aggregating the contributed `HealthIndicator` set. The body is **status-only** (`{"status":"UP"|"DOWN"}` + 200/503) on every connector — a probe needs only the status code, and per-check names/details would hand a public prober the infra composition. Failing checks are WARN-logged with name + detail instead, so diagnostics live in the logs (where operators already look) rather than behind a port.
 - OpenTelemetry tracing is **opt-in later**, not baseline.
 
 ---

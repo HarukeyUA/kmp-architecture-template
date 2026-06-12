@@ -12,12 +12,16 @@ import io.ktor.client.plugins.resources.post
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.testing.testApplication
 import kotlin.test.Test
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.observability.MetricsConfig
 import org.example.project.server.web.WebLimitsConfig
@@ -78,8 +82,16 @@ class WebHardeningIntegrationTest {
                 assertThat(error).isInstanceOf(RateLimited::class)
                 assertThat((error as RateLimited).retryAfterSeconds).isNotNull()
 
-                // Strict-only posture: non-credential endpoints have no tier at all.
-                repeat(4) { assertThat(client.get("/health").status).isEqualTo(HttpStatusCode.OK) }
+                // Strict-only posture: non-credential endpoints have no tier at all. The body is
+                // also pinned status-only: per-check names/details would hand a public prober the
+                // infra composition, so they go to the log instead (HealthRoute).
+                repeat(4) {
+                    val health = client.get("/health")
+                    assertThat(health.status).isEqualTo(HttpStatusCode.OK)
+                    val body = Json.parseToJsonElement(health.bodyAsText()).jsonObject
+                    assertThat(body.keys).isEqualTo(setOf("status"))
+                    assertThat(body["status"]?.jsonPrimitive?.content).isEqualTo("UP")
+                }
             }
         }
     }
