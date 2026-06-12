@@ -21,4 +21,13 @@ class NotesValidationTest {
         val tooLong = "a".repeat(NoteText.MAX_LENGTH + 1)
         assertThat(NoteText.of(tooLong).leftOrNull()?.code).isEqualTo("too_long")
     }
+
+    @Test
+    fun `length is counted in code points, not UTF-16 units`() {
+        // Each 🦀 is one code point but two UTF-16 units — under `.length` this would be
+        // rejected at twice the cap.
+        val astral = "🦀".repeat(NoteText.MAX_LENGTH)
+        assertThat(NoteText.of(astral).getOrNull()?.value).isEqualTo(astral)
+        assertThat(NoteText.of(astral + "🦀").leftOrNull()?.code).isEqualTo("too_long")
+    }
 }

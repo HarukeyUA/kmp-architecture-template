@@ -25,10 +25,13 @@ interface NotesService {
 
     companion object {
         /**
-         * The per-account character budget across all of an account's notes. Exceeding it yields a
-         * typed [org.example.project.shared.notes.NotesQuotaExceeded]. Lives on the contract so
-         * callers (and tests) share one source of truth.
+         * The per-account budget across all of an account's notes, in **Unicode code points** (the
+         * unit shared by Kotlin's surrogate-aware count and Postgres `char_length` — see
+         * [org.example.project.shared.notes.NoteText]). Exceeding it yields a typed
+         * [org.example.project.shared.notes.NotesQuotaExceeded]. Lives on the contract so callers
+         * (and tests) share one source of truth. Sized demo-small so the template's quota path is
+         * actually triggerable from the UI.
          */
-        const val QUOTA = 20_000
+        const val QUOTA = 2_000
     }
 }

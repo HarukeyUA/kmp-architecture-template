@@ -125,10 +125,12 @@ class NotesIntegrationTest {
                 assertThat(client.delete(byId) { bearerAuth(token) }.status)
                     .isEqualTo(HttpStatusCode.NotFound)
 
-                // Fill the account's character budget, then the next create surfaces the typed
-                // error.
+                // Fill the account's code-point budget with astral-plane notes (each 🦀 is one
+                // code point but two UTF-16 units), then the next create surfaces the typed error.
+                // This locks the quota unit to code points end-to-end: counted by `.length`, the
+                // second fill note would already burst the budget and `used` would misreport.
                 val notesToFill = NotesService.QUOTA / NoteText.MAX_LENGTH
-                repeat(notesToFill) { client.createNote(token, "a".repeat(NoteText.MAX_LENGTH)) }
+                repeat(notesToFill) { client.createNote(token, "🦀".repeat(NoteText.MAX_LENGTH)) }
                 val capped = client.createNote(token, "one over budget")
                 assertThat(capped.status).isEqualTo(HttpStatusCode.Conflict)
                 assertThat(capped.body<ErrorEnvelope>().error)

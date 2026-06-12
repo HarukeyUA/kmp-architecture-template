@@ -60,8 +60,9 @@ class DefaultNoteRepository : NoteRepository {
     ): Either<ApiError, Note> = either {
         dbTransaction {
             advisoryXactLock(QUOTA_LOCK_NAMESPACE, accountId.value.hashCode())
-            val used = byteTotal(accountId)
-            ensure(used + text.length <= quota) { NotesQuotaExceeded(quota = quota, used = used) }
+            val used = usedCodePoints(accountId)
+            val candidate = text.codePointCount(0, text.length)
+            ensure(used + candidate <= quota) { NotesQuotaExceeded(quota = quota, used = used) }
             insert(accountId, text)
         }
     }
@@ -71,12 +72,14 @@ class DefaultNoteRepository : NoteRepository {
         Notes.deleteWhere { (Notes.id eq uuid) and (Notes.accountId eq accountId.value) } > 0
     }
 
-    private fun byteTotal(accountId: AccountId): Int {
+    private fun usedCodePoints(accountId: AccountId): Int {
         // SUM(char_length(text)) on the DB: one scalar back, no text blobs loaded into the app.
-        val totalChars = Notes.text.charLength().sum()
-        return Notes.select(totalChars)
+        // Postgres char_length counts Unicode code points — the same unit codePointCount gives the
+        // candidate above, so the gate, the error's `used`, and the stored truth never drift.
+        val totalCodePoints = Notes.text.charLength().sum()
+        return Notes.select(totalCodePoints)
             .where { Notes.accountId eq accountId.value }
-            .single()[totalChars] ?: 0
+            .single()[totalCodePoints] ?: 0
     }
 
     private fun insert(accountId: AccountId, text: String): Note {
