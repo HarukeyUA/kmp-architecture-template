@@ -19,24 +19,22 @@ class DefaultProfileComponent(
     @Assisted componentContext: AppComponentContext,
     @Assisted private val onLogout: () -> Unit,
     private val userRepository: UserRepository,
-) :
-    ProfileComponent,
-    MoleculeComponent<ProfileComponent.State, ProfileComponent.Event>(componentContext) {
+) : ProfileComponent, MoleculeComponent<ProfileComponent.State>(componentContext) {
 
     @Composable
     override fun produceState(): ProfileComponent.State {
         val userName by rememberSaveable { mutableStateOf("User") }
         val email by rememberSaveable { mutableStateOf("user@example.com") }
 
-        CollectEvents { event ->
-            when (event) {
-                ProfileComponent.Event.LogoutClicked -> {
-                    logout()
+        return ProfileComponent.State(
+            userName = userName,
+            email = email,
+            eventSink = { event ->
+                when (event) {
+                    ProfileComponent.Event.LogoutClicked -> logout()
                 }
-            }
-        }
-
-        return ProfileComponent.State(userName = userName, email = email)
+            },
+        )
     }
 
     private fun logout() {

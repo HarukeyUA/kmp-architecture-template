@@ -1,18 +1,12 @@
 package org.example.project.core.component
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.cash.molecule.RecompositionMode
 import app.cash.molecule.launchMolecule
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.launch
 import org.example.project.core.component.internal.EssentyLifecycleOwner
 import org.example.project.core.component.internal.returningCompositionLocalProvider
 
@@ -23,20 +17,20 @@ import org.example.project.core.component.internal.returningCompositionLocalProv
  * - Lifecycle-aware coroutine scope
  * - Molecule-powered state production with @Composable
  * - StateKeeper integration for saved state that survives process death on Android and iOS
- * - Event channel for UI -> Component communication
  * - Essenty Lifecycle -> AndroidX LifecycleOwner bridge
+ *
+ * User actions are handled by `eventSink` lambdas built inside [produceState] and carried by the
+ * returned state; each lambda closes over the component's callbacks, [scope], and `remember`ed
+ * Compose state.
  */
-abstract class MoleculeComponent<S : UiState, E : UiEvent>(componentContext: AppComponentContext) :
-    StatefulComponent<S, E>, AppComponentContext by componentContext {
+abstract class MoleculeComponent<S : UiState>(componentContext: AppComponentContext) :
+    StatefulComponent<S>, AppComponentContext by componentContext {
 
     /**
      * Lifecycle-aware coroutine scope. Uses the platform main dispatcher and a SupervisorJob.
      * Automatically canceled when the component is destroyed.
      */
     protected val scope: CoroutineScope = lifecycleAwareScope()
-
-    /** Event channel with buffer to guarantee delivery even before collection starts */
-    private val events = Channel<E>(capacity = 64)
 
     override val state: StateFlow<S> by lazy {
         scope.launchMolecule(
@@ -48,22 +42,6 @@ abstract class MoleculeComponent<S : UiState, E : UiEvent>(componentContext: App
             returningCompositionLocalProvider(LocalLifecycleOwner provides lifecycleOwner) {
                 ProvideStateKeeperSaveableStateRegistry { produceState() }
             }
-        }
-    }
-
-    override fun onEvent(event: E) {
-        events.trySend(event)
-    }
-
-    /**
-     * Collect events within the Molecule composition. Use this in produceState() to handle UI
-     * events.
-     */
-    @Composable
-    protected fun CollectEvents(onEvent: suspend (E) -> Unit) {
-        val onEventUpdatedState by rememberUpdatedState(onEvent)
-        LaunchedEffect(Unit) {
-            events.consumeAsFlow().collect { launch { onEventUpdatedState(it) } }
         }
     }
 

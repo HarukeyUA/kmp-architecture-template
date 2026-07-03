@@ -12,13 +12,13 @@ import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.MoleculeComponent
 
 @AssistedInject
 class DefaultSearchComponent(@Assisted componentContext: AppComponentContext) :
-    SearchComponent,
-    MoleculeComponent<SearchComponent.State, SearchComponent.Event>(componentContext) {
+    SearchComponent, MoleculeComponent<SearchComponent.State>(componentContext) {
 
     @Composable
     override fun produceState(): SearchComponent.State {
@@ -26,31 +26,32 @@ class DefaultSearchComponent(@Assisted componentContext: AppComponentContext) :
         var results by rememberSaveable { mutableStateOf(emptyList<String>()) }
         var isSearching by rememberSaveable { mutableStateOf(false) }
 
-        CollectEvents { event ->
-            when (event) {
-                SearchComponent.Event.SearchClicked -> {
-                    if (query.text.isNotBlank()) {
-                        isSearching = true
-                        // Simulate search delay
-                        delay(500)
-                        results =
-                            listOf(
-                                "Result 1 for '${query.text}'",
-                                "Result 2 for '${query.text}'",
-                                "Result 3 for '${query.text}'",
-                                "Result 4 for '${query.text}'",
-                                "Result 5 for '${query.text}'",
-                            )
-                        isSearching = false
-                    }
-                }
-            }
-        }
-
         return SearchComponent.State(
             queryTextFieldState = query,
             results = results,
             isSearching = isSearching,
+            eventSink = { event ->
+                when (event) {
+                    SearchComponent.Event.SearchClicked -> {
+                        if (!isSearching && query.text.isNotBlank()) {
+                            isSearching = true
+                            scope.launch {
+                                // Simulate search delay
+                                delay(500)
+                                results =
+                                    listOf(
+                                        "Result 1 for '${query.text}'",
+                                        "Result 2 for '${query.text}'",
+                                        "Result 3 for '${query.text}'",
+                                        "Result 4 for '${query.text}'",
+                                        "Result 5 for '${query.text}'",
+                                    )
+                                isSearching = false
+                            }
+                        }
+                    }
+                }
+            },
         )
     }
 

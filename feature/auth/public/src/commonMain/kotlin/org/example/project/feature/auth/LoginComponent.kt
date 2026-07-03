@@ -1,13 +1,12 @@
 package org.example.project.feature.auth
 
-import kotlinx.serialization.Serializable
 import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.StatefulComponent
 import org.example.project.core.component.UiEvent
 import org.example.project.core.component.UiState
 
-interface LoginComponent : StatefulComponent<LoginComponent.State, LoginComponent.Event> {
-    @Serializable data class State(val counter: Int = 0) : UiState
+interface LoginComponent : StatefulComponent<LoginComponent.State> {
+    data class State(val counter: Int = 0, val eventSink: (Event) -> Unit) : UiState
 
     sealed interface Event : UiEvent {
         data object LoginClicked : Event

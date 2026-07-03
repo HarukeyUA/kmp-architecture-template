@@ -41,15 +41,12 @@ class DefaultSearchScreen : SearchScreen {
     override fun Content(component: SearchComponent) {
         val state by component.state.collectAsStateWithLifecycle()
 
-        SearchScreenContent(state = state, onEvent = component::onEvent)
+        SearchScreenContent(state = state)
     }
 }
 
 @Composable
-private fun SearchScreenContent(
-    state: SearchComponent.State,
-    onEvent: (SearchComponent.Event) -> Unit,
-) {
+private fun SearchScreenContent(state: SearchComponent.State) {
     Column(
         modifier =
             Modifier.fillMaxSize()
@@ -72,7 +69,7 @@ private fun SearchScreenContent(
             Spacer(modifier = Modifier.width(8.dp))
 
             Button(
-                onClick = { onEvent(SearchComponent.Event.SearchClicked) },
+                onClick = { state.eventSink(SearchComponent.Event.SearchClicked) },
                 enabled = !state.isSearching && state.queryTextFieldState.text.isNotBlank(),
             ) {
                 Text("Search")

@@ -36,15 +36,12 @@ class DefaultHomeListScreen : HomeListScreen {
     override fun Content(component: HomeListComponent) {
         val state by component.state.collectAsStateWithLifecycle()
 
-        HomeListScreenContent(state = state, onEvent = component::onEvent)
+        HomeListScreenContent(state = state)
     }
 }
 
 @Composable
-private fun HomeListScreenContent(
-    state: HomeListComponent.State,
-    onEvent: (HomeListComponent.Event) -> Unit,
-) {
+private fun HomeListScreenContent(state: HomeListComponent.State) {
     Column(
         modifier =
             Modifier.fillMaxSize()
@@ -65,7 +62,7 @@ private fun HomeListScreenContent(
                 Card(
                     modifier =
                         Modifier.fillMaxWidth().padding(horizontal = 16.dp).clickable {
-                            onEvent(HomeListComponent.Event.ItemClick(item.id))
+                            state.eventSink(HomeListComponent.Event.ItemClick(item.id))
                         }
                 ) {
                     Row(

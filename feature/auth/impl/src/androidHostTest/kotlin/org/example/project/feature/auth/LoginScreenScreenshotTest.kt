@@ -6,6 +6,6 @@ import org.junit.Test
 class LoginScreenScreenshotTest : ScreenshotTest() {
     @Test
     fun loginScreenDefaultState() {
-        capture { LoginScreenContent(state = LoginComponent.State(), onEvent = {}) }
+        capture { LoginScreenContent(state = LoginComponent.State(eventSink = {})) }
     }
 }

@@ -1,19 +1,20 @@
 package org.example.project.feature.main.presentation
 
-import com.arkivanov.decompose.router.stack.ChildStack
-import com.arkivanov.decompose.value.Value
 import kotlinx.serialization.Serializable
 import org.example.project.core.component.AppComponentContext
-import org.example.project.core.component.EventComponent
+import org.example.project.core.component.StatefulComponent
 import org.example.project.core.component.UiEvent
+import org.example.project.core.component.UiState
 import org.example.project.core.component.snackbar.SnackbarHostState
+import org.example.project.core.navigation.StackComponent
 import org.example.project.core.ui.navigation.ScreenChild
 
-interface MainComponent : EventComponent<MainComponent.Event> {
+interface MainComponent :
+    StatefulComponent<MainComponent.State>, StackComponent<MainComponent.Tab, ScreenChild> {
 
     val snackbarHostState: SnackbarHostState
 
-    val stack: Value<ChildStack<Tab, ScreenChild>>
+    data class State(val eventSink: (Event) -> Unit) : UiState
 
     @Serializable
     sealed interface Tab {
@@ -25,11 +26,11 @@ interface MainComponent : EventComponent<MainComponent.Event> {
     }
 
     sealed interface Event : UiEvent {
-        object HomeTabClick : Event
+        data object HomeTabClick : Event
 
-        object SearchTabClick : Event
+        data object SearchTabClick : Event
 
-        object ProfileTabClick : Event
+        data object ProfileTabClick : Event
     }
 
     fun interface Factory {

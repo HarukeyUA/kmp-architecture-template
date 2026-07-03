@@ -5,10 +5,14 @@ import org.example.project.core.component.StatefulComponent
 import org.example.project.core.component.UiEvent
 import org.example.project.core.component.UiState
 
-interface HomeDetailComponent :
-    StatefulComponent<HomeDetailComponent.State, HomeDetailComponent.Event> {
+interface HomeDetailComponent : StatefulComponent<HomeDetailComponent.State> {
 
-    data class State(val id: Int, val title: String, val description: String) : UiState
+    data class State(
+        val id: Int,
+        val title: String,
+        val description: String,
+        val eventSink: (Event) -> Unit,
+    ) : UiState
 
     sealed interface Event : UiEvent {
         data object BackClick : Event

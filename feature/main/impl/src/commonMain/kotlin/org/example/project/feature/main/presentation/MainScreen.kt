@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
@@ -26,6 +27,7 @@ class DefaultMainScreen : MainScreen {
 
     @Composable
     override fun Content(component: MainComponent) {
+        val state by component.state.collectAsStateWithLifecycle()
         val stack by component.stack.subscribeAsState()
         val activeTab = stack.active.configuration
         val composeSnackbarHostState =
@@ -37,19 +39,19 @@ class DefaultMainScreen : MainScreen {
                 NavigationBar(modifier = Modifier.fillMaxWidth()) {
                     NavigationBarItem(
                         selected = activeTab is MainComponent.Tab.Home,
-                        onClick = { component.onEvent(MainComponent.Event.HomeTabClick) },
+                        onClick = { state.eventSink(MainComponent.Event.HomeTabClick) },
                         icon = { Text(TabItem.Home.icon) },
                         label = { Text(TabItem.Home.title) },
                     )
                     NavigationBarItem(
                         selected = activeTab is MainComponent.Tab.Search,
-                        onClick = { component.onEvent(MainComponent.Event.SearchTabClick) },
+                        onClick = { state.eventSink(MainComponent.Event.SearchTabClick) },
                         icon = { Text(TabItem.Search.icon) },
                         label = { Text(TabItem.Search.title) },
                     )
                     NavigationBarItem(
                         selected = activeTab is MainComponent.Tab.Profile,
-                        onClick = { component.onEvent(MainComponent.Event.ProfileTabClick) },
+                        onClick = { state.eventSink(MainComponent.Event.ProfileTabClick) },
                         icon = { Text(TabItem.Profile.icon) },
                         label = { Text(TabItem.Profile.title) },
                     )

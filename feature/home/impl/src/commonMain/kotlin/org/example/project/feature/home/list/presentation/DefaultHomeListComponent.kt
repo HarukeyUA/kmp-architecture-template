@@ -13,27 +13,23 @@ import org.example.project.core.component.MoleculeComponent
 class DefaultHomeListComponent(
     @Assisted componentContext: AppComponentContext,
     @Assisted private val onItemSelected: (id: Int) -> Unit,
-) :
-    HomeListComponent,
-    MoleculeComponent<HomeListComponent.State, HomeListComponent.Event>(componentContext) {
+) : HomeListComponent, MoleculeComponent<HomeListComponent.State>(componentContext) {
 
     @Composable
-    override fun produceState(): HomeListComponent.State {
-        CollectEvents { event ->
-            when (event) {
-                is HomeListComponent.Event.ItemClick -> onItemSelected(event.id)
-            }
-        }
-
-        return HomeListComponent.State(
+    override fun produceState(): HomeListComponent.State =
+        HomeListComponent.State(
             items =
                 listOf(
                     HomeListComponent.Item(id = 1, title = "First Item"),
                     HomeListComponent.Item(id = 2, title = "Second Item"),
                     HomeListComponent.Item(id = 3, title = "Third Item"),
-                )
+                ),
+            eventSink = { event ->
+                when (event) {
+                    is HomeListComponent.Event.ItemClick -> onItemSelected(event.id)
+                }
+            },
         )
-    }
 
     @AssistedFactory
     @ContributesBinding(AppScope::class)

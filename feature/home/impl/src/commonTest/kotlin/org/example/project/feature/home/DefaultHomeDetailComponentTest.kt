@@ -36,7 +36,7 @@ class DefaultHomeDetailComponentTest {
                 createComponent(lifecycle = lifecycle, onBack = { backClicked.value = true })
 
             component.state.test {
-                component.onEvent(HomeDetailComponent.Event.BackClick)
+                awaitItem().eventSink(HomeDetailComponent.Event.BackClick)
                 cancelAndIgnoreRemainingEvents()
             }
 

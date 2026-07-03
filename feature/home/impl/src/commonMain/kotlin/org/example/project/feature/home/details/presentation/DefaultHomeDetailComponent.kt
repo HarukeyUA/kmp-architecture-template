@@ -16,18 +16,10 @@ class DefaultHomeDetailComponent(
     @Assisted componentContext: AppComponentContext,
     @Assisted private val itemId: Int,
     @Assisted private val onBack: () -> Unit,
-) :
-    HomeDetailComponent,
-    MoleculeComponent<HomeDetailComponent.State, HomeDetailComponent.Event>(componentContext) {
+) : HomeDetailComponent, MoleculeComponent<HomeDetailComponent.State>(componentContext) {
 
     @Composable
     override fun produceState(): HomeDetailComponent.State {
-        CollectEvents { event ->
-            when (event) {
-                HomeDetailComponent.Event.BackClick -> onBack()
-            }
-        }
-
         LaunchedEffect(Unit) {
             this@DefaultHomeDetailComponent.snackbarHandler.showSnackbar(
                 SnackbarMessage(text = "Message")
@@ -38,6 +30,11 @@ class DefaultHomeDetailComponent(
             id = itemId,
             title = "Item $itemId",
             description = "This is the detailed description for item $itemId.",
+            eventSink = { event ->
+                when (event) {
+                    HomeDetailComponent.Event.BackClick -> onBack()
+                }
+            },
         )
     }
 

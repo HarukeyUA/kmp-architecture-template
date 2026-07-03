@@ -35,7 +35,7 @@ class DefaultHomeListComponentTest {
                 createComponent(lifecycle = lifecycle, onItemSelected = { selectedId.value = it })
 
             component.state.test {
-                component.onEvent(HomeListComponent.Event.ItemClick(id = 2))
+                awaitItem().eventSink(HomeListComponent.Event.ItemClick(id = 2))
                 cancelAndIgnoreRemainingEvents()
             }
 

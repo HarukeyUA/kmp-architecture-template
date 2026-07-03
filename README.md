@@ -11,8 +11,8 @@ project or generating new feature slices.
 
 - **Molecule + Decompose state production**: `MoleculeComponent` is the default stateful component
   primitive. Components produce `StateFlow` UI state from a `@Composable produceState()` function,
-  receive UI events through an internal event channel, and live inside Decompose/Essenty component
-  contexts.
+  receive user actions through Circuit-style `eventSink` lambdas carried by the state itself, and
+  live inside Decompose/Essenty component contexts.
 - **Process-death-safe state**: `MoleculeComponent` bridges Essenty `StateKeeper` into Compose's
   `SaveableStateRegistry`, so `rememberSaveable` and `rememberSerializable` work inside Molecule
   state production. This applies to Android process death and is also wired for iOS restoration.

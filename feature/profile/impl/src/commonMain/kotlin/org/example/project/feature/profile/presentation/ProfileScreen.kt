@@ -36,15 +36,12 @@ class DefaultProfileScreen : ProfileScreen {
     override fun Content(component: ProfileComponent) {
         val state by component.state.collectAsStateWithLifecycle()
 
-        ProfileScreenContent(state = state, onEvent = component::onEvent)
+        ProfileScreenContent(state = state)
     }
 }
 
 @Composable
-private fun ProfileScreenContent(
-    state: ProfileComponent.State,
-    onEvent: (ProfileComponent.Event) -> Unit,
-) {
+private fun ProfileScreenContent(state: ProfileComponent.State) {
     Column(
         modifier =
             Modifier.fillMaxSize()
@@ -91,7 +88,7 @@ private fun ProfileScreenContent(
         Spacer(modifier = Modifier.height(48.dp))
 
         Button(
-            onClick = { onEvent(ProfileComponent.Event.LogoutClicked) },
+            onClick = { state.eventSink(ProfileComponent.Event.LogoutClicked) },
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
         ) {
             Text("Logout")

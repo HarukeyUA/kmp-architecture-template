@@ -6,11 +6,12 @@ import org.example.project.core.component.StatefulComponent
 import org.example.project.core.component.UiEvent
 import org.example.project.core.component.UiState
 
-interface SearchComponent : StatefulComponent<SearchComponent.State, SearchComponent.Event> {
+interface SearchComponent : StatefulComponent<SearchComponent.State> {
     data class State(
         val queryTextFieldState: TextFieldState = TextFieldState(),
         val results: List<String> = emptyList(),
         val isSearching: Boolean = false,
+        val eventSink: (Event) -> Unit,
     ) : UiState
 
     sealed interface Event : UiEvent {

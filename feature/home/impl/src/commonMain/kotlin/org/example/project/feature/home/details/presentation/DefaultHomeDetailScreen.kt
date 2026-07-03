@@ -30,23 +30,20 @@ class DefaultHomeDetailScreen : HomeDetailScreen {
     override fun Content(component: HomeDetailComponent) {
         val state by component.state.collectAsStateWithLifecycle()
 
-        HomeDetailScreenContent(state = state, onEvent = component::onEvent)
+        HomeDetailScreenContent(state = state)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HomeDetailScreenContent(
-    state: HomeDetailComponent.State,
-    onEvent: (HomeDetailComponent.Event) -> Unit,
-) {
+private fun HomeDetailScreenContent(state: HomeDetailComponent.State) {
     Column(
         modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.background)
     ) {
         TopAppBar(
             title = { Text(text = state.title) },
             navigationIcon = {
-                TextButton(onClick = { onEvent(HomeDetailComponent.Event.BackClick) }) {
+                TextButton(onClick = { state.eventSink(HomeDetailComponent.Event.BackClick) }) {
                     Text(text = "<")
                 }
             },

@@ -24,9 +24,7 @@ class DefaultLoginComponent(
     @Assisted componentContext: AppComponentContext,
     @Assisted private val onLoginSuccess: () -> Unit,
     private val userRepository: UserRepository,
-) :
-    LoginComponent,
-    MoleculeComponent<LoginComponent.State, LoginComponent.Event>(componentContext) {
+) : LoginComponent, MoleculeComponent<LoginComponent.State>(componentContext) {
 
     @Composable
     override fun produceState(): LoginComponent.State {
@@ -39,15 +37,14 @@ class DefaultLoginComponent(
             }
         }
 
-        CollectEvents { event ->
-            when (event) {
-                LoginComponent.Event.LoginClicked -> {
-                    logIn()
+        return LoginComponent.State(
+            counter = counter,
+            eventSink = { event ->
+                when (event) {
+                    LoginComponent.Event.LoginClicked -> logIn()
                 }
-            }
-        }
-
-        return LoginComponent.State(counter = counter)
+            },
+        )
     }
 
     private fun logIn() {

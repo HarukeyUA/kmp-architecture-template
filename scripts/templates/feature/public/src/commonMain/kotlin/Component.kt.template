@@ -5,8 +5,8 @@ import {{BASE_PACKAGE}}.core.component.StatefulComponent
 import {{BASE_PACKAGE}}.core.component.UiEvent
 import {{BASE_PACKAGE}}.core.component.UiState
 
-interface {{FEATURE_NAME}}Component : StatefulComponent<{{FEATURE_NAME}}Component.State, {{FEATURE_NAME}}Component.Event> {
-    data class State(val placeholder: String = "") : UiState
+interface {{FEATURE_NAME}}Component : StatefulComponent<{{FEATURE_NAME}}Component.State> {
+    data class State(val placeholder: String = "", val eventSink: (Event) -> Unit) : UiState
 
     sealed interface Event : UiEvent {
         data object PlaceholderClicked : Event

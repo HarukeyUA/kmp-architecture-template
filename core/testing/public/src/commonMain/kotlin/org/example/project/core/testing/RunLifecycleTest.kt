@@ -19,14 +19,19 @@ enum class LifecycleTestMainMode {
     /**
      * Main dispatcher is an [UnconfinedTestDispatcher] sharing the test scheduler. Launched
      * coroutines start eagerly on the calling thread; good for tests that assert on side effects
-     * immediately after triggering them (e.g. checking a recorder right after calling `onEvent`).
+     * immediately after triggering them (e.g. checking a recorder right after invoking an event
+     * sink). Note that eager dispatch lets snapshot-apply notifications run between adjacent
+     * `MutableState` writes, so unwrapped multi-writes in a sink surface as separate (torn)
+     * emissions here — see the `withMutableSnapshot` rule in ARCHITECTURE.md.
      */
     Eager,
 
     /**
      * Main dispatcher is a [StandardTestDispatcher] sharing the test scheduler. Work runs only as
-     * the scheduler advances; good for tests that need to observe each intermediate state emission
-     * instead of having adjacent writes coalesced into one snapshot.
+     * the scheduler advances, so adjacent snapshot writes coalesce into one state emission; good
+     * for tests that step through a multi-step async sequence one scheduler advance at a time —
+     * under [Eager] such a sequence runs to completion before the collector looks, and the
+     * conflated `StateFlow` only shows the final state.
      */
     Queued,
 }

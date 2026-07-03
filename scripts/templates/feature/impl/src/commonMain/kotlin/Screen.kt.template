@@ -31,15 +31,12 @@ class Default{{FEATURE_NAME}}Screen : {{FEATURE_NAME}}Screen {
     override fun Content(component: {{FEATURE_NAME}}Component) {
         val state by component.state.collectAsStateWithLifecycle()
 
-        {{FEATURE_NAME}}ScreenContent(state = state, onEvent = component::onEvent)
+        {{FEATURE_NAME}}ScreenContent(state = state)
     }
 }
 
 @Composable
-private fun {{FEATURE_NAME}}ScreenContent(
-    state: {{FEATURE_NAME}}Component.State,
-    onEvent: ({{FEATURE_NAME}}Component.Event) -> Unit,
-) {
+private fun {{FEATURE_NAME}}ScreenContent(state: {{FEATURE_NAME}}Component.State) {
     Column(
         modifier =
             Modifier.fillMaxSize()
@@ -55,7 +52,7 @@ private fun {{FEATURE_NAME}}ScreenContent(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(onClick = { onEvent({{FEATURE_NAME}}Component.Event.PlaceholderClicked) }) {
+        Button(onClick = { state.eventSink({{FEATURE_NAME}}Component.Event.PlaceholderClicked) }) {
             Text(text = "Click Me")
         }
     }

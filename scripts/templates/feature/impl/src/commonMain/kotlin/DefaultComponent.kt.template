@@ -15,19 +15,20 @@ import {{BASE_PACKAGE}}.core.component.MoleculeComponent
 @AssistedInject
 class Default{{FEATURE_NAME}}Component(@Assisted componentContext: AppComponentContext) :
     {{FEATURE_NAME}}Component,
-    MoleculeComponent<{{FEATURE_NAME}}Component.State, {{FEATURE_NAME}}Component.Event>(componentContext) {
+    MoleculeComponent<{{FEATURE_NAME}}Component.State>(componentContext) {
 
     @Composable
     override fun produceState(): {{FEATURE_NAME}}Component.State {
         val placeholder by rememberSaveable { mutableStateOf("{{FEATURE_NAME}}") }
 
-        CollectEvents { event ->
-            when (event) {
-                {{FEATURE_NAME}}Component.Event.PlaceholderClicked -> Unit
-            }
-        }
-
-        return {{FEATURE_NAME}}Component.State(placeholder = placeholder)
+        return {{FEATURE_NAME}}Component.State(
+            placeholder = placeholder,
+            eventSink = { event ->
+                when (event) {
+                    {{FEATURE_NAME}}Component.Event.PlaceholderClicked -> Unit
+                }
+            },
+        )
     }
 
     @AssistedFactory

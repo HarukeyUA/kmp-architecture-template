@@ -5,9 +5,9 @@ import org.example.project.core.component.StatefulComponent
 import org.example.project.core.component.UiEvent
 import org.example.project.core.component.UiState
 
-interface HomeListComponent : StatefulComponent<HomeListComponent.State, HomeListComponent.Event> {
+interface HomeListComponent : StatefulComponent<HomeListComponent.State> {
 
-    data class State(val items: List<Item> = emptyList()) : UiState
+    data class State(val items: List<Item> = emptyList(), val eventSink: (Event) -> Unit) : UiState
 
     data class Item(val id: Int, val title: String)
 

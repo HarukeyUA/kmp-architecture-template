@@ -34,7 +34,7 @@ class DefaultLoginComponentTest {
                 )
 
             component.state.test {
-                component.onEvent(LoginComponent.Event.LoginClicked)
+                awaitItem().eventSink(LoginComponent.Event.LoginClicked)
                 runCurrent()
                 cancelAndConsumeRemainingEvents()
             }

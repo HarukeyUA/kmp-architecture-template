@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
  * ```
  * override val sideEffects = SideEffects<MyComponent.SideEffect>()
  *
- * // inside CollectEvents:
+ * // inside an event sink:
  * sideEffects.send(MyComponent.SideEffect.ScrollToTop)
  * ```
  */

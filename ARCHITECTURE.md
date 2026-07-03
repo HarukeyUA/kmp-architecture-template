@@ -167,39 +167,68 @@ All components extend `AppComponentContext`, a custom interface that extends Dec
 AppComponentContext (extends GenericComponentContext<AppComponentContext>)
 │   snackbarHandler: SnackbarHandler
 │
-├── StatefulComponent<S, E>      # Produces state, handles events
-│       │                          state: StateFlow<S>, onEvent(E)
+├── StatefulComponent<S>         # Produces state; user actions arrive via
+│       │                          sink lambdas carried by the state
+│       │                          state: StateFlow<S>
 │       │
-│       └── MoleculeComponent<S, E>  # Molecule-based implementation
+│       └── MoleculeComponent<S>     # Molecule-based implementation
 │                                      Provides: coroutine scope, Molecule state
-│                                      production, StateKeeper bridge, event channel
-│
-├── EventComponent<E>            # Handles events only, no state production
-│                                  onEvent(E)
+│                                      production, StateKeeper bridge
 │
 └── StackComponent<C, T>         # Manages a child stack via Decompose's childStack
                                    stack: Value<ChildStack<C, T>>, onBackClick()
 ```
 
+User actions flow up through **event-sink lambdas carried by the state** (Circuit-style).
+`StatefulComponent` has a single type parameter and exposes only `val state: StateFlow<S>`. A
+coordinator that produces no data of its own is a `StatefulComponent` whose `State` carries nothing
+but the sink. See [Patterns](#patterns) for the rationale.
+
 ### When to Use Each Primitive
 
-| Primitive                 | Use When                                                 | Example                                                  |
-|---------------------------|----------------------------------------------------------|----------------------------------------------------------|
-| `StatefulComponent<S, E>` | Component produces reactive UI state and handles events  | `LoginComponent`, `SearchComponent`, `HomeListComponent` |
-| `EventComponent<E>`       | Component handles events but delegates state to children | `MainComponent` (tab clicks, no own state)               |
-| `StackComponent<C, T>`    | Component manages navigation between child components    | `RootComponent`, `HomeComponent` (list → detail)         |
+| Primitive              | Use When                                                                        | Example                                                  |
+|------------------------|---------------------------------------------------------------------------------|----------------------------------------------------------|
+| `StatefulComponent<S>` | Component produces reactive UI state; user actions arrive via sink(s) on `S`     | `LoginComponent`, `SearchComponent`, `HomeListComponent` |
+| `StackComponent<C, T>` | Component manages navigation between child components                            | `RootComponent`, `HomeComponent` (list → detail)         |
 
-These can be combined — e.g., a component could implement both `EventComponent` and `StackComponent`.
+A stateless coordinator (e.g., a tab bar that only forwards clicks to navigation) is also a
+`StatefulComponent` — its `State` is a data class carrying just the `eventSink`. These can be
+combined — e.g., a component can implement both `StatefulComponent` and `StackComponent` (state +
+the child stack it hosts), as `MainComponent` does.
 
 ### MoleculeComponent
 
-`MoleculeComponent<S, E>` (in `:core:component:public`) is the default implementation of `StatefulComponent`. It takes an `AppComponentContext` and delegates to it via `AppComponentContext by componentContext`. It provides:
+`MoleculeComponent<S>` (in `:core:component:public`) is the default implementation of `StatefulComponent`. It takes an `AppComponentContext` and delegates to it via `AppComponentContext by componentContext`. It provides:
 
 - **Lifecycle-aware coroutine scope** — cancels on destroy
 - **Molecule-powered state production** — state is produced via a `@Composable produceState()` function
 - **StateKeeper integration** — bridges Essenty's StateKeeper to Compose's `SaveableStateRegistry` for process death survival
-- **Event channel** — `CollectEvents {}` helper to consume UI events within the Molecule composition
 - **Lifecycle bridge** — maps Essenty `Lifecycle` to AndroidX `LifecycleOwner`
+
+`produceState()` builds the `eventSink` lambda(s) it places on the returned state; each lambda
+captures the component's callbacks and `scope`, and mutates the `remember`ed Compose state (or
+launches work on `scope`) when the UI invokes it.
+
+Because the sink runs synchronously (no coroutine hop) and Molecule recomposes with
+`RecompositionMode.Immediate`, a handler that mutates **two or more coupled `MutableState` holders**
+must wrap them in `Snapshot.withMutableSnapshot { }` so they apply as a single emission. Without the
+wrapper, atomicity is scheduling-dependent: Molecule recomposes on snapshot-apply *notifications*,
+which are scheduled and coalesced rather than delivered synchronously per write — adjacent writes
+usually merge into one emission (always under the `Queued` test main mode), but if a notification runs
+between the writes (deterministic in tests under the `Eager` main mode; a cross-thread race in
+production) the `StateFlow` publishes an intermediate, half-updated state, which can also restart a
+`LaunchedEffect` keyed on one of the values mid-transition. `withMutableSnapshot` makes the atomicity
+hold by construction, independent of scheduling. Writes already inside a `scope.launch { }` block need
+no wrapper.
+
+**Sink lambdas must be stable, or `StateFlow` dedup breaks.** `State` data classes compare their
+`eventSink` by reference, so state equality degrades to sink identity — deduplication only works if
+the Compose compiler memoizes the sink to one instance across recompositions. A sink must therefore
+capture only stable identities: the component itself (for scopes/repositories/nav callbacks) and
+`remember`ed snapshot-state holders (reading a delegated `var x by remember { … }` *inside* the
+lambda captures the stable holder, which is fine) — never a plain value unwrapped during composition
+(e.g. `val text = textFieldState.text.toString()` captured in the lambda), which changes each
+recomposition, rebuilds the lambda, and makes every emission compare unequal.
 
 ### ChildStack Composable
 
@@ -221,8 +250,11 @@ Side effects (in `:core:component:public`) are one-time events dispatched from a
 
 **Flow:**
 1. Component interface declares `val sideEffects: SideEffects<SideEffect>` and a `sealed interface SideEffect : UiSideEffect`
-2. Component implementation creates `override val sideEffects = SideEffects<...>()` and calls `sideEffects.send(...)` inside `CollectEvents` (or anywhere with an `AppComponentContext` in scope)
+2. Component implementation creates `override val sideEffects = SideEffects<...>()` and calls `sideEffects.send(...)` — typically from inside an `eventSink` lambda while handling a user action, or anywhere in the Molecule composition / on `scope`
 3. Screen composable calls `CollectSideEffects(component.sideEffects) { effect -> ... }` to react (e.g., animate scroll, request focus)
+
+Side effects (one-time component→UI effects) and `StackComponent.onBackClick()` (system back) are
+orthogonal to the event-sink mechanism.
 
 ---
 
@@ -230,17 +262,108 @@ Side effects (in `:core:component:public`) are one-time events dispatched from a
 
 ### Defining a StatefulComponent
 
-In `:public`, define the interface with nested `State`, `Event`, and `Factory`:
+User actions are delivered **Circuit-style**: the `State` carries an `eventSink: (Event) -> Unit`
+lambda that the UI invokes. The sink travels *with* the state so illegal actions can be made
+unrepresentable per state.
+
+#### Flat state — one sink for the whole screen
+
+When every action is legal in every render, `State` is a single data class with one `eventSink`. In
+`:public` (or `:impl`, for feature-internal components), define the interface with nested `State`,
+`Event`, and `Factory`:
 
 ```kotlin
-interface LoginComponent : StatefulComponent<LoginComponent.State, LoginComponent.Event> {
-    data class State(val counter: Int = 0) : UiState
-    sealed interface Event : UiEvent { ... }
+interface LoginComponent : StatefulComponent<LoginComponent.State> {
+    data class State(val counter: Int = 0, val eventSink: (Event) -> Unit) : UiState
+
+    sealed interface Event : UiEvent {
+        data object LoginClicked : Event
+    }
+
     fun interface Factory { fun create(componentContext: AppComponentContext, ...): LoginComponent }
 }
 ```
 
-In `:impl`, extend `MoleculeComponent` (passing `AppComponentContext`), override `produceState()`, and use `CollectEvents {}` to handle events. The Metro `@AssistedFactory` / `@ContributesBinding` annotations wire the factory into DI.
+In `:impl`, extend `MoleculeComponent<State>` (passing `AppComponentContext`) and override
+`produceState()`. Build the sink there; it captures the component's navigation callbacks and
+`remember`ed state. The Metro `@AssistedFactory` / `@ContributesBinding` annotations wire the factory
+into DI:
+
+```kotlin
+@Composable
+override fun produceState(): LoginComponent.State {
+    var counter by rememberSaveable { mutableStateOf(0) }
+
+    return LoginComponent.State(
+        counter = counter,
+        eventSink = { event ->
+            when (event) {
+                LoginComponent.Event.LoginClicked -> logIn()
+            }
+        },
+    )
+}
+```
+
+#### Sealed state — a sink per branch
+
+When the screen renders as a state machine (loading spinner → content → committing), model `State`
+as a `sealed interface` and put a sink **only on the branches where actions are legal**. Each
+interactive branch carries its own `eventSink` typed to that branch's own event sub-interface;
+blocking/terminal branches (spinners, "in progress") carry **no sink at all**, so there is literally
+no way for the UI to dispatch an action that branch can't handle.
+
+```kotlin
+interface ImportComponent : StatefulComponent<ImportComponent.State> {
+
+    sealed interface State : UiState {
+        // Actions legal here → narrow sink typed to FilePickEvent.
+        data class FilePick(
+            val parseError: AppError? = null,
+            val eventSink: (FilePickEvent) -> Unit,
+        ) : State
+
+        // No legal actions while parsing → no sink.
+        data object Parsing : State
+
+        data class Preview(
+            val parsedEntryCount: Int,
+            val eventSink: (PreviewEvent) -> Unit,
+        ) : State
+
+        data class Committing(val processed: Int, val total: Int) : State  // no sink
+    }
+
+    // Shared base so the event space has one supertype (SideEffect wiring, dispatch, tests).
+    sealed interface Event : UiEvent
+
+    sealed interface FilePickEvent : Event {
+        data object PickFileClick : FilePickEvent
+        data object BackClick : FilePickEvent      // FilePick's back exits the flow
+    }
+
+    sealed interface PreviewEvent : Event {
+        data object CommitClick : PreviewEvent
+        data object BackClick : PreviewEvent        // Preview's back steps back to FilePick
+    }
+}
+```
+
+**Why per-branch sinks and not one hoisted sink?** A single `eventSink` hoisted onto the sealed base
+would have to be typed `(Event) -> Unit` — the widest type — which re-admits *every* event on
+*every* branch, defeating the "illegal actions unrepresentable" goal. You also can't declare a
+narrower sink on the base and override it per branch: function parameters are **contravariant**, so
+an override may only *widen* the accepted parameter type, never narrow it. Making a branch accept
+*fewer* events therefore requires a *separate* `eventSink` property on that branch (not an override).
+The branches share nothing at the property level; only their **event types** share the base
+`sealed interface Event`, which keeps the event space unified for dispatch, `SideEffect` wiring, and
+tests.
+
+**Placement rule:** put each action on the narrowest event interface where it is *always* legal. An
+action legal only in `Preview` lives on `PreviewEvent`; a truly cross-cutting action legal on every
+branch can live directly on the base `Event`. When two branches share an action name but its
+behaviour differs (like `BackClick` above), model it per-branch. Branches with no legal action carry
+no sink.
 
 ### Defining a StackComponent
 
@@ -283,34 +406,45 @@ override fun Content(component: HomeComponent) {
 }
 ```
 
-### Defining an EventComponent
+### Defining a stateless coordinator
 
-In `:public`, define the interface with a `sealed interface Event`. For tab-based coordinators, expose a `@Serializable sealed interface Tab` as the stack configuration type so the screen can determine the active tab via `stack.active.configuration` without referencing child component types:
+A coordinator that produces no data of its own (e.g., a tab bar that only forwards clicks to
+navigation) is a `StatefulComponent` whose `State` carries **only** the `eventSink`. When the
+coordinator also hosts a child stack, it implements `StackComponent` too. For tab-based
+coordinators, expose a `@Serializable sealed interface Tab` as the stack configuration type so the
+screen can determine the active tab via `stack.active.configuration` without referencing child
+component types:
 
 ```kotlin
-interface MainComponent : EventComponent<MainComponent.Event> {
+interface MainComponent : StatefulComponent<MainComponent.State>, StackComponent<MainComponent.Tab, ScreenChild> {
+
     val snackbarHostState: SnackbarHostState
-    val stack: Value<ChildStack<Tab, ScreenChild>>
+
+    data class State(val eventSink: (Event) -> Unit) : UiState
+
     @Serializable sealed interface Tab {
         @Serializable data object Home : Tab
         @Serializable data object Search : Tab
         @Serializable data object Profile : Tab
     }
     sealed interface Event : UiEvent {
-        object HomeTabClick : Event
-        object SearchTabClick : Event
-        object ProfileTabClick : Event
+        data object HomeTabClick : Event
+        data object SearchTabClick : Event
+        data object ProfileTabClick : Event
     }
 }
 ```
 
-In `:impl`, implement `onEvent()` to handle each event (e.g., calling `navigation.bringToFront()`). The `Tab` type doubles as Decompose's stack configuration, eliminating the need for a separate private `Config` class. The child factory pairs each feature component with its screen via `asChild`.
+In `:impl`, `produceState()` returns a `State` whose `eventSink` dispatches each event (e.g., calling
+`navigation.bringToFront(Tab.Home)`). The `Tab` type doubles as Decompose's stack configuration,
+eliminating the need for a separate private `Config` class. The child factory pairs each feature
+component with its screen via `asChild`.
 
 ### Screen Interface Pattern
 
 Screens are defined as interfaces and implemented in `:impl`. For feature entry-point screens (e.g., `HomeScreen`), the interface lives in `:public` so other features can inject and render it. For feature-internal child screens (e.g., `HomeListScreen`, `HomeDetailScreen`), both the interface and implementation live in `:impl` since they're only used within the feature's `StackComponent`.
 
-- **StatefulComponent screens** — observe `component.state` via `collectAsStateWithLifecycle()`, delegate to a private stateless composable for previewability
+- **StatefulComponent screens** — observe `component.state` via `collectAsStateWithLifecycle()`, then dispatch user actions by invoking the sink on the current state (`state.eventSink(Event.BackClick)`). For sealed state, `when`-branch on the state and reach the branch's own sink (`state.eventSink(FilePickEvent.PickFileClick)`). Delegate to a private stateless content composable that takes the sink-bearing `State` (plus separately hoisted `onX: () -> Unit` lambdas where applicable) — previews supply the state with an inert `eventSink = {}` stub
 - **StackComponent screens** — use the `ChildStack(component)` convenience overload; each `ScreenChild` renders itself, so the host screen has no child-specific knowledge
 
 ---
@@ -355,7 +489,7 @@ All navigation uses Decompose's `childStack` with `@Serializable` configuration 
 ```
 
 - **RootComponent** — `StackComponent` managing Splash → Login → Main flow; start destination is determined by `UserRepository.isLoggedIn`
-- **MainComponent** — `EventComponent` managing bottom navigation tabs via `childStack` + `bringToFront`
+- **MainComponent** — stateless coordinator (`StatefulComponent` + `StackComponent`) managing bottom navigation tabs via `childStack` + `bringToFront`
 - **HomeComponent** — `StackComponent` managing List → Detail navigation within the Home tab
 
 ---
@@ -586,7 +720,7 @@ For `Flow`-returning APIs, apply `.flowOn(ioDispatcher)` at the boundary so coll
 Components have a built-in lifecycle-aware coroutine scope that is cancelled when the component is destroyed. **This is the default scope for all component-initiated work.**
 
 - **`MoleculeComponent` subclasses** — already expose a lifecycle-aware `CoroutineScope`; use it directly.
-- **Components that do not extend `MoleculeComponent`** (e.g., plain `EventComponent` or `StackComponent` implementations that need to launch coroutines) — call `LifecycleOwner.lifecycleAwareScope()` from `:core:component:public`. It returns a `CoroutineScope` tied to the component's lifecycle, running on the platform main dispatcher with a `SupervisorJob`, and is cancelled automatically on destroy. Since `AppComponentContext` extends `LifecycleOwner`, this is available on any component context:
+- **Components that do not extend `MoleculeComponent`** (e.g., plain `StackComponent` implementations that need to launch coroutines) — call `LifecycleOwner.lifecycleAwareScope()` from `:core:component:public`. It returns a `CoroutineScope` tied to the component's lifecycle, running on the platform main dispatcher with a `SupervisorJob`, and is cancelled automatically on destroy. Since `AppComponentContext` extends `LifecycleOwner`, this is available on any component context:
   ```kotlin
   class DefaultMyComponent(
       componentContext: AppComponentContext,
@@ -633,7 +767,7 @@ All component platform bridges live in `:core:component:public`:
 
 ### Testing Principles
 
-1. **Test via the component contract** — observe `state: StateFlow<S>` and send events via `onEvent(E)`, no UI framework needed
+1. **Test via the component contract** — observe `state: StateFlow<S>` and drive the component by reaching the `eventSink` on the current state (`state.value.eventSink(...)`), no UI framework needed. For sealed state, narrow to a branch with the `asBranch<Branch>()` helper first: `state.value.asBranch<State.FilePick>().eventSink(FilePickEvent.PickFileClick)`
 2. **Fakes over mocks** — hand-written fake implementations, not mocking libraries
 3. **Shared fakes in `:testing` modules** — reusable across feature tests
 4. **Tests live in `commonTest`** — in `:impl` modules, next to the implementation
@@ -676,11 +810,13 @@ The `mainMode` parameter selects how coroutines launched on `Dispatchers.Main` a
 | Mode                                       | Dispatcher                 | When to use                                                                                                                                                                                   |
 |--------------------------------------------|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `LifecycleTestMainMode.Queued` *(default)* | `StandardTestDispatcher`   | Work runs only as the scheduler advances. Pair with Turbine's `awaitItem()` (or explicit `runCurrent()` / `advanceUntilIdle()`) to observe each intermediate state emission.                  |
-| `LifecycleTestMainMode.Eager`              | `UnconfinedTestDispatcher` | Launched coroutines start eagerly on the calling thread. Useful when asserting on a side effect immediately after dispatching an event (e.g. checking a navigation callback after `onEvent`). |
+| `LifecycleTestMainMode.Eager`              | `UnconfinedTestDispatcher` | Launched coroutines start eagerly on the calling thread. Useful when asserting on a side effect immediately after dispatching an event (e.g. checking a navigation callback right after invoking an event sink). |
 
 **`runCoroutineTest`** — same dispatcher / mode handling as `runLifecycleTest`, without lifecycle management. Use for tests that don't involve a component lifecycle.
 
 **`testComponentContext(lifecycle)`** — creates a `DefaultAppComponentContext` with `SnapshotNotifier.WhileActive`, so Molecule manages its own snapshot notifications in tests (in production, Compose UI handles this via `SnapshotNotifier.External`). All test `createComponent` helpers should use this instead of constructing `DefaultAppComponentContext` directly.
+
+**`asBranch<Branch>()`** — narrows a sealed state (or a nested branch holder) to `Branch`, throwing a clear `AssertionError` if it is some other branch (or `null`). Use it to reach a branch's `eventSink` before dispatching: `component.state.value.asBranch<State.FilePick>().eventSink(FilePickEvent.PickFileClick)`.
 
 ### Testing a StatefulComponent
 
@@ -690,7 +826,7 @@ Tests use `runLifecycleTest` to get a managed lifecycle and a test-scheduler-bac
 - `runLifecycleTest { lifecycle -> ... }` — manages `LifecycleRegistry` creation, `resume()`, `destroy()`, and `Dispatchers.Main`
 - `createComponent(lifecycle, ...)` — builds `testComponentContext(lifecycle)` and the component under test
 - `component.state.test { ... }` — Turbine collects the `StateFlow` and provides `awaitItem()` for assertions
-- `component.onEvent(...)` — simulates UI interactions
+- `state.value.eventSink(...)` (or `awaitItem().eventSink(...)` inside a Turbine block) — simulates UI interactions by invoking the sink on the current state. For sealed state, narrow first with `state.value.asBranch<Branch>().eventSink(...)`
 
 See `DefaultLoginComponentTest` in `:feature:auth:impl` for a full example.
 
@@ -711,12 +847,15 @@ See `DefaultHomeListComponentTest` and `DefaultHomeDetailComponentTest` in `:fea
 
 Feature modules add screenshot tests in `src/androidHostTest/kotlin/` and apply the `screenshot.testing` convention plugin.
 
+Screenshot tests target the private stateless content composable, constructing the sink-bearing
+`State` with an inert `eventSink = {}` stub (and stubbing any separately hoisted `onX` lambdas):
+
 ```kotlin
 // Example
 class LoginScreenScreenshotTest : ScreenshotTest() {
     @Test
     fun loginScreen() = capture {
-        LoginScreenContent(state = LoginComponent.State())
+        LoginScreenContent(state = LoginComponent.State(eventSink = {}))
     }
 }
 ```
