@@ -5,6 +5,7 @@ import org.example.project.core.component.StatefulComponent
 import org.example.project.core.component.UiEvent
 import org.example.project.core.component.UiState
 import org.example.project.core.error.AppError
+import org.example.project.shared.notes.NotesQuotaExceeded
 
 interface NotesComponent : StatefulComponent<NotesComponent.State, NotesComponent.Event> {
     data class State(
@@ -13,6 +14,9 @@ interface NotesComponent : StatefulComponent<NotesComponent.State, NotesComponen
         val isLoading: Boolean = false,
         val isSubmitting: Boolean = false,
         val error: AppError? = null,
+        // The one Declared error `create` can return (ADR-0011), rendered inline with its budget;
+        // anything else rides the generic [error] pipeline.
+        val quotaExceeded: NotesQuotaExceeded? = null,
     ) : UiState
 
     sealed interface Event : UiEvent {

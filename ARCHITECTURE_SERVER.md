@@ -2,7 +2,7 @@
 
 > **Companion to [`ARCHITECTURE.md`](ARCHITECTURE.md)**, which documents the client. This file covers the server, the shared **Seam**, and the fullstack module topology that joins them.
 >
-> **Status: in progress** (see [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) for the phased plan). **Landed:** Phase 1 — client modules under `:client:*`; Phase 2 — the `:server:app` skeleton (boots against Postgres, `/health` + `/metrics`, Flyway, Metro-on-JVM graph, migration drift test); Phase 3 — the `:shared:common` seam + the polymorphic `ApiError` error pipeline end-to-end (stop-gap: no sealed grouping yet); Phase 4 — the **auth tracer bullet** (the validation gate): credential/session seam, Argon2id, opaque sessions + Caffeine cache, secure client token storage (KSafe), the 401→Login interceptor, and the platform `ApiConfig` — proven by a server Testcontainers integration test and a client MockEngine test; Phase 5 — the **notes** domain (this section's running example, now real): cheap replication of the slice shape plus a **cross-domain** `NotesService → AuthService` call (resolving each note's author through auth's `:public`, never its tables) and the per-account `notes.quota_exceeded` budget — added with **zero lines** in `:server:app`, and the module-assert task rejects a deliberate reach into another domain's `:impl`; Phase 6 — **hardening**: the `BlobStore` object-storage primitive (`:server:core:storage`, presigned-URL transfer model, aws-sdk-kotlin against MinIO/S3, **never local disk**), the advisory-lock `ScheduledJob` runner (`:server:core:scheduler`, `pg_try_advisory_lock` → no concurrent runs across instances) with an idempotent expired-session sweeper, and a target-agnostic `installDist`→JRE `Dockerfile` — all self-registering, still **zero lines** added to the app graph's `main()`/routes, proven by MinIO + two-instance-Postgres Testcontainers tests. **Pending:** Phase 7 — revisit the deferred (sealed `ApiError` grouping; real-time SSE/WS); live deploy provisioning is left to the deployer. Rationale and rejected alternatives live in [`docs/adr/`](docs/adr/README.md); vocabulary lives in [`CONTEXT.md`](CONTEXT.md).
+> **Status: in progress** (see [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) for the phased plan). **Landed:** Phase 1 — client modules under `:client:*`; Phase 2 — the `:server:app` skeleton (boots against Postgres, `/health` + `/metrics`, Flyway, Metro-on-JVM graph, migration drift test); Phase 3 — the `:shared:common` seam + the polymorphic `ApiError` error pipeline end-to-end; Phase 4 — the **auth tracer bullet** (the validation gate): credential/session seam, Argon2id, opaque sessions + Caffeine cache, secure client token storage (KSafe), the 401→Login interceptor, and the platform `ApiConfig` — proven by a server Testcontainers integration test and a client MockEngine test; Phase 5 — the **notes** domain (this section's running example, now real): cheap replication of the slice shape plus a **cross-domain** `NotesService → AuthService` call (resolving each note's author through auth's `:public`, never its tables) and the per-account `notes.quota_exceeded` budget — added with **zero lines** in `:server:app`, and the module-assert task rejects a deliberate reach into another domain's `:impl`; Phase 6 — **hardening**: the `BlobStore` object-storage primitive (`:server:core:storage`, presigned-URL transfer model, aws-sdk-kotlin against MinIO/S3, **never local disk**), the advisory-lock `ScheduledJob` runner (`:server:core:scheduler`, `pg_try_advisory_lock` → no concurrent runs across instances) with an idempotent expired-session sweeper, and a target-agnostic `installDist`→JRE `Dockerfile` — all self-registering, still **zero lines** added to the app graph's `main()`/routes, proven by MinIO + two-instance-Postgres Testcontainers tests. Phase 7a — **per-endpoint Declared errors** ([ADR-0011](docs/adr/0011-per-endpoint-declared-errors.md)): `Endpoint` carries an `Err` set, server enforcement via `Failure<E>`, client `CallFailure` with exhaustive `when`, declared-set freeze tests — resolving the ADR-0005 pin. **Pending:** real-time SSE/WS; live deploy provisioning is left to the deployer. Rationale and rejected alternatives live in [`docs/adr/`](docs/adr/README.md); vocabulary lives in [`CONTEXT.md`](CONTEXT.md).
 
 The goal: a Compose Multiplatform client and a Ktor server in **one Gradle build**, joined by a shared contract so the two halves feel like "one whole thing" — while staying changeable and not foreclosing horizontal scale. The unity comes from the **type-safe Seam**, not from interleaving code.
 
@@ -143,7 +143,7 @@ data class UnknownApiError(val code: String, val raw: JsonObject?) : ApiError   
 
 > **Implemented (Phase 3).** Both sides build their `Json` via the shared `buildSeamJson(domainModules)` (folds the multibound set onto `commonApiErrorSerializersModule`), so the wire format is byte-identical. `UnknownApiError` is produced by a `defaultDeserializer` on the polymorphic `ApiError`. One Kotlin/Native subtlety, pre-solved: a bare `serializer<ApiError>()` can't resolve an *interface* serializer at runtime on Native, so `ApiError` always crosses the wire **inside `ErrorEnvelope`** — whose generated serializer wires the polymorphic field at compile time on every target. (Serialize a bare `ApiError` only via `PolymorphicSerializer(ApiError::class)`.)
 
-**Server side** — services return `Either<ApiError, T>`; `ApiError` is *semantic*, the route maps it to a status:
+**Server side** — services return `Either<Failure<Err>, T>` ([ADR-0011](docs/adr/0011-per-endpoint-declared-errors.md)): the `Declared` arm is compile-checked against the endpoint's declared set, the `Ambient` arm carries cross-cutting errors (`declared(e)` / `ambient(e)` Raise helpers). `Route.serve` unwraps to `ApiError` — which stays *semantic*; the route maps it to a status:
 
 ```kotlin
 // :server:core:web — the ONE place ApiError meets HTTP
@@ -159,22 +159,22 @@ fun ApiError.toStatus() = when (this) {
 suspend fun ApplicationCall.respondError(e: ApiError) = respond(e.toStatus(), ErrorEnvelope(e, requestId()))
 ```
 
-`Either` for *expected* failures; **StatusPages only for unexpected exceptions** → log + generic `Internal`, never leak. `ApiError` is the **information-disclosure boundary** (no `UserNotFound` vs `WrongPassword` — both collapse to `Unauthorized`).
+`Either` for *expected* failures; **StatusPages only for unexpected exceptions** → log + generic `Internal`, never leak. `ApiError` is the **information-disclosure boundary** (no `UserNotFound` vs `WrongPassword` — both collapse to the single Declared `auth.invalid_credentials`; `Unauthorized` means exactly one thing: Access token missing/expired/invalid).
 
 **Client side** — `ApiError` stays pure in `:shared` (it can't implement the client's `AppError` — umbrella law), so it is wrapped in a carrier that does, and rides the existing `AppError`/`DelegatingError`/`ErrorRenderer` pipeline to a localized string:
 
 ```kotlin
-// :client:core:error — one new variant on the existing NetworkError
-sealed interface NetworkError : AppError {
-    data class Http(val code: Int) : NetworkError
-    data class Connection(val cause: Throwable) : NetworkError
-    data class Serialization(val cause: Throwable) : NetworkError
-    data class Api(val error: ApiError) : NetworkError       // wraps the shared type
+// :client:core:error — the endpoint-typed carrier (ADR-0011)
+sealed interface CallFailure<out E : ApiError> : AppError {
+    data class Declared<E : ApiError>(val error: E) : CallFailure<E>   // exhaustive when per endpoint
+    data class Ambient(val error: ApiError) : CallFailure<Nothing>     // cross-cutting → central renderer
+    data class Transport(val error: NetworkError) : CallFailure<Nothing> // offline / 5xx / decode
 }
-// executeSafe parses a 4xx ErrorEnvelope into NetworkError.Api(...)
+// HttpClient.call narrows a parsed 4xx envelope against the endpoint's declared KClass:
+// isInstance → Declared; otherwise (common, unknown, or undeclared = drift valve) → Ambient
 ```
 
-> **⚠ Open / deferred:** whether each `:shared:<domain>` adds a sealed `XApiError : ApiError` grouping as a **client-side narrowing lens** (autocomplete + compile-forced exhaustive domain handling; common/unknown fall to `else`). **Interim stop-gap in effect:** domain errors are declared directly as `: ApiError` with no grouping; services return loose `Either<ApiError, T>`; the client matches `is X -> … ; else -> generic`. Adding the grouping later is purely additive and non-breaking. Tracked as a pin; revisit once the server shape exists. Full rationale + the loose-vs-sealed-vs-lens options are in [ADR-0005](docs/adr/0005-error-model.md).
+> **Resolved ([ADR-0011](docs/adr/0011-per-endpoint-declared-errors.md), supersedes the ADR-0005 stop-gap):** errors are declared **per endpoint** — `Endpoint<R, Req, Res, Err>` carries a nullable `KClass<out Err>` (`null` ⇒ no Declared errors, `Err = Nothing`), with one lazily-minted sealed lens per operation (`NotesCreateError`) and a declared-set freeze test per domain. Declared errors cross the client unmapped by default (a deliberate carve-out from ADR-0003); repositories may still narrow/map when they recover errors internally.
 
 ---
 
@@ -377,7 +377,7 @@ Recorded so the boundary of "now" is explicit:
 
 - **Real-time updates** (SSE/WS) — an enhancement layer over the REST baseline with graceful degradation.
 - **kotlinx-rpc** — rejected (no wire-compat guarantees); see [ADR-0002](docs/adr/0002-rest-ktor-resources-contract.md).
-- **Sealed per-domain `ApiError` grouping** — deferred; interim stop-gap in effect; see [ADR-0005](docs/adr/0005-error-model.md).
+- ~~**Sealed per-domain `ApiError` grouping**~~ — resolved as per-**endpoint** Declared error sets; see [ADR-0011](docs/adr/0011-per-endpoint-declared-errors.md).
 - **Redis shared cache**, **deferred-job queue** (outbox + worker), **read replicas**, **OpenTelemetry tracing** — all swap-in-when-needed per [ADR-0010](docs/adr/0010-scale-posture.md).
 - **`/v2` API versioning** — only if additive evolution is ever genuinely exhausted.
 
@@ -385,4 +385,4 @@ Recorded so the boundary of "now" is explicit:
 
 ## ADR index
 
-See [`docs/adr/README.md`](docs/adr/README.md). Decisions: 0001 umbrellas · 0002 REST/Resources · 0003 share-the-wire · 0004 validation split · 0005 error model (partial) · 0006 server public/impl · 0007 persistence/migrations · 0008 Metro DI · 0009 auth · 0010 scale.
+See [`docs/adr/README.md`](docs/adr/README.md). Decisions: 0001 umbrellas · 0002 REST/Resources · 0003 share-the-wire · 0004 validation split · 0005 error model · 0006 server public/impl · 0007 persistence/migrations · 0008 Metro DI · 0009 auth · 0010 scale · 0011 per-endpoint declared errors.

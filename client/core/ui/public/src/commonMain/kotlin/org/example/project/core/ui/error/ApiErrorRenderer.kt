@@ -20,12 +20,13 @@ import org.example.project.shared.common.Validation
 
 /**
  * Maps a cross-cutting [ApiError] (carried by
- * [NetworkError.Api][org.example.project.core.error.NetworkError.Api]) to a localized message.
+ * [CallFailure.Ambient][org.example.project.core.error.CallFailure.Ambient]) to a localized
+ * message, used by [CallFailureRenderer].
  *
- * Per the interim stop-gap (ADR-0005) this matches the known variants and lets everything else —
- * [Internal], [UnknownApiError], and (for now) per-domain errors — return `null`, i.e. fall through
- * to the generic fallback in `CompositeErrorRenderer`. When the sealed per-domain grouping lands
- * (Phase 7), each domain narrows its own variants in its own renderer.
+ * This matches the known cross-cutting variants and lets everything else — [Internal],
+ * [UnknownApiError], and per-domain Declared errors — return `null`, i.e. fall through to the
+ * generic fallback in `CompositeErrorRenderer`. Per-domain Declared errors are rendered inline by
+ * the feature that reacts to them (ADR-0011), not here.
  */
 fun ApiError.toResourceResult(): ResourceResult? =
     when (this) {

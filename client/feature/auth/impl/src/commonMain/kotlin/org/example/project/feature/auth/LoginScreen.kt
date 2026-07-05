@@ -22,7 +22,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
+import org.example.project.client.feature.auth.impl.Res
+import org.example.project.client.feature.auth.impl.error_email_taken
+import org.example.project.client.feature.auth.impl.error_invalid_credentials
 import org.example.project.core.ui.error.message
+import org.jetbrains.compose.resources.stringResource
 
 @ContributesBinding(AppScope::class)
 @Inject
@@ -66,9 +70,16 @@ internal fun LoginScreenContent(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        state.error?.let { error ->
-            Text(text = error.message(), color = MaterialTheme.colorScheme.error)
-        }
+        // A Declared failure shows its inline field message; anything else rides the generic
+        // renderer via error.message().
+        val message =
+            when (state.formError) {
+                LoginComponent.FormError.InvalidCredentials ->
+                    stringResource(Res.string.error_invalid_credentials)
+                LoginComponent.FormError.EmailTaken -> stringResource(Res.string.error_email_taken)
+                null -> state.error?.message()
+            }
+        message?.let { Text(text = it, color = MaterialTheme.colorScheme.error) }
 
         Button(
             onClick = { onEvent(LoginComponent.Event.LoginClicked) },

@@ -32,18 +32,39 @@ class AuthResource {
  * defined once.
  */
 object AuthApi {
-    val signup: Endpoint<AuthResource.Signup, SignupRequest, TokensResponse> =
-        Endpoint(HttpMethod.Post, SignupRequest.serializer(), TokensResponse.serializer())
+    val signup: Endpoint<AuthResource.Signup, SignupRequest, TokensResponse, AuthSignupError> =
+        Endpoint(
+            HttpMethod.Post,
+            SignupRequest.serializer(),
+            TokensResponse.serializer(),
+            error = AuthSignupError::class,
+        )
 
-    val login: Endpoint<AuthResource.Login, LoginRequest, TokensResponse> =
-        Endpoint(HttpMethod.Post, LoginRequest.serializer(), TokensResponse.serializer())
+    val login: Endpoint<AuthResource.Login, LoginRequest, TokensResponse, AuthLoginError> =
+        Endpoint(
+            HttpMethod.Post,
+            LoginRequest.serializer(),
+            TokensResponse.serializer(),
+            error = AuthLoginError::class,
+        )
 
-    val refresh: Endpoint<AuthResource.Refresh, RefreshRequest, AccessTokenResponse> =
-        Endpoint(HttpMethod.Post, RefreshRequest.serializer(), AccessTokenResponse.serializer())
+    val refresh:
+        Endpoint<AuthResource.Refresh, RefreshRequest, AccessTokenResponse, AuthRefreshError> =
+        Endpoint(
+            HttpMethod.Post,
+            RefreshRequest.serializer(),
+            AccessTokenResponse.serializer(),
+            error = AuthRefreshError::class,
+        )
 
-    val logout: Endpoint<AuthResource.Logout, LogoutRequest, Unit> =
-        Endpoint(HttpMethod.Post, LogoutRequest.serializer(), response = null)
+    val logout: Endpoint<AuthResource.Logout, LogoutRequest, Unit, Nothing> =
+        Endpoint(HttpMethod.Post, LogoutRequest.serializer(), response = null, error = null)
 
-    val me: Endpoint<AuthResource.Me, Unit, AccountResponse> =
-        Endpoint(HttpMethod.Get, request = null, response = AccountResponse.serializer())
+    val me: Endpoint<AuthResource.Me, Unit, AccountResponse, Nothing> =
+        Endpoint(
+            HttpMethod.Get,
+            request = null,
+            response = AccountResponse.serializer(),
+            error = null,
+        )
 }

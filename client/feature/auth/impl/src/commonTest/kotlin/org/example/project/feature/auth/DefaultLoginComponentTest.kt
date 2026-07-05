@@ -5,15 +5,14 @@ import arrow.core.left
 import arrow.core.right
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlin.test.Test
 import kotlinx.coroutines.test.runCurrent
-import org.example.project.core.error.NetworkError
+import org.example.project.core.error.CallFailure
 import org.example.project.core.testing.runLifecycleTest
 import org.example.project.core.testing.testComponentContext
-import org.example.project.shared.common.Unauthorized
+import org.example.project.shared.auth.InvalidCredentials
 
 class DefaultLoginComponentTest {
     @Test
@@ -35,7 +34,7 @@ class DefaultLoginComponentTest {
         val component =
             createComponent(
                 lifecycle = lifecycle,
-                authRepository = FakeAuthRepository(result = Unit.right()),
+                authRepository = FakeAuthRepository(loginResult = Unit.right()),
                 onAuthenticated = { authenticated = true },
             )
 
@@ -50,18 +49,22 @@ class DefaultLoginComponentTest {
     }
 
     @Test
-    fun `failed login surfaces the error in state`() = runLifecycleTest { lifecycle ->
+    fun `invalid credentials surface as an inline form error`() = runLifecycleTest { lifecycle ->
         val component =
             createComponent(
                 lifecycle = lifecycle,
-                authRepository = FakeAuthRepository(result = NetworkError.Api(Unauthorized).left()),
+                authRepository =
+                    FakeAuthRepository(
+                        loginResult = CallFailure.Declared(InvalidCredentials).left()
+                    ),
             )
 
         component.state.test { awaitItem() }
         component.onEvent(LoginComponent.Event.LoginClicked)
         runCurrent()
 
-        assertThat(component.state.value.error).isNotNull()
+        assertThat(component.state.value.formError)
+            .isEqualTo(LoginComponent.FormError.InvalidCredentials)
     }
 
     private fun createComponent(

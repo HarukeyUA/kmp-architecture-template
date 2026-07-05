@@ -15,6 +15,8 @@ import dev.zacsweers.metro.ContributesBinding
 import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.MoleculeComponent
 import org.example.project.core.error.AppError
+import org.example.project.core.error.CallFailure
+import org.example.project.shared.notes.NotesQuotaExceeded
 
 @AssistedInject
 class DefaultNotesComponent(
@@ -31,6 +33,7 @@ class DefaultNotesComponent(
         var isLoading by remember { mutableStateOf(false) }
         var isSubmitting by remember { mutableStateOf(false) }
         var error by remember { mutableStateOf<AppError?>(null) }
+        var quotaExceeded by remember { mutableStateOf<NotesQuotaExceeded?>(null) }
 
         suspend fun reload() {
             isLoading = true
@@ -54,16 +57,27 @@ class DefaultNotesComponent(
                 is NotesComponent.Event.TextChanged -> {
                     textInput = event.value
                     error = null
+                    quotaExceeded = null
                 }
                 NotesComponent.Event.Refresh -> reload()
                 NotesComponent.Event.AddClicked -> {
                     if (isSubmitting || textInput.isBlank()) return@CollectEvents
                     isSubmitting = true
                     error = null
+                    quotaExceeded = null
                     repository
                         .create(textInput)
                         .fold(
-                            ifLeft = { error = it },
+                            // The Declared arm is an exhaustive `when` over NotesCreateError.
+                            ifLeft = { failure ->
+                                when (failure) {
+                                    is CallFailure.Declared ->
+                                        when (val declared = failure.error) {
+                                            is NotesQuotaExceeded -> quotaExceeded = declared
+                                        }
+                                    else -> error = failure
+                                }
+                            },
                             ifRight = {
                                 textInput = ""
                                 reload()
@@ -84,6 +98,7 @@ class DefaultNotesComponent(
             isLoading = isLoading,
             isSubmitting = isSubmitting,
             error = error,
+            quotaExceeded = quotaExceeded,
         )
     }
 

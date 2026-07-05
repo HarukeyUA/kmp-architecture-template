@@ -16,5 +16,9 @@ class AuthErrorGoldenTest {
     @Test
     fun `auth error codes are frozen`() {
         assertThat(serializer<EmailTaken>().descriptor.serialName).isEqualTo("auth.email_taken")
+        assertThat(serializer<InvalidCredentials>().descriptor.serialName)
+            .isEqualTo("auth.invalid_credentials")
+        assertThat(serializer<SessionExpired>().descriptor.serialName)
+            .isEqualTo("auth.session_expired")
     }
 }

@@ -24,6 +24,14 @@ _Avoid_: feature (a client-only term), service, bounded context
 The serialized over-the-network representation of data or errors; the only thing the Seam holds.
 _Avoid_: payload, entity, bare "model"
 
+**Declared error**:
+A Wire error that a specific operation in a Contract commits to returning, minted in the owning Domain's Contract module; the set the client handles exhaustively. If the client must react specifically to a failure, it is a Declared error — even when a similar cross-cutting shape exists.
+_Avoid_: expected error, typed error (every Wire error is typed), domain error (collides with Domain model)
+
+**Ambient error**:
+A cross-cutting Wire error (unauthorized, rate-limited, validation, internal, unknown…) that any operation can produce, usually from plugins rather than handlers; protocol plumbing handled once, centrally — never part of an operation's declared set.
+_Avoid_: common error, global error, generic error
+
 **Domain model**:
 A side's own internal representation of a concept, deliberately distinct from the Wire; client and server each own theirs.
 _Avoid_: entity, DTO
@@ -58,6 +66,7 @@ _Avoid_: cron, task, worker, sweeper (use for the specific job, not the concept)
 - A **Domain** = one **Seam** contract module + one **Server** slice (+ the **Client** features that consume it).
 - **Client** and **Server** each map the **Wire** to their own **Domain model** — the Wire is shared, the Domain model is not.
 - A **Credential module** issues a **Session**; a **Session** mints **Access tokens**; a verified **Access token** yields a **Principal**.
+- Each operation in a **Contract** names its **Declared errors**; **Ambient errors** ride every operation and are never declared.
 
 ## Example dialogue
 

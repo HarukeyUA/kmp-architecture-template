@@ -1,8 +1,10 @@
 package org.example.project.core.error
 
-import org.example.project.shared.common.ApiError
-
-/** Typed error hierarchy for remote API operations. */
+/**
+ * Transport-level failure of a remote call: no typed wire error was produced. A parsed wire
+ * [ApiError][org.example.project.shared.common.ApiError] is carried by
+ * [CallFailure.Ambient]/[CallFailure.Declared] instead, not by this hierarchy (ADR-0011).
+ */
 sealed interface NetworkError : AppError {
     /** HTTP error with a status code and optional error message from the server. */
     data class Http(val code: Int, val message: String? = null) : NetworkError
@@ -12,10 +14,4 @@ sealed interface NetworkError : AppError {
 
     /** Failed to serialize the request or deserialize the response. */
     data class Serialization(val cause: Throwable) : NetworkError
-
-    /**
-     * A typed [ApiError] parsed from a 4xx error envelope. Keeps the pure shared error out of the
-     * client's `AppError` hierarchy while still carrying it to the renderer.
-     */
-    data class Api(val error: ApiError) : NetworkError
 }

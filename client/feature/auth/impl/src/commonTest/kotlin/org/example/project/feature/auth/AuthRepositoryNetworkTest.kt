@@ -21,13 +21,15 @@ import kotlin.test.Test
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.test.runTest
-import org.example.project.core.error.NetworkError
+import org.example.project.core.error.CallFailure
 import org.example.project.core.network.sessionBearer
 import org.example.project.core.secure.storage.ClientSession
 import org.example.project.feature.auth.data.AuthRepositoryImpl
 import org.example.project.shared.auth.AccessTokenResponse
 import org.example.project.shared.auth.AccountResponse
 import org.example.project.shared.auth.AuthResource
+import org.example.project.shared.auth.InvalidCredentials
+import org.example.project.shared.auth.SessionExpired
 import org.example.project.shared.auth.TokensResponse
 import org.example.project.shared.auth.authErrorSerializersModule
 import org.example.project.shared.common.ErrorEnvelope
@@ -70,11 +72,11 @@ class AuthRepositoryNetworkTest {
     }
 
     @Test
-    fun `a rejected login surfaces the typed error and stores nothing`() = runTest {
+    fun `a rejected login surfaces the declared InvalidCredentials and stores nothing`() = runTest {
         val (repo, store) =
             fixture {
                 respond(
-                    json.encodeToString(ErrorEnvelope(Unauthorized)),
+                    json.encodeToString(ErrorEnvelope(InvalidCredentials)),
                     HttpStatusCode.Unauthorized,
                     jsonHeaders,
                 )
@@ -82,7 +84,7 @@ class AuthRepositoryNetworkTest {
 
         val result = repo.login("alice@example.com", "wrong-password")
 
-        assertThat(result.leftOrNull()).isEqualTo(NetworkError.Api(Unauthorized))
+        assertThat(result.leftOrNull()).isEqualTo(CallFailure.Declared(InvalidCredentials))
         assertThat(store.current()).isNull()
     }
 
@@ -130,14 +132,14 @@ class AuthRepositoryNetworkTest {
         val client =
             client(store) {
                 respond(
-                    json.encodeToString(ErrorEnvelope(Unauthorized)),
+                    json.encodeToString(ErrorEnvelope(SessionExpired)),
                     HttpStatusCode.Unauthorized,
                     jsonHeaders,
                 )
             }
 
-        // An authed call whose session the server has revoked: the 401 triggers a refresh
-        // attempt, the refresh 401s too, and the interceptor clears the local session.
+        // An authed call whose Session the server has revoked: the 401 triggers a refresh attempt,
+        // the refresh returns auth.session_expired, and the interceptor clears the local session.
         client.get(AuthResource.Me())
 
         assertThat(store.current()).isNull()

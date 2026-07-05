@@ -138,9 +138,9 @@ Sequenced plan to build the server + shared seam described in [`ARCHITECTURE_SER
 **Goal:** with the server shape in hand, resolve what was deferred. (ADR-0005, ADR-0002)
 
 **Steps**
-- **Error grouping** (pin / task #1): experiment with the sealed per-domain `XApiError : ApiError` client-side narrowing lens against the now-real domains; it's purely additive over the stop-gap. Update ADR-0005 to "Accepted" with the chosen approach.
+- ~~**Error grouping** (pin / task #1)~~ **Done** — resolved as per-**endpoint** Declared error sets, not the per-domain lens: `Endpoint<R, Req, Res, Err>` + server `Failure<E>` enforcement + client `CallFailure` + declared-set freeze tests. See [ADR-0011](adr/0011-per-endpoint-declared-errors.md); ADR-0005 is now "Accepted" with its pin closed.
 - **Real-time**: add an SSE (or WS) enhancement channel over the REST baseline with graceful degradation, when an app needs it.
 
-**Done when:** ADR-0005 is no longer "partial"; (real-time only if/when an app requires it).
+**Done when:** ~~ADR-0005 is no longer "partial"~~ done via ADR-0011; (real-time only if/when an app requires it).
 
 **Depends on:** Phases 4–5 (a real server shape to experiment against).

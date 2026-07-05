@@ -23,7 +23,7 @@ class NotesValidationTest {
     }
 
     @Test
-    fun `length is counted in code points, not UTF-16 units`() {
+    fun `length is counted in code points not UTF-16 units`() {
         // Each 🦀 is one code point but two UTF-16 units — under `.length` this would be
         // rejected at twice the cap.
         val astral = "🦀".repeat(NoteText.MAX_LENGTH)

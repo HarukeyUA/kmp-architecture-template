@@ -28,6 +28,5 @@ class NetworkErrorRenderer : ErrorRenderer<NetworkError> {
 
             is NetworkError.Connection -> ResourceResult(Res.string.error_network_connection)
             is NetworkError.Serialization -> ResourceResult(Res.string.error_network_serialization)
-            is NetworkError.Api -> error.error.toResourceResult()
         }
 }

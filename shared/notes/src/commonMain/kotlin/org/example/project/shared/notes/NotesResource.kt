@@ -24,12 +24,22 @@ class NotesResource {
  * Client (`HttpClient.call`) and server (`Route.serve`) both consume these.
  */
 object NotesApi {
-    val list: Endpoint<NotesResource, Unit, NoteListResponse> =
-        Endpoint(HttpMethod.Get, request = null, response = NoteListResponse.serializer())
+    val list: Endpoint<NotesResource, Unit, NoteListResponse, Nothing> =
+        Endpoint(
+            HttpMethod.Get,
+            request = null,
+            response = NoteListResponse.serializer(),
+            error = null,
+        )
 
-    val create: Endpoint<NotesResource, CreateNoteRequest, NoteResponse> =
-        Endpoint(HttpMethod.Post, CreateNoteRequest.serializer(), NoteResponse.serializer())
+    val create: Endpoint<NotesResource, CreateNoteRequest, NoteResponse, NotesCreateError> =
+        Endpoint(
+            HttpMethod.Post,
+            CreateNoteRequest.serializer(),
+            NoteResponse.serializer(),
+            error = NotesCreateError::class,
+        )
 
-    val delete: Endpoint<NotesResource.ById, Unit, Unit> =
-        Endpoint(HttpMethod.Delete, request = null, response = null)
+    val delete: Endpoint<NotesResource.ById, Unit, Unit, Nothing> =
+        Endpoint(HttpMethod.Delete, request = null, response = null, error = null)
 }

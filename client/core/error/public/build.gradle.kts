@@ -3,5 +3,6 @@ plugins {
     alias(libs.plugins.convention.arrow)
 }
 
-// NetworkError.Api wraps the shared ApiError so it rides the existing AppError pipeline (ADR-0005).
+// CallFailure carries the shared ApiError (Declared/Ambient) so it rides the AppError pipeline
+// (ADR-0011).
 kotlin { sourceSets { commonMain.dependencies { api(project(":shared:common")) } } }

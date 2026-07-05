@@ -2,21 +2,27 @@ package org.example.project.server.feature.notes
 
 import arrow.core.Either
 import org.example.project.server.auth.Principal
-import org.example.project.shared.common.ApiError
+import org.example.project.server.web.Failure
+import org.example.project.shared.notes.NotesCreateError
 
 /**
  * The notes domain service: per-account CRUD over the caller's own notes. Every method takes the
- * authenticated [Principal] (the route supplies it from the session middleware) and returns
- * `Either<ApiError, T>` over **domain types** (ADR-0003 as amended) — the route owns the Wire
- * mapping. The notes domain holds only an opaque `account_id` and reaches the auth domain through
- * its **public** service for any account detail (ADR-0006).
+ * authenticated [Principal] (the route supplies it from the session middleware) and returns a
+ * `Either<Failure<Err>, T>` over **domain types** (ADR-0003 as amended; ADR-0011) — the route owns
+ * the Wire mapping. Only [create] declares an error ([NotesCreateError]); [list] and [delete]
+ * declare none, so their failure channel is purely Ambient (`Failure<Nothing>`). The notes domain
+ * holds only an opaque `account_id` and reaches the auth domain through its **public** service for
+ * any account detail (ADR-0006).
  */
 interface NotesService {
-    suspend fun list(principal: Principal): Either<ApiError, List<AuthoredNote>>
+    suspend fun list(principal: Principal): Either<Failure<Nothing>, List<AuthoredNote>>
 
-    suspend fun create(principal: Principal, text: String): Either<ApiError, AuthoredNote>
+    suspend fun create(
+        principal: Principal,
+        text: String,
+    ): Either<Failure<NotesCreateError>, AuthoredNote>
 
-    suspend fun delete(principal: Principal, noteId: String): Either<ApiError, Unit>
+    suspend fun delete(principal: Principal, noteId: String): Either<Failure<Nothing>, Unit>
 
     companion object {
         /**

@@ -19,7 +19,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlin.test.Test
 import kotlin.time.Clock
 import kotlinx.coroutines.test.runTest
-import org.example.project.core.error.NetworkError
+import org.example.project.core.error.CallFailure
 import org.example.project.feature.notes.data.NotesRepositoryImpl
 import org.example.project.shared.common.ErrorEnvelope
 import org.example.project.shared.common.buildSeamJson
@@ -82,7 +82,7 @@ class NotesRepositoryNetworkTest {
         val result = repo.create("one more note")
 
         assertThat(result.leftOrNull())
-            .isEqualTo(NetworkError.Api(NotesQuotaExceeded(quota = 20_000, used = 18_000)))
+            .isEqualTo(CallFailure.Declared(NotesQuotaExceeded(quota = 20_000, used = 18_000)))
     }
 
     private fun repo(

@@ -27,9 +27,11 @@ import org.example.project.shared.auth.AccessTokenResponse
 import org.example.project.shared.auth.AccountResponse
 import org.example.project.shared.auth.AuthResource
 import org.example.project.shared.auth.EmailTaken
+import org.example.project.shared.auth.InvalidCredentials
 import org.example.project.shared.auth.LoginRequest
 import org.example.project.shared.auth.LogoutRequest
 import org.example.project.shared.auth.RefreshRequest
+import org.example.project.shared.auth.SessionExpired
 import org.example.project.shared.auth.SignupRequest
 import org.example.project.shared.auth.TokensResponse
 import org.example.project.shared.auth.authErrorSerializersModule
@@ -141,28 +143,29 @@ class AuthIntegrationTest {
                     }
                 assertThat(login.status).isEqualTo(HttpStatusCode.OK)
 
-                // Wrong password → the service raises Unauthorized, so the route already envelopes
-                // the 401 (unlike the body-less auth *challenge* above). The StatusPages 401 hook
-                // must leave this enveloped response alone rather than rebuilding/clobbering it.
+                // Wrong password → the service declares InvalidCredentials, so the route already
+                // envelopes the 401 (unlike the body-less auth *challenge* above, which stays a
+                // cross-cutting Unauthorized). The StatusPages 401 hook must leave this enveloped
+                // response alone rather than rebuilding/clobbering it.
                 val wrongPassword =
                     client.post(AuthResource.Login()) {
                         contentType(ContentType.Application.Json)
                         setBody(LoginRequest("alice@example.com", "wrongpassword99"))
                     }
                 assertThat(wrongPassword.status).isEqualTo(HttpStatusCode.Unauthorized)
-                assertThat(wrongPassword.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+                assertThat(wrongPassword.body<ErrorEnvelope>().error).isEqualTo(InvalidCredentials)
 
-                // Unknown email → byte-identical envelope to wrong-password: the collapse to
-                // Unauthorized is the information-disclosure boundary, and the service burns a
-                // dummy Argon2 verify on this path so timing doesn't pierce it either (the
-                // dummy-verify contract itself is pinned in DefaultAuthServiceTest).
+                // Unknown email → byte-identical envelope to wrong-password: the collapse to the
+                // single InvalidCredentials is the information-disclosure boundary (ADR-0011), and
+                // the service burns a dummy Argon2 verify on this path so timing doesn't pierce it
+                // either (the dummy-verify contract itself is pinned in DefaultAuthServiceTest).
                 val unknownEmail =
                     client.post(AuthResource.Login()) {
                         contentType(ContentType.Application.Json)
                         setBody(LoginRequest("nobody@example.com", "hunter2hunter2"))
                     }
                 assertThat(unknownEmail.status).isEqualTo(HttpStatusCode.Unauthorized)
-                assertThat(unknownEmail.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+                assertThat(unknownEmail.body<ErrorEnvelope>().error).isEqualTo(InvalidCredentials)
 
                 // Refresh: the opaque token mints a fresh access token (the one place the session
                 // store is consulted per request cycle); the minted JWT works immediately.
@@ -176,14 +179,15 @@ class AuthIntegrationTest {
                 assertThat(client.get(AuthResource.Me()) { bearerAuth(mintedAccessToken) }.status)
                     .isEqualTo(HttpStatusCode.OK)
 
-                // A garbage refresh token → the same collapsed 401.
+                // A garbage refresh token → the Declared SessionExpired (refresh presents a
+                // Session, not an Access token, so it never reuses the cross-cutting Unauthorized).
                 val badRefresh =
                     client.post(AuthResource.Refresh()) {
                         contentType(ContentType.Application.Json)
                         setBody(RefreshRequest("not-a-real-refresh-token"))
                     }
                 assertThat(badRefresh.status).isEqualTo(HttpStatusCode.Unauthorized)
-                assertThat(badRefresh.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+                assertThat(badRefresh.body<ErrorEnvelope>().error).isEqualTo(SessionExpired)
 
                 // Log out (revoke the refresh token server-side) → 204.
                 val logout =
@@ -194,14 +198,14 @@ class AuthIntegrationTest {
                     }
                 assertThat(logout.status).isEqualTo(HttpStatusCode.NoContent)
 
-                // The revoked refresh token mints nothing → 401 …
+                // The revoked refresh token mints nothing → 401 SessionExpired …
                 val revokedRefresh =
                     client.post(AuthResource.Refresh()) {
                         contentType(ContentType.Application.Json)
                         setBody(RefreshRequest(tokens.refreshToken))
                     }
                 assertThat(revokedRefresh.status).isEqualTo(HttpStatusCode.Unauthorized)
-                assertThat(revokedRefresh.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+                assertThat(revokedRefresh.body<ErrorEnvelope>().error).isEqualTo(SessionExpired)
 
                 // … while the already-minted access token keeps working until its TTL runs out —
                 // the bounded revocation staleness the JWT amendment to ADR-0009 accepts by design.
@@ -313,7 +317,7 @@ class AuthIntegrationTest {
                             setBody(RefreshRequest(refreshToken))
                         }
                     assertThat(revoked.status).isEqualTo(HttpStatusCode.Unauthorized)
-                    assertThat(revoked.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+                    assertThat(revoked.body<ErrorEnvelope>().error).isEqualTo(SessionExpired)
                 }
 
                 // A fresh login afterwards works — revocation is not a lockout.

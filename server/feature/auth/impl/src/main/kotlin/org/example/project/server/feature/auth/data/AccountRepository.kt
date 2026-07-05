@@ -13,7 +13,6 @@ import org.example.project.server.auth.AccountId
 import org.example.project.server.database.dbTransaction
 import org.example.project.server.feature.auth.Account
 import org.example.project.shared.auth.EmailTaken
-import org.example.project.shared.common.ApiError
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
@@ -32,7 +31,7 @@ interface AccountRepository {
 
     suspend fun findCredentialByEmail(email: String): Credential?
 
-    suspend fun create(email: String, passwordHash: String): Either<ApiError, Account>
+    suspend fun create(email: String, passwordHash: String): Either<EmailTaken, Account>
 }
 
 @Inject
@@ -49,7 +48,7 @@ class DefaultAccountRepository : AccountRepository {
             ?.let { Credential(AccountId(it[Accounts.id]), it[Accounts.passwordHash]) }
     }
 
-    override suspend fun create(email: String, passwordHash: String): Either<ApiError, Account> =
+    override suspend fun create(email: String, passwordHash: String): Either<EmailTaken, Account> =
         either {
             catch({
                 dbTransaction {

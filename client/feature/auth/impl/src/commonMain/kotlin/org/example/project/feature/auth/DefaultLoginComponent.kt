@@ -16,6 +16,12 @@ import kotlinx.coroutines.launch
 import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.MoleculeComponent
 import org.example.project.core.error.AppError
+import org.example.project.core.error.CallFailure
+import org.example.project.shared.auth.AuthLoginError
+import org.example.project.shared.auth.AuthSignupError
+import org.example.project.shared.auth.EmailTaken
+import org.example.project.shared.auth.InvalidCredentials
+import org.example.project.shared.common.ApiError
 
 @AssistedInject
 class DefaultLoginComponent(
@@ -32,16 +38,26 @@ class DefaultLoginComponent(
         var password by rememberSaveable { mutableStateOf("") }
         var isSubmitting by remember { mutableStateOf(false) }
         var error by remember { mutableStateOf<AppError?>(null) }
+        var formError by remember { mutableStateOf<LoginComponent.FormError?>(null) }
 
-        fun submit(action: suspend (String, String) -> Either<AppError, Unit>) {
+        // Declared failures ([declaredForm], an exhaustive `when` over the operation's error lens)
+        // render inline; everything else (Ambient/Transport) rides the generic renderer pipeline.
+        fun <E : ApiError> submit(
+            action: suspend (String, String) -> Either<CallFailure<E>, Unit>,
+            declaredForm: (E) -> LoginComponent.FormError,
+        ) {
             if (isSubmitting) return
             isSubmitting = true
             error = null
+            formError = null
             scope.launch {
                 action(email, password)
                     .fold(
-                        ifLeft = {
-                            error = it
+                        ifLeft = { failure ->
+                            when (failure) {
+                                is CallFailure.Declared -> formError = declaredForm(failure.error)
+                                else -> error = failure
+                            }
                             isSubmitting = false
                         },
                         // On success the issued Session is already in secure storage (which flips
@@ -56,13 +72,25 @@ class DefaultLoginComponent(
                 is LoginComponent.Event.EmailChanged -> {
                     email = event.value
                     error = null
+                    formError = null
                 }
                 is LoginComponent.Event.PasswordChanged -> {
                     password = event.value
                     error = null
+                    formError = null
                 }
-                LoginComponent.Event.LoginClicked -> submit(authRepository::login)
-                LoginComponent.Event.SignupClicked -> submit(authRepository::signup)
+                LoginComponent.Event.LoginClicked ->
+                    submit(authRepository::login) { declared: AuthLoginError ->
+                        when (declared) {
+                            InvalidCredentials -> LoginComponent.FormError.InvalidCredentials
+                        }
+                    }
+                LoginComponent.Event.SignupClicked ->
+                    submit(authRepository::signup) { declared: AuthSignupError ->
+                        when (declared) {
+                            EmailTaken -> LoginComponent.FormError.EmailTaken
+                        }
+                    }
             }
         }
 
@@ -71,6 +99,7 @@ class DefaultLoginComponent(
             password = password,
             isSubmitting = isSubmitting,
             error = error,
+            formError = formError,
         )
     }
 

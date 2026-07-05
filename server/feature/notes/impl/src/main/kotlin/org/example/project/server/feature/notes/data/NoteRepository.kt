@@ -12,7 +12,6 @@ import org.example.project.server.auth.AccountId
 import org.example.project.server.database.advisoryXactLock
 import org.example.project.server.database.dbTransaction
 import org.example.project.server.feature.notes.Note
-import org.example.project.shared.common.ApiError
 import org.example.project.shared.notes.NotesQuotaExceeded
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -38,7 +37,7 @@ interface NoteRepository {
         accountId: AccountId,
         text: String,
         quota: Int,
-    ): Either<ApiError, Note>
+    ): Either<NotesQuotaExceeded, Note>
 
     /** Deletes the note iff it exists *and* belongs to [accountId]; returns whether a row went. */
     suspend fun delete(accountId: AccountId, noteId: String): Boolean
@@ -58,7 +57,7 @@ class DefaultNoteRepository : NoteRepository {
         accountId: AccountId,
         text: String,
         quota: Int,
-    ): Either<ApiError, Note> = either {
+    ): Either<NotesQuotaExceeded, Note> = either {
         dbTransaction {
             advisoryXactLock(QUOTA_LOCK_NAMESPACE, accountId.value.hashCode())
             val used = usedCodePoints(accountId)

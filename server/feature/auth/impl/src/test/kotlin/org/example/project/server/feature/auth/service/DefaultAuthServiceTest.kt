@@ -19,8 +19,10 @@ import org.example.project.server.feature.auth.Account
 import org.example.project.server.feature.auth.PasswordHasher
 import org.example.project.server.feature.auth.data.AccountRepository
 import org.example.project.server.feature.auth.data.Credential
-import org.example.project.shared.common.ApiError
-import org.example.project.shared.common.Unauthorized
+import org.example.project.server.web.Failure
+import org.example.project.shared.auth.EmailTaken
+import org.example.project.shared.auth.InvalidCredentials
+import org.example.project.shared.auth.SessionExpired
 
 /**
  * Pins the login failure-path contract against fakes — above all the **timing-equalization** shape,
@@ -40,19 +42,20 @@ class DefaultAuthServiceTest {
     private val service = DefaultAuthService(repo, hasher, sessionStore, FakeAccessTokenIssuer())
 
     @Test
-    fun `unknown email burns exactly one dummy verify and collapses to Unauthorized`() = runTest {
-        val result = service.login("unknown@example.com", "whatever password")
+    fun `unknown email burns exactly one dummy verify and collapses to InvalidCredentials`() =
+        runTest {
+            val result = service.login("unknown@example.com", "whatever password")
 
-        assertThat(result).isEqualTo(Unauthorized.left())
-        assertThat(hasher.dummyVerifyCalls).isEqualTo(1)
-        assertThat(hasher.verifyCalls).isEqualTo(0)
-    }
+            assertThat(result).isEqualTo(Failure.Declared(InvalidCredentials).left())
+            assertThat(hasher.dummyVerifyCalls).isEqualTo(1)
+            assertThat(hasher.verifyCalls).isEqualTo(0)
+        }
 
     @Test
     fun `wrong password performs one real verify and no dummy`() = runTest {
         val result = service.login("known@example.com", "wrong password")
 
-        assertThat(result).isEqualTo(Unauthorized.left())
+        assertThat(result).isEqualTo(Failure.Declared(InvalidCredentials).left())
         assertThat(hasher.verifyCalls).isEqualTo(1)
         assertThat(hasher.dummyVerifyCalls).isEqualTo(0)
     }
@@ -61,7 +64,7 @@ class DefaultAuthServiceTest {
     fun `malformed email fails fast with no hasher work at all`() = runTest {
         val result = service.login("not an email", "whatever password")
 
-        assertThat(result).isEqualTo(Unauthorized.left())
+        assertThat(result).isEqualTo(Failure.Declared(InvalidCredentials).left())
         assertThat(hasher.verifyCalls).isEqualTo(0)
         assertThat(hasher.dummyVerifyCalls).isEqualTo(0)
     }
@@ -89,12 +92,14 @@ class DefaultAuthServiceTest {
         }
 
     @Test
-    fun `refresh with an unknown or revoked token collapses to Unauthorized`() = runTest {
-        assertThat(service.refresh("never-issued")).isEqualTo(Unauthorized.left())
+    fun `refresh with an unknown or revoked token collapses to SessionExpired`() = runTest {
+        assertThat(service.refresh("never-issued"))
+            .isEqualTo(Failure.Declared(SessionExpired).left())
 
         val tokens = service.login("known@example.com", "correct horse").getOrNull()!!
         service.logout(tokens.session.token)
-        assertThat(service.refresh(tokens.session.token)).isEqualTo(Unauthorized.left())
+        assertThat(service.refresh(tokens.session.token))
+            .isEqualTo(Failure.Declared(SessionExpired).left())
     }
 }
 
@@ -104,7 +109,7 @@ private class FakeAccountRepository(private val credentials: Map<String, Credent
 
     override suspend fun findCredentialByEmail(email: String): Credential? = credentials[email]
 
-    override suspend fun create(email: String, passwordHash: String): Either<ApiError, Account> =
+    override suspend fun create(email: String, passwordHash: String): Either<EmailTaken, Account> =
         Account(AccountId(UUID.randomUUID()), email).right()
 }
 

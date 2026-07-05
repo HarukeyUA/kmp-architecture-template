@@ -31,7 +31,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
+import org.example.project.client.feature.notes.impl.Res
+import org.example.project.client.feature.notes.impl.error_notes_quota_exceeded
 import org.example.project.core.ui.error.message
+import org.jetbrains.compose.resources.stringResource
 
 @ContributesBinding(AppScope::class)
 @Inject
@@ -67,9 +70,13 @@ internal fun NotesScreenContent(
             modifier = Modifier.fillMaxWidth(),
         )
 
-        state.error?.let { error ->
-            Text(text = error.message(), color = MaterialTheme.colorScheme.error)
-        }
+        // The Declared quota failure shows its budget inline; anything else rides the generic
+        // renderer via error.message().
+        val message =
+            state.quotaExceeded?.let { quota ->
+                stringResource(Res.string.error_notes_quota_exceeded, quota.used, quota.quota)
+            } ?: state.error?.message()
+        message?.let { Text(text = it, color = MaterialTheme.colorScheme.error) }
 
         Button(
             onClick = { onEvent(NotesComponent.Event.AddClicked) },
