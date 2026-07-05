@@ -42,7 +42,14 @@ suspend fun main(): Unit = resourceScope {
 private suspend fun ResourceScope.installServerGraph(config: ServerConfig): ServerGraph =
     install({
         createGraphFactory<ServerGraph.Factory>()
-            .create(config, config.database, config.storage, config.metrics, config.webLimits)
+            .create(
+                config,
+                config.database,
+                config.storage,
+                config.metrics,
+                config.webLimits,
+                config.jwt,
+            )
     }) { graph, _ ->
         graph.serverResources.closeAll()
     }

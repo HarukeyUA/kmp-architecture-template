@@ -8,8 +8,6 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BearerTokens
-import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.resources.Resources
 import io.ktor.client.plugins.resources.get
@@ -24,10 +22,13 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.test.runTest
 import org.example.project.core.error.NetworkError
+import org.example.project.core.network.sessionBearer
 import org.example.project.core.secure.storage.ClientSession
 import org.example.project.feature.auth.data.AuthRepositoryImpl
+import org.example.project.shared.auth.AccessTokenResponse
+import org.example.project.shared.auth.AccountResponse
 import org.example.project.shared.auth.AuthResource
-import org.example.project.shared.auth.SessionResponse
+import org.example.project.shared.auth.TokensResponse
 import org.example.project.shared.auth.authErrorSerializersModule
 import org.example.project.shared.common.ErrorEnvelope
 import org.example.project.shared.common.Unauthorized
@@ -36,19 +37,25 @@ import org.example.project.shared.common.buildSeamJson
 /**
  * The client side of the auth gate, against a `MockEngine` server: it exercises the real
  * request-building (shared `@Resource`), the seam `Json` (a 4xx `ErrorEnvelope` parses back to the
- * typed `ApiError`), token storage, and the global 401 → clear-session interceptor (ADR-0009).
+ * typed `ApiError`), token-pair storage, and the production [sessionBearer] provider — the native
+ * Ktor refresh flow plus the "refresh rejected → clear session" interceptor (ADR-0009 as amended).
  */
 class AuthRepositoryNetworkTest {
     private val json = buildSeamJson(setOf(authErrorSerializersModule))
     private val jsonHeaders = headersOf(HttpHeaders.ContentType, "application/json")
 
     @Test
-    fun `successful login stores the session token`() = runTest {
+    fun `successful login stores the token pair`() = runTest {
         val (repo, store) =
             fixture {
                 respond(
                     json.encodeToString(
-                        SessionResponse("login-token", Clock.System.now() + 1.hours)
+                        TokensResponse(
+                            accessToken = "login-access",
+                            accessTokenExpiresAt = Clock.System.now() + 1.hours,
+                            refreshToken = "login-refresh",
+                            refreshTokenExpiresAt = Clock.System.now() + 720.hours,
+                        )
                     ),
                     HttpStatusCode.OK,
                     jsonHeaders,
@@ -58,7 +65,8 @@ class AuthRepositoryNetworkTest {
         val result = repo.login("alice@example.com", "hunter2hunter2")
 
         assertThat(result.leftOrNull()).isNull()
-        assertThat(store.current()?.token).isEqualTo("login-token")
+        assertThat(store.current())
+            .isEqualTo(ClientSession(accessToken = "login-access", refreshToken = "login-refresh"))
     }
 
     @Test
@@ -79,9 +87,46 @@ class AuthRepositoryNetworkTest {
     }
 
     @Test
-    fun `a 401 on an authenticated request clears the stored session`() = runTest {
+    fun `a 401 with a live refresh token mints a new access token and retries`() = runTest {
         val store = InMemorySecureSessionStore()
-        store.save(ClientSession("revoked-token"))
+        store.save(ClientSession(accessToken = "expired-access", refreshToken = "refresh-1"))
+        val client =
+            client(store) { request ->
+                when {
+                    request.url.encodedPath.endsWith("/auth/refresh") ->
+                        respond(
+                            json.encodeToString(
+                                AccessTokenResponse("minted-access", Clock.System.now() + 1.hours)
+                            ),
+                            HttpStatusCode.OK,
+                            jsonHeaders,
+                        )
+                    request.headers[HttpHeaders.Authorization] == "Bearer minted-access" ->
+                        respond(
+                            json.encodeToString(AccountResponse("id", "alice@example.com")),
+                            HttpStatusCode.OK,
+                            jsonHeaders,
+                        )
+                    else ->
+                        respond(
+                            json.encodeToString(ErrorEnvelope(Unauthorized)),
+                            HttpStatusCode.Unauthorized,
+                            jsonHeaders,
+                        )
+                }
+            }
+
+        val response = client.get(AuthResource.Me())
+
+        assertThat(response.status).isEqualTo(HttpStatusCode.OK)
+        assertThat(store.current())
+            .isEqualTo(ClientSession(accessToken = "minted-access", refreshToken = "refresh-1"))
+    }
+
+    @Test
+    fun `a rejected refresh clears the stored session`() = runTest {
+        val store = InMemorySecureSessionStore()
+        store.save(ClientSession(accessToken = "stale-access", refreshToken = "revoked-refresh"))
         val client =
             client(store) {
                 respond(
@@ -91,7 +136,8 @@ class AuthRepositoryNetworkTest {
                 )
             }
 
-        // An authed call whose token the server has revoked.
+        // An authed call whose session the server has revoked: the 401 triggers a refresh
+        // attempt, the refresh 401s too, and the interceptor clears the local session.
         client.get(AuthResource.Me())
 
         assertThat(store.current()).isNull()
@@ -111,17 +157,6 @@ class AuthRepositoryNetworkTest {
         HttpClient(MockEngine(handler)) {
             install(ContentNegotiation) { json(json) }
             install(Resources)
-            install(Auth) {
-                bearer {
-                    sendWithoutRequest { true }
-                    loadTokens {
-                        store.current()?.let { BearerTokens(it.token, refreshToken = null) }
-                    }
-                    refreshTokens {
-                        store.clear()
-                        null
-                    }
-                }
-            }
+            install(Auth) { sessionBearer(store) }
         }
 }

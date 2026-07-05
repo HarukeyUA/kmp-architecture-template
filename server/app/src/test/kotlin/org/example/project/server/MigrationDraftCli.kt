@@ -58,11 +58,19 @@ private fun generateMigrationStatements(): List<String> {
                 storage = storageConfig,
                 metrics = MetricsConfig(port = 0),
                 webLimits = testWebLimitsConfig(),
+                jwt = testJwtConfig(),
             )
 
         val graph =
             createGraphFactory<ServerGraph.Factory>()
-                .create(config, databaseConfig, storageConfig, config.metrics, config.webLimits)
+                .create(
+                    config,
+                    databaseConfig,
+                    storageConfig,
+                    config.metrics,
+                    config.webLimits,
+                    config.jwt,
+                )
 
         graph.databaseBootstrap.start()
 

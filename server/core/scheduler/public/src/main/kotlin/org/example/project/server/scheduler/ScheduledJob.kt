@@ -13,9 +13,9 @@ import kotlin.time.Duration
  * 1. **Write jobs idempotently.** The lock prevents *concurrent* double-execution; it bounds
  *    neither how often a job runs nor where — per-node loops are independently phased, so across N
  *    nodes a job can run up to ~N times per interval. A re-run must be a no-op (e.g. "delete
- *    expired rows", not "increment a counter"). If a future job is frequency-sensitive, the
- *    upgrade path is a `scheduled_job_runs` last-run-at row checked *inside* the lock (skip when
- *    the last run is younger than the interval) — no current job needs it.
+ *    expired rows", not "increment a counter"). If a future job is frequency-sensitive, the upgrade
+ *    path is a `scheduled_job_runs` last-run-at row checked *inside* the lock (skip when the last
+ *    run is younger than the interval) — no current job needs it.
  * 2. **Keep [name] stable and unique.** It derives the advisory-lock key, so renaming a job changes
  *    which lock it takes. Uniqueness is enforced at startup — the scheduler refuses to start if two
  *    jobs would map to the same lock key — so a clash fails fast rather than silently serializing.

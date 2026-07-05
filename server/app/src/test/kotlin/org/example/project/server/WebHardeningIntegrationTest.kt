@@ -140,6 +140,7 @@ class WebHardeningIntegrationTest {
         val databaseConfig = DatabaseConfig(postgres.jdbcUrl, postgres.username, postgres.password)
         val storageConfig = testStorageConfig()
         val metricsConfig = MetricsConfig(port = 0)
+        val jwtConfig = testJwtConfig()
         return createGraphFactory<ServerGraph.Factory>()
             .create(
                 ServerConfig(
@@ -150,11 +151,13 @@ class WebHardeningIntegrationTest {
                     storageConfig,
                     metricsConfig,
                     webLimitsConfig,
+                    jwtConfig,
                 ),
                 databaseConfig,
                 storageConfig,
                 metricsConfig,
                 webLimitsConfig,
+                jwtConfig,
             )
     }
 }

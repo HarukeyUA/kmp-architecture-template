@@ -22,8 +22,8 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 
 /**
  * Reads/writes accounts, returning the domain [Account] (never a `ResultRow`) so the service is
- * unit-testable against a fake. The Argon2id hash is queried only via [findCredentialByEmail] —
- * the login path's verify step — and never rides along on account lookups. Repository methods are
+ * unit-testable against a fake. The Argon2id hash is queried only via [findCredentialByEmail] — the
+ * login path's verify step — and never rides along on account lookups. Repository methods are
  * transaction-safe: they open a transaction when called alone and join the caller's transaction
  * when one exists (ADR-0006).
  */

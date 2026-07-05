@@ -4,6 +4,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Multibinds
 import dev.zacsweers.metro.Provides
+import org.example.project.server.auth.JwtConfig
 import org.example.project.server.auth.SessionStore
 import org.example.project.server.database.DatabaseBootstrap
 import org.example.project.server.database.DatabaseConfig
@@ -59,6 +60,7 @@ interface ServerGraph {
             @Provides storageConfig: StorageConfig,
             @Provides metricsConfig: MetricsConfig,
             @Provides webLimitsConfig: WebLimitsConfig,
+            @Provides jwtConfig: JwtConfig,
         ): ServerGraph
     }
 }

@@ -23,8 +23,8 @@ import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.feature.notes.NotesService
 import org.example.project.server.observability.MetricsConfig
 import org.example.project.shared.auth.AuthResource
-import org.example.project.shared.auth.SessionResponse
 import org.example.project.shared.auth.SignupRequest
+import org.example.project.shared.auth.TokensResponse
 import org.example.project.shared.auth.authErrorSerializersModule
 import org.example.project.shared.common.ErrorEnvelope
 import org.example.project.shared.common.Unauthorized
@@ -57,6 +57,7 @@ class NotesIntegrationTest {
             val storageConfig = testStorageConfig()
             val metricsConfig = MetricsConfig(port = 0)
             val webLimitsConfig = testWebLimitsConfig()
+            val jwtConfig = testJwtConfig()
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
                     .create(
@@ -68,11 +69,13 @@ class NotesIntegrationTest {
                             storageConfig,
                             metricsConfig,
                             webLimitsConfig,
+                            jwtConfig,
                         ),
                         databaseConfig,
                         storageConfig,
                         metricsConfig,
                         webLimitsConfig,
+                        jwtConfig,
                     )
             graph.databaseBootstrap.start()
 
@@ -89,17 +92,17 @@ class NotesIntegrationTest {
                     install(Resources)
                 }
 
-                // A note is owned by whoever the session belongs to, so sign up first.
+                // A note is owned by whoever the tokens belong to, so sign up first.
                 val token =
                     client
                         .post(AuthResource.Signup()) {
                             contentType(ContentType.Application.Json)
                             setBody(SignupRequest("alice@example.com", "hunter2hunter2"))
                         }
-                        .body<SessionResponse>()
-                        .token
+                        .body<TokensResponse>()
+                        .accessToken
 
-                // Unauthenticated access is rejected by the session middleware.
+                // Unauthenticated access is rejected by the JWT middleware.
                 val unauthenticated = client.get(NotesResource())
                 assertThat(unauthenticated.status).isEqualTo(HttpStatusCode.Unauthorized)
                 assertThat(unauthenticated.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)

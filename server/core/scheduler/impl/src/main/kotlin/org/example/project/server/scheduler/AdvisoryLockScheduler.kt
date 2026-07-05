@@ -15,8 +15,8 @@ import kotlinx.coroutines.withContext
 import org.slf4j.LoggerFactory
 
 /**
- * Runs each [ScheduledJob] periodically, but only while holding a Postgres **advisory lock** for
- * it — so a job never runs **concurrently** on two instances, with no queue or leader election
+ * Runs each [ScheduledJob] periodically, but only while holding a Postgres **advisory lock** for it
+ * — so a job never runs **concurrently** on two instances, with no queue or leader election
  * (ADR-0010). The lock bounds concurrency, not frequency: each node's loop is phased off its own
  * boot, so across N nodes a job can run up to ~N times per interval — safe because jobs are
  * idempotent ([ScheduledJob] rule 1). A throwaway `pg_try_advisory_lock` is non-blocking: a node

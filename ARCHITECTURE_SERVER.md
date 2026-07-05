@@ -188,7 +188,7 @@ sealed interface NetworkError : AppError {
 |--------|----------|--------|
 | `:server:core:database` | `dbTransaction` helper, `TableSet`, `DatabaseConfig` | Hikari + Flyway + Exposed wiring, DB `HealthIndicator` |
 | `:server:core:web` | `RouteRegistrar` / `PluginInstaller` contracts; `ApiError→status`, `Either`-fold responder | base Ktor plugins, ContentNegotiation, `Json` provider |
-| `:server:core:auth` | `Principal`, session-store interface, `authenticate{}` | Session validation, middleware, cache, expired-session sweeper (`ScheduledJob`) |
+| `:server:core:auth` | `Principal`, `JwtConfig`, `AccessTokenIssuer`, session-store interface, `authenticate{}` | JWT minting + stateless verification middleware, session store, cache, expired-session sweeper (`ScheduledJob`) |
 | `:server:core:observability` | `HealthIndicator` contract, correlation-id key | CallId + MDC logging, Micrometer/metrics, `/health` + `/metrics` routes |
 | `:server:core:storage` | `BlobStore` (presigned PUT/GET, head, delete), `StorageConfig` | aws-sdk-kotlin S3 client (MinIO/S3), lazy-built so it's never a boot dependency |
 | `:server:core:scheduler` | `ScheduledJob` contract (name + interval + `run()`) | advisory-lock runner + self-registering startup hook |
@@ -276,16 +276,16 @@ class NotesRoutes(private val service: NotesService) : RouteRegistrar {
 
 ## 9. Auth
 
-([ADR-0009](docs/adr/0009-auth-credential-session-seam.md)) Separate the **Credential module** (how you prove identity — swappable) from the **session/authorization infra** (invariant).
+([ADR-0009](docs/adr/0009-auth-credential-session-seam.md), as amended) Separate the **Credential module** (how you prove identity — swappable) from the **token/authorization infra** (invariant).
 
 | Concern | Where |
 |---------|-------|
-| `Principal`, `Authentication` middleware, `authenticate{}`, session issuance/revocation, store interface | `:server:core:auth` (invariant) |
-| Verify a credential → issue a Session (default: email + Argon2id) | `:server:feature:auth` (swappable) |
+| `Principal`, `Authentication` middleware (Ktor `jwt()`), `authenticate{}`, `AccessTokenIssuer`, session issuance/revocation, store interface | `:server:core:auth` (invariant) |
+| Verify a credential → issue the token pair (default: email + Argon2id) | `:server:feature:auth` (swappable) |
 
-**Default scheme:** opaque **Session** token + cached server-side store (Postgres `sessions` table + Caffeine cache). Revocation = row delete. **Owned in-server**, no external provider.
+**Default scheme (JWT-access + opaque-refresh hybrid):** a short-lived **JWT access token** (HS256, `JWT_SECRET`/`JWT_ISSUER`/`JWT_AUDIENCE`/`JWT_ACCESS_TTL_MINUTES`, 15 min default) verified statelessly on every authenticated request, minted by the opaque **Session** — the refresh credential in the cached server-side store (Postgres `sessions` table + Caffeine cache), consulted only by `POST /v1/auth/refresh`. Revocation = row delete; it cuts off minting, and outstanding access tokens die on TTL (bounded staleness, same shape as ADR-0010's cache TTL). No refresh rotation — that's the error-prone part ADR-0009 refuses to hand-roll. **Owned in-server**, no external provider.
 
-Baked-in defaults (never hand-rolled per app): **Argon2id** hashing; **platform-secure client token storage** (Keychain / Keystore-backed / encrypted — *not* plain DataStore); global **401 → clear session → Login** interceptor on the client, wired into the existing Splash → Login → Main flow. witchy's device-key auth fits this as "just another Credential module."
+Baked-in defaults (never hand-rolled per app): **Argon2id** hashing; **platform-secure client token-pair storage** (Keychain / Keystore-backed / encrypted — *not* plain DataStore); the client's Ktor-native bearer provider (`sessionBearer`): attach access token → 401 → refresh → retry, and **refresh rejected → clear session → Login**, wired into the existing Splash → Login → Main flow. witchy's device-key auth fits this as "just another Credential module."
 
 ---
 
@@ -304,7 +304,7 @@ Baseline (no standalone ADR — it's the obvious baseline):
 
 ([ADR-0010](docs/adr/0010-scale-posture.md)) The template targets **"don't foreclose,"** not "scale now." All three rules are **implemented (Phase 6)**:
 
-1. **Per-instance state behind an interface, tolerably-stale default** — session cache short TTL (≈30–60s), Redis swappable later. Rate limiting is **per-node** (global limits need a shared backing later): strict per-client-IP tiers on the credential endpoints only (`signup`/`login` — the pre-auth, Argon2-expensive surface), responding with the typed `RateLimited(retryAfterSeconds)` envelope, never a bare 429. No default tier on other endpoints — they're cheap reads behind the session cache, and a number picked without traffic data mostly punishes legitimate bursts. The client IP is the socket address unless `CLIENT_IP_HEADER` names a trusted proxy header (Railway: `X-Real-IP`; Cloudflare-fronted: `CF-Connecting-IP`); it's a header *name*, not a trust-the-proxy boolean, because **which** header is trustworthy is deployment-specific, and a missing header falls back to the socket address rather than a shared bucket.
+1. **Per-instance state behind an interface, tolerably-stale default** — session cache short TTL (≈30–60s), Redis swappable later. Rate limiting is **per-node** (global limits need a shared backing later): strict per-client-IP tiers on the credential endpoints only (`signup`/`login` — the pre-auth, Argon2-expensive surface), responding with the typed `RateLimited(retryAfterSeconds)` envelope, never a bare 429. No default tier on other endpoints — they're cheap (JWT verification is stateless, and `refresh` is one cached indexed lookup), and a number picked without traffic data mostly punishes legitimate bursts. The client IP is the socket address unless `CLIENT_IP_HEADER` names a trusted proxy header (Railway: `X-Real-IP`; Cloudflare-fronted: `CF-Connecting-IP`); it's a header *name*, not a trust-the-proxy boolean, because **which** header is trustworthy is deployment-specific, and a missing header falls back to the socket address rather than a shared bucket.
 2. **Stateless app** — opaque-session-via-DB + blobs via the `BlobStore` interface (`:server:core:storage`), **never local disk**. The S3-compatible impl (aws-sdk-kotlin) uses the **presigned-URL** transfer model: the client `PUT`s/`GET`s bytes straight to object storage, so blobs never stream through the app and memory stays flat regardless of size.
 3. **Multi-node-safe background jobs from day one** — the `ScheduledJob` + advisory-lock runner (`:server:core:scheduler`) uses `pg_try_advisory_lock` so a job never runs *concurrently* on two nodes (no queue, no leader election). The lock bounds concurrency, not frequency: per-node loops are independently phased, so a job can run up to ~N times per interval across N nodes — idempotency (the `ScheduledJob` contract's rule 1) is what makes that safe. A frequency-sensitive job's documented upgrade path is a `scheduled_job_runs` last-run-at row checked inside the lock; no current job needs it. The worked example is the expired-session sweeper. Full deferred-job queue (outbox + worker) still deferred.
 
@@ -312,7 +312,7 @@ Baseline (no standalone ADR — it's the obvious baseline):
 
 - **Request bodies are capped** (1 MiB default, `ServerConfig`-tunable) via Ktor's `RequestBodyLimit`, mapped to the typed `PayloadTooLarge` envelope (413) — Blobs bypass the app entirely via presigned URLs, so nothing legitimate comes close.
 - **Argon2 concurrency is bounded** inside `Argon2PasswordHasher` (`Dispatchers.Default.limitedParallelism(min(cores, 4))`), capping hashing at ≤256 MiB native memory. Saturation **queues, never sheds**: the per-IP rate limit upstream already rejects the abusive case, so whatever reaches the queue waits instead of failing. The bound is a code constant, not config — raising it safely requires redoing the memory math, which an env var invites skipping.
-- **Forged bearer tokens can't evict live sessions** — the session cache is split by trust level: unknown-token misses are remembered in a separate, smaller cache, so unauthenticated input never competes with `Present`/`Revoked` entries (both tied to real sessions) for space. A spray of fabricated tokens churns only other junk; each unique forged token still costs one cheap indexed point-miss, same as with no negative cache at all.
+- **Forged tokens can't evict live sessions** — a forged *access* token dies at stateless signature verification and never touches any state. A forged *refresh* token reaches the session cache (via `/v1/auth/refresh`), which is split by trust level: unknown-token misses are remembered in a separate, smaller cache, so unauthenticated input never competes with `Present`/`Revoked` entries (both tied to real sessions) for space. A spray of fabricated tokens churns only other junk; each unique forged token still costs one cheap indexed point-miss, same as with no negative cache at all.
 
 Connection pool configurable; `instances × poolSize ≤ Postgres max_connections` (PgBouncer if ever hit) — count the few scheduled jobs too, since each holds one pooled connection for the lock while it runs. Result: going multi-node is config + an interface swap, never a rewrite, and never a silent correctness regression.
 

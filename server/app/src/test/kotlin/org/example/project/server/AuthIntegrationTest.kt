@@ -23,12 +23,15 @@ import org.example.project.server.auth.AccountId
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.database.dbTransaction
 import org.example.project.server.observability.MetricsConfig
+import org.example.project.shared.auth.AccessTokenResponse
 import org.example.project.shared.auth.AccountResponse
 import org.example.project.shared.auth.AuthResource
 import org.example.project.shared.auth.EmailTaken
 import org.example.project.shared.auth.LoginRequest
-import org.example.project.shared.auth.SessionResponse
+import org.example.project.shared.auth.LogoutRequest
+import org.example.project.shared.auth.RefreshRequest
 import org.example.project.shared.auth.SignupRequest
+import org.example.project.shared.auth.TokensResponse
 import org.example.project.shared.auth.authErrorSerializersModule
 import org.example.project.shared.common.BadRequest
 import org.example.project.shared.common.ErrorEnvelope
@@ -44,7 +47,7 @@ import org.testcontainers.containers.PostgreSQLContainer
  */
 class AuthIntegrationTest {
     @Test
-    fun `signup, authenticated call, login, then revoke yields 401`() {
+    fun `signup, authenticated call, login, refresh, then revoke kills the refresh path`() {
         PostgreSQLContainer("postgres:17-alpine").use { postgres ->
             postgres.start()
             val databaseConfig =
@@ -53,6 +56,7 @@ class AuthIntegrationTest {
             val storageConfig = testStorageConfig()
             val metricsConfig = MetricsConfig(port = 0)
             val webLimitsConfig = testWebLimitsConfig()
+            val jwtConfig = testJwtConfig()
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
                     .create(
@@ -64,11 +68,13 @@ class AuthIntegrationTest {
                             storageConfig,
                             metricsConfig,
                             webLimitsConfig,
+                            jwtConfig,
                         ),
                         databaseConfig,
                         storageConfig,
                         metricsConfig,
                         webLimitsConfig,
+                        jwtConfig,
                     )
             graph.databaseBootstrap.start()
 
@@ -82,14 +88,16 @@ class AuthIntegrationTest {
                 }
                 val credentials = SignupRequest("alice@example.com", "hunter2hunter2")
 
-                // Sign up → 201 + an opaque session token.
+                // Sign up → 201 + the token pair: a JWT access token and an opaque refresh token.
                 val signup =
                     client.post(AuthResource.Signup()) {
                         contentType(ContentType.Application.Json)
                         setBody(credentials)
                     }
                 assertThat(signup.status).isEqualTo(HttpStatusCode.Created)
-                val token = signup.body<SessionResponse>().token
+                val tokens = signup.body<TokensResponse>()
+                // Only the refresh token has server-side state, and it's stored hashed — the raw
+                // token never touches the table, and the stateless access token has no row at all.
                 val storedSessionKeys = dbTransaction {
                     val keys = mutableListOf<String>()
                     exec("SELECT token_hash FROM sessions") { rs ->
@@ -100,10 +108,11 @@ class AuthIntegrationTest {
                     keys
                 }
                 assertThat(storedSessionKeys.size).isEqualTo(1)
-                assertThat(storedSessionKeys.single() == token).isEqualTo(false)
+                assertThat(storedSessionKeys.single() == tokens.refreshToken).isEqualTo(false)
 
-                // Authenticated call → 200 + the Principal's account.
-                val me = client.get(AuthResource.Me()) { bearerAuth(token) }
+                // Authenticated call with the access token → 200 + the Principal's account. The
+                // JWT is verified statelessly — no sessions lookup on this path.
+                val me = client.get(AuthResource.Me()) { bearerAuth(tokens.accessToken) }
                 assertThat(me.status).isEqualTo(HttpStatusCode.OK)
                 assertThat(me.body<AccountResponse>().email).isEqualTo("alice@example.com")
 
@@ -111,6 +120,18 @@ class AuthIntegrationTest {
                 val missingToken = client.get(AuthResource.Me())
                 assertThat(missingToken.status).isEqualTo(HttpStatusCode.Unauthorized)
                 assertThat(missingToken.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+
+                // A tampered JWT (signature no longer matches) → 401, rejected by verification
+                // alone.
+                val tampered =
+                    client.get(AuthResource.Me()) { bearerAuth(tokens.accessToken.dropLast(2)) }
+                assertThat(tampered.status).isEqualTo(HttpStatusCode.Unauthorized)
+                assertThat(tampered.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+
+                // The refresh token is not an access token: it means nothing to the JWT provider.
+                val refreshAsBearer =
+                    client.get(AuthResource.Me()) { bearerAuth(tokens.refreshToken) }
+                assertThat(refreshAsBearer.status).isEqualTo(HttpStatusCode.Unauthorized)
 
                 // Log in with the same credentials → 200 (a second valid session).
                 val login =
@@ -143,14 +164,49 @@ class AuthIntegrationTest {
                 assertThat(unknownEmail.status).isEqualTo(HttpStatusCode.Unauthorized)
                 assertThat(unknownEmail.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
 
-                // Log out (server-side revoke) → 204.
-                assertThat(client.post(AuthResource.Logout()) { bearerAuth(token) }.status)
-                    .isEqualTo(HttpStatusCode.NoContent)
+                // Refresh: the opaque token mints a fresh access token (the one place the session
+                // store is consulted per request cycle); the minted JWT works immediately.
+                val refreshed =
+                    client.post(AuthResource.Refresh()) {
+                        contentType(ContentType.Application.Json)
+                        setBody(RefreshRequest(tokens.refreshToken))
+                    }
+                assertThat(refreshed.status).isEqualTo(HttpStatusCode.OK)
+                val mintedAccessToken = refreshed.body<AccessTokenResponse>().accessToken
+                assertThat(client.get(AuthResource.Me()) { bearerAuth(mintedAccessToken) }.status)
+                    .isEqualTo(HttpStatusCode.OK)
 
-                // The revoked token now resolves to nothing → 401.
-                val revoked = client.get(AuthResource.Me()) { bearerAuth(token) }
-                assertThat(revoked.status).isEqualTo(HttpStatusCode.Unauthorized)
-                assertThat(revoked.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+                // A garbage refresh token → the same collapsed 401.
+                val badRefresh =
+                    client.post(AuthResource.Refresh()) {
+                        contentType(ContentType.Application.Json)
+                        setBody(RefreshRequest("not-a-real-refresh-token"))
+                    }
+                assertThat(badRefresh.status).isEqualTo(HttpStatusCode.Unauthorized)
+                assertThat(badRefresh.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+
+                // Log out (revoke the refresh token server-side) → 204.
+                val logout =
+                    client.post(AuthResource.Logout()) {
+                        bearerAuth(tokens.accessToken)
+                        contentType(ContentType.Application.Json)
+                        setBody(LogoutRequest(tokens.refreshToken))
+                    }
+                assertThat(logout.status).isEqualTo(HttpStatusCode.NoContent)
+
+                // The revoked refresh token mints nothing → 401 …
+                val revokedRefresh =
+                    client.post(AuthResource.Refresh()) {
+                        contentType(ContentType.Application.Json)
+                        setBody(RefreshRequest(tokens.refreshToken))
+                    }
+                assertThat(revokedRefresh.status).isEqualTo(HttpStatusCode.Unauthorized)
+                assertThat(revokedRefresh.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+
+                // … while the already-minted access token keeps working until its TTL runs out —
+                // the bounded revocation staleness the JWT amendment to ADR-0009 accepts by design.
+                assertThat(client.get(AuthResource.Me()) { bearerAuth(tokens.accessToken) }.status)
+                    .isEqualTo(HttpStatusCode.OK)
 
                 // Signing up the same email again → the typed domain error round-trips back.
                 val duplicate =
@@ -184,6 +240,7 @@ class AuthIntegrationTest {
             val storageConfig = testStorageConfig()
             val metricsConfig = MetricsConfig(port = 0)
             val webLimitsConfig = testWebLimitsConfig()
+            val jwtConfig = testJwtConfig()
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
                     .create(
@@ -195,11 +252,13 @@ class AuthIntegrationTest {
                             storageConfig,
                             metricsConfig,
                             webLimitsConfig,
+                            jwtConfig,
                         ),
                         databaseConfig,
                         storageConfig,
                         metricsConfig,
                         webLimitsConfig,
+                        jwtConfig,
                     )
             graph.databaseBootstrap.start()
 
@@ -220,28 +279,39 @@ class AuthIntegrationTest {
                         setBody(credentials)
                     }
                 assertThat(signup.status).isEqualTo(HttpStatusCode.Created)
-                val firstToken = signup.body<SessionResponse>().token
+                val firstRefreshToken = signup.body<TokensResponse>().refreshToken
                 val login =
                     client.post(AuthResource.Login()) {
                         contentType(ContentType.Application.Json)
                         setBody(LoginRequest("bob@example.com", "hunter2hunter2"))
                     }
                 assertThat(login.status).isEqualTo(HttpStatusCode.OK)
-                val secondToken = login.body<SessionResponse>().token
+                val secondTokens = login.body<TokensResponse>()
 
-                // Resolve both so they are *cached* — revoke-all must defeat the cache, not just
-                // the table.
-                val me = client.get(AuthResource.Me()) { bearerAuth(firstToken) }
+                // Refresh with both so the sessions are *cached* — revoke-all must defeat the
+                // cache, not just the table. (Access tokens never touch the session store; only
+                // the refresh path does.)
+                for (refreshToken in listOf(firstRefreshToken, secondTokens.refreshToken)) {
+                    val refreshed =
+                        client.post(AuthResource.Refresh()) {
+                            contentType(ContentType.Application.Json)
+                            setBody(RefreshRequest(refreshToken))
+                        }
+                    assertThat(refreshed.status).isEqualTo(HttpStatusCode.OK)
+                }
+                val me = client.get(AuthResource.Me()) { bearerAuth(secondTokens.accessToken) }
                 assertThat(me.status).isEqualTo(HttpStatusCode.OK)
                 val accountId = AccountId(UUID.fromString(me.body<AccountResponse>().id))
-                assertThat(client.get(AuthResource.Me()) { bearerAuth(secondToken) }.status)
-                    .isEqualTo(HttpStatusCode.OK)
 
                 graph.sessionStore.revokeAllFor(accountId)
 
-                // Both sessions 401 immediately on this node — no TTL wait.
-                for (token in listOf(firstToken, secondToken)) {
-                    val revoked = client.get(AuthResource.Me()) { bearerAuth(token) }
+                // Both sessions stop minting immediately on this node — no TTL wait.
+                for (refreshToken in listOf(firstRefreshToken, secondTokens.refreshToken)) {
+                    val revoked =
+                        client.post(AuthResource.Refresh()) {
+                            contentType(ContentType.Application.Json)
+                            setBody(RefreshRequest(refreshToken))
+                        }
                     assertThat(revoked.status).isEqualTo(HttpStatusCode.Unauthorized)
                     assertThat(revoked.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
                 }
@@ -266,6 +336,7 @@ class AuthIntegrationTest {
             val storageConfig = testStorageConfig()
             val metricsConfig = MetricsConfig(port = 0)
             val webLimitsConfig = testWebLimitsConfig()
+            val jwtConfig = testJwtConfig()
             val graph =
                 createGraphFactory<ServerGraph.Factory>()
                     .create(
@@ -277,11 +348,13 @@ class AuthIntegrationTest {
                             storageConfig,
                             metricsConfig,
                             webLimitsConfig,
+                            jwtConfig,
                         ),
                         databaseConfig,
                         storageConfig,
                         metricsConfig,
                         webLimitsConfig,
+                        jwtConfig,
                     )
             graph.databaseBootstrap.start()
 

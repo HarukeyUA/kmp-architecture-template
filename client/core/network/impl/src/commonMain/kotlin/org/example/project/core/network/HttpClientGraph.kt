@@ -7,8 +7,6 @@ import dev.zacsweers.metro.SingleIn
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BearerTokens
-import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.resources.Resources
@@ -26,12 +24,9 @@ interface HttpClientGraph {
     /**
      * The app's single [HttpClient]. ContentNegotiation uses the seam [Json] (so a 4xx
      * `ErrorEnvelope` parses into the typed `ApiError`); typed `@Resource` requests share the
-     * seam's route definitions; the bearer token is read from [SecureSessionStore] on each request.
-     *
-     * The opaque Session has no refresh — so a 401 on an authenticated request means the session
-     * was revoked or expired server-side. The [Auth] `refreshTokens` hook is the global "401 →
-     * clear session" interceptor (ADR-0009): clearing makes [SecureSessionStore.sessionFlow] emit
-     * null, which the root navigation observes and bounces to Login.
+     * seam's route definitions; [sessionBearer] attaches the stored access token, refreshes it
+     * through the refresh endpoint on 401, and clears the session (→ Login) when the refresh itself
+     * is rejected (ADR-0009 as amended).
      */
     @Provides
     @SingleIn(AppScope::class)
@@ -43,19 +38,7 @@ interface HttpClientGraph {
         HttpClient(httpClientEngine()) {
             install(ContentNegotiation) { json(seamJson) }
             install(Resources)
-            install(Auth) {
-                bearer {
-                    cacheTokens = false
-                    sendWithoutRequest { true }
-                    loadTokens {
-                        sessionStore.current()?.let { BearerTokens(it.token, refreshToken = null) }
-                    }
-                    refreshTokens {
-                        sessionStore.clear()
-                        null
-                    }
-                }
-            }
+            install(Auth) { sessionBearer(sessionStore) }
             defaultRequest {
                 url(apiConfig.baseUrl)
                 accept(ContentType.Application.Json)

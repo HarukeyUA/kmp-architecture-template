@@ -28,11 +28,10 @@ import org.example.project.shared.notes.NoteText
 class DefaultNotesService(private val repo: NoteRepository, private val authService: AuthService) :
     NotesService {
 
-    override suspend fun list(principal: Principal): Either<ApiError, List<AuthoredNote>> =
-        either {
-            val authorEmail = authorEmail(principal).bind()
-            repo.listFor(principal.accountId).map { AuthoredNote(it, authorEmail) }
-        }
+    override suspend fun list(principal: Principal): Either<ApiError, List<AuthoredNote>> = either {
+        val authorEmail = authorEmail(principal).bind()
+        repo.listFor(principal.accountId).map { AuthoredNote(it, authorEmail) }
+    }
 
     override suspend fun create(
         principal: Principal,

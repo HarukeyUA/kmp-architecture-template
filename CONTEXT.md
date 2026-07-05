@@ -29,15 +29,19 @@ A side's own internal representation of a concept, deliberately distinct from th
 _Avoid_: entity, DTO
 
 **Credential module**:
-A swappable server component that verifies a proof of identity (password, OAuth, device key) and issues a Session.
+A swappable server component that verifies a proof of identity (password, OAuth, device key) and issues a Session plus its first Access token.
 _Avoid_: login, auth provider
 
 **Session**:
-An opaque, server-validated token that represents an authenticated Principal and is revoked by deletion.
-_Avoid_: bare "token", JWT, cookie
+An opaque, server-validated token that represents an authenticated Principal and is revoked by deletion. Presented only to the refresh and logout endpoints, where it mints Access tokens (ADR-0009 as amended).
+_Avoid_: bare "token", refresh token (in prose — the wire field is `refreshToken`), cookie
+
+**Access token**:
+A short-lived, signed JWT minted from a Session and carried on every authenticated request; verified statelessly, so it cannot be revoked — it just expires. Revoking the Session stops new ones from being minted.
+_Avoid_: bare "token", bare "JWT", bearer
 
 **Principal**:
-The authenticated identity attached to a request once a Session is validated.
+The authenticated identity attached to a request once its Access token is verified.
 _Avoid_: bare "user", bare "account", subject
 
 **Blob** (via **BlobStore**):
@@ -53,18 +57,18 @@ _Avoid_: cron, task, worker, sweeper (use for the specific job, not the concept)
 - A **Contract** lives in the **Seam**; both **Client** and **Server** depend on it, never on each other.
 - A **Domain** = one **Seam** contract module + one **Server** slice (+ the **Client** features that consume it).
 - **Client** and **Server** each map the **Wire** to their own **Domain model** — the Wire is shared, the Domain model is not.
-- A **Credential module** issues a **Session**; a validated **Session** yields a **Principal**.
+- A **Credential module** issues a **Session**; a **Session** mints **Access tokens**; a verified **Access token** yields a **Principal**.
 
 ## Example dialogue
 
 > **Architect:** "We're adding image sync. Does that mean a new **Domain**?"
 > **Developer:** "Yes — a `:shared:images` **Contract** and a `:server:feature:images` slice. The client's existing media **feature** consumes the **Contract**."
 > **Architect:** "And the upload auth?"
-> **Developer:** "Same **Session** as everything else — the **Principal** is already on the request. Images is a **Domain**, not a new **Credential module**. We only add one of those to change *how you log in*, not *what you can do*."
+> **Developer:** "Same **Access token** as everything else — the **Principal** is already on the request. Images is a **Domain**, not a new **Credential module**. We only add one of those to change *how you log in*, not *what you can do*."
 
 ## Flagged ambiguities
 
 - **"feature" vs "domain"** — On the client a *feature* is a UI slice (`:client:feature:*`). On the server the equivalent functional slice is a **Domain**. The server module path is `:server:feature:<domain>` only for symmetry with the client; the *concept* is **Domain**. Say "Domain" when talking about server slices.
-- **"token" → Session** — "token" is overloaded (session token, CSRF token, push token). The auth credential is a **Session**; avoid bare "token."
+- **"token" → Session / Access token** — "token" is overloaded (session token, access token, CSRF token, push token). The revocable credential is a **Session**, the per-request JWT is an **Access token**; avoid bare "token."
 - **"model" → Wire / Domain model / UI model** — three distinct things (UI/Domain/Wire mapping is already established in `ARCHITECTURE.md`): the **Wire** (DTO) crosses the network, the **Domain model** is a side's internal type, the *UI model* is render-optimized. Never say bare "model."
 - **"account" / "user" → Principal** — when referring to the authenticated caller, say **Principal**; reserve "account"/"user" for concepts inside a specific **Domain**.

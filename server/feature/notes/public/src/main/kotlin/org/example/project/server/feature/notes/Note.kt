@@ -5,8 +5,8 @@ import org.example.project.server.auth.AccountId
 
 /**
  * The notes domain model — what the repository persists and returns, never an Exposed `ResultRow`
- * (ADR-0006). Lives in `:public` because the service returns it across module boundaries
- * (ADR-0003 as amended).
+ * (ADR-0006). Lives in `:public` because the service returns it across module boundaries (ADR-0003
+ * as amended).
  */
 data class Note(val id: String, val accountId: AccountId, val text: String, val createdAt: Instant)
 

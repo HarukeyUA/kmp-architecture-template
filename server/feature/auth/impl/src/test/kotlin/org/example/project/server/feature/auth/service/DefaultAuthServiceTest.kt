@@ -9,6 +9,8 @@ import java.util.UUID
 import kotlin.test.Test
 import kotlin.time.Instant
 import kotlinx.coroutines.test.runTest
+import org.example.project.server.auth.AccessToken
+import org.example.project.server.auth.AccessTokenIssuer
 import org.example.project.server.auth.AccountId
 import org.example.project.server.auth.Principal
 import org.example.project.server.auth.Session
@@ -21,10 +23,10 @@ import org.example.project.shared.common.ApiError
 import org.example.project.shared.common.Unauthorized
 
 /**
- * Pins the login failure-path contract against fakes — above all the **timing-equalization**
- * shape, which no integration test can assert: an unknown email must burn exactly one dummy
- * verify (so it costs the same as a wrong password), while a malformed email stays fast on
- * purpose. If a refactor drops the dummy verify as "dead work", these tests are what fail.
+ * Pins the login failure-path contract against fakes — above all the **timing-equalization** shape,
+ * which no integration test can assert: an unknown email must burn exactly one dummy verify (so it
+ * costs the same as a wrong password), while a malformed email stays fast on purpose. If a refactor
+ * drops the dummy verify as "dead work", these tests are what fail.
  */
 class DefaultAuthServiceTest {
 
@@ -34,7 +36,8 @@ class DefaultAuthServiceTest {
             mapOf("known@example.com" to Credential(accountId, "hash:correct horse"))
         )
     private val hasher = RecordingHasher()
-    private val service = DefaultAuthService(repo, hasher, FakeSessionStore())
+    private val sessionStore = FakeSessionStore()
+    private val service = DefaultAuthService(repo, hasher, sessionStore, FakeAccessTokenIssuer())
 
     @Test
     fun `unknown email burns exactly one dummy verify and collapses to Unauthorized`() = runTest {
@@ -64,16 +67,39 @@ class DefaultAuthServiceTest {
     }
 
     @Test
-    fun `valid credentials issue a session`() = runTest {
+    fun `valid credentials issue an access token and a session`() = runTest {
         val result = service.login("known@example.com", "correct horse")
 
-        assertThat(result.map { it.accountId }).isEqualTo(accountId.right())
+        assertThat(result.map { it.session.accountId }).isEqualTo(accountId.right())
+        assertThat(result.map { it.accessToken.token })
+            .isEqualTo("access:${accountId.value}".right())
+    }
+
+    @Test
+    fun `refresh with a live session mints an access token without touching the hasher`() =
+        runTest {
+            val tokens = service.login("known@example.com", "correct horse").getOrNull()!!
+            hasher.verifyCalls = 0
+
+            val result = service.refresh(tokens.session.token)
+
+            assertThat(result.map { it.token }).isEqualTo("access:${accountId.value}".right())
+            assertThat(hasher.verifyCalls).isEqualTo(0)
+            assertThat(hasher.dummyVerifyCalls).isEqualTo(0)
+        }
+
+    @Test
+    fun `refresh with an unknown or revoked token collapses to Unauthorized`() = runTest {
+        assertThat(service.refresh("never-issued")).isEqualTo(Unauthorized.left())
+
+        val tokens = service.login("known@example.com", "correct horse").getOrNull()!!
+        service.logout(tokens.session.token)
+        assertThat(service.refresh(tokens.session.token)).isEqualTo(Unauthorized.left())
     }
 }
 
-private class FakeAccountRepository(
-    private val credentials: Map<String, Credential>,
-) : AccountRepository {
+private class FakeAccountRepository(private val credentials: Map<String, Credential>) :
+    AccountRepository {
     override suspend fun findById(id: AccountId): Account? = null
 
     override suspend fun findCredentialByEmail(email: String): Credential? = credentials[email]
@@ -99,13 +125,30 @@ private class RecordingHasher : PasswordHasher {
     }
 }
 
+/** Issues predictable per-account tokens so tests can assert which account was granted access. */
+private class FakeAccessTokenIssuer : AccessTokenIssuer {
+    override fun issue(accountId: AccountId): AccessToken =
+        AccessToken(token = "access:${accountId.value}", expiresAt = Instant.DISTANT_FUTURE)
+}
+
+/** In-memory issue/resolve/revoke, enough to pin the refresh contract against. */
 private class FakeSessionStore : SessionStore {
-    override suspend fun issue(accountId: AccountId): Session =
-        Session(token = "opaque-token", accountId = accountId, expiresAt = Instant.DISTANT_FUTURE)
+    private val live = mutableMapOf<String, AccountId>()
+    private var counter = 0
 
-    override suspend fun resolve(token: String): Principal? = null
+    override suspend fun issue(accountId: AccountId): Session {
+        val token = "opaque-token-${counter++}"
+        live[token] = accountId
+        return Session(token = token, accountId = accountId, expiresAt = Instant.DISTANT_FUTURE)
+    }
 
-    override suspend fun revoke(token: String) = Unit
+    override suspend fun resolve(token: String): Principal? = live[token]?.let(::Principal)
 
-    override suspend fun revokeAllFor(accountId: AccountId) = Unit
+    override suspend fun revoke(token: String) {
+        live.remove(token)
+    }
+
+    override suspend fun revokeAllFor(accountId: AccountId) {
+        live.entries.removeAll { it.value == accountId }
+    }
 }

@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":server:core:scheduler:public"))
 
     implementation(libs.ktor.server.auth)
+    implementation(libs.ktor.server.auth.jwt)
     implementation(libs.caffeine)
     implementation(libs.exposed.core)
     implementation(libs.exposed.jdbc)

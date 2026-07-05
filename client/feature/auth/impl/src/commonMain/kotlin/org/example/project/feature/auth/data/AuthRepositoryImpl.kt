@@ -14,7 +14,9 @@ import org.example.project.feature.auth.AuthRepository
 import org.example.project.shared.auth.AuthApi
 import org.example.project.shared.auth.AuthResource
 import org.example.project.shared.auth.LoginRequest
+import org.example.project.shared.auth.LogoutRequest
 import org.example.project.shared.auth.SignupRequest
+import org.example.project.shared.auth.TokensResponse
 
 @Inject
 @ContributesBinding(AppScope::class)
@@ -23,25 +25,31 @@ class AuthRepositoryImpl(
     private val sessionStore: SecureSessionStore,
 ) : AuthRepository {
     override suspend fun login(email: String, password: String): Either<AppError, Unit> = either {
-        val session =
+        val tokens =
             client
                 .call(AuthApi.login, AuthResource.Login(), LoginRequest(email.trim(), password))
                 .bind()
-        sessionStore.save(ClientSession(session.token))
+        sessionStore.save(tokens.toSession())
     }
 
     override suspend fun signup(email: String, password: String): Either<AppError, Unit> = either {
-        val session =
+        val tokens =
             client
                 .call(AuthApi.signup, AuthResource.Signup(), SignupRequest(email.trim(), password))
                 .bind()
-        sessionStore.save(ClientSession(session.token))
+        sessionStore.save(tokens.toSession())
     }
 
     override suspend fun logout() {
-        // Best-effort server revoke (the bearer token is attached automatically); `call` folds any
-        // network failure into the Either, so the local session is cleared regardless.
-        client.call(AuthApi.logout, AuthResource.Logout())
+        // Best-effort server revoke of the refresh token (the access token rides along as the
+        // bearer); `call` folds any network failure into the Either, so the local session is
+        // cleared regardless.
+        sessionStore.current()?.let { session ->
+            client.call(AuthApi.logout, AuthResource.Logout(), LogoutRequest(session.refreshToken))
+        }
         sessionStore.clear()
     }
 }
+
+private fun TokensResponse.toSession(): ClientSession =
+    ClientSession(accessToken = accessToken, refreshToken = refreshToken)

@@ -1,5 +1,8 @@
 package org.example.project.server
 
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import org.example.project.server.auth.JwtConfig
 import org.example.project.server.storage.StorageConfig
 import org.example.project.server.web.WebLimitsConfig
 
@@ -15,6 +18,18 @@ fun testStorageConfig(): StorageConfig =
         bucket = "test",
         accessKey = "test",
         secretKey = "test",
+    )
+
+/**
+ * A [JwtConfig] with the production-default TTL for integration flows. A test probing access-token
+ * expiry itself can pass a tighter [accessTokenTtl].
+ */
+fun testJwtConfig(accessTokenTtl: Duration = 15.minutes): JwtConfig =
+    JwtConfig(
+        secret = "test-only-jwt-secret-0123456789abcdef",
+        issuer = "kmp-template-test",
+        audience = "kmp-template-test",
+        accessTokenTtl = accessTokenTtl,
     )
 
 /**
