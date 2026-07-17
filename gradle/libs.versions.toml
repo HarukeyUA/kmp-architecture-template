@@ -39,7 +39,7 @@ assertk = "0.28.1"
 turbine = "1.2.1"
 
 spotless = "8.8.0"
-ktfmt = "0.63"
+ktfmt = "0.64"
 
 [libraries]
 # Gradle plugins for build-logic
