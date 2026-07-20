@@ -35,6 +35,12 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+    echo "Not inside a git repository." >&2
+    exit 2
+}
+cd "$repo_root"
+
 if ! git rev-parse --verify --quiet "${base_ref}^{commit}" >/dev/null; then
     cat >&2 <<EOF
 Base ref '$base_ref' is not available locally.
