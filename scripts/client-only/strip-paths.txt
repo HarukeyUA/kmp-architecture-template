@@ -1,0 +1,35 @@
+# Paths removed by scripts/make-client-only.sh, one per line, relative to the
+# repository root. Directories are removed recursively. Lines starting with #
+# and blank lines are ignored.
+
+# The server and the shared seam.
+server
+shared
+
+# The notes feature exists to prove the seam replicates; it has no meaning
+# without the server.
+client/feature/notes
+
+# Seam-typed error channel (ADR-0011) and its renderer.
+client/core/error/public/src/commonMain/kotlin/org/example/project/core/error/CallFailure.kt
+client/core/ui/public/src/commonMain/kotlin/org/example/project/core/ui/error/ApiErrorRenderer.kt
+client/core/ui/public/src/commonTest/kotlin/org/example/project/core/ui/error/ApiErrorRenderTest.kt
+
+# Session bearer/refresh rides the auth endpoints of the seam.
+client/core/network/public/src/commonMain/kotlin/org/example/project/core/network/SessionBearerAuth.kt
+
+# Server-backed auth data layer (replaced by a local fake via the overlay).
+client/feature/auth/impl/src/commonMain/kotlin/org/example/project/feature/auth/AuthClientBindings.kt
+client/feature/auth/impl/src/commonMain/kotlin/org/example/project/feature/auth/data/AuthRepositoryImpl.kt
+client/feature/auth/impl/src/commonTest/kotlin/org/example/project/feature/auth/AuthRepositoryNetworkTest.kt
+client/feature/auth/impl/src/commonTest/kotlin/org/example/project/feature/auth/InMemorySecureSessionStore.kt
+
+# Server documentation, infra, and tooling.
+ARCHITECTURE_SERVER.md
+CONTEXT.md
+REVIEW.md
+docs
+docker-compose.yml
+Dockerfile
+.env.example
+scripts/check-migration-order.sh
