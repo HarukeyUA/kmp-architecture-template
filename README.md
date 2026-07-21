@@ -96,6 +96,21 @@ Nested and core module generation are also supported:
 
 Use `--display-name` to customize the launcher name and `--dry-run` to preview changes first.
 
+## Client-Only Variant
+
+This full-stack tree is the single source of truth; a client-only template is derived from it
+mechanically. In a fresh clone, worktree, or CI checkout:
+
+```bash
+./scripts/make-client-only.sh
+```
+
+The script removes `:server:*`, `:shared:*`, and the client pieces that only exist to exercise the
+server contract, then swaps in client-only counterparts (a local fake auth repository, seam-less
+networking, a two-tab main screen) from `scripts/client-only/overlay/`. The `client-only-variant`
+CI job runs the script and builds the result on every PR, so the variant cannot silently rot. When
+a PR changes seam-coupled client code, update `scripts/client-only/` in the same PR.
+
 ## Module Rules
 
 The build enforces these rules:
