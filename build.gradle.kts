@@ -12,3 +12,17 @@ plugins {
     alias(libs.plugins.convention.spotless)
     alias(libs.plugins.detekt)
 }
+
+tasks.register<Exec>("checkMigrationOrder") {
+    group = "verification"
+    description =
+        "Fails when PR-added Flyway migrations are older than the latest migration on the base ref."
+
+    val baseRef =
+        providers
+            .gradleProperty("migrationBaseRef")
+            .orElse(providers.environmentVariable("MIGRATION_BASE_REF"))
+            .orElse("origin/main")
+
+    doFirst { commandLine("bash", "scripts/check-migration-order.sh", "--base", baseRef.get()) }
+}

@@ -30,3 +30,6 @@ captures
 iosApp/Configuration/Generated.xcconfig
 node_modules/
 
+# Server local config (committed: .env.example)
+.env
+

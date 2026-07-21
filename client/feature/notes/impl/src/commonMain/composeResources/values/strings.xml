@@ -1,0 +1,3 @@
+<resources>
+    <string name="error_notes_quota_exceeded">Note limit reached — %1$d of %2$d characters used. Delete a note to add more.</string>
+</resources>

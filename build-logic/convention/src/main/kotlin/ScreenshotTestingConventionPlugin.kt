@@ -27,7 +27,7 @@ class ScreenshotTestingConventionPlugin : Plugin<Project> {
                     implementation(libs.library("robolectric"))
                     implementation(libs.library("junit"))
                     implementation(libs.library("compose-ui-test-junit4"))
-                    implementation(project(":core:screenshot-testing:public"))
+                    implementation(project(":client:core:screenshot-testing:public"))
                 }
             }
         }

@@ -1,0 +1,13 @@
+<resources>
+    <string name="error_network_connection">Network error. Check your connection and try again.</string>
+    <string name="error_network_http_with_message">%1$s</string>
+    <string name="error_network_http">Server error (%1$d)</string>
+    <string name="error_network_serialization">Unexpected response from server</string>
+    <string name="error_unexpected">Something went wrong</string>
+    <string name="error_unauthorized">Your session has expired. Please sign in again.</string>
+    <string name="error_forbidden">You don\'t have permission to do that.</string>
+    <string name="error_not_found">Not found.</string>
+    <string name="error_conflict">That conflicts with something that already exists.</string>
+    <string name="error_validation">Please check the highlighted fields.</string>
+    <string name="error_rate_limited">Too many requests. Please slow down and try again.</string>
+</resources>

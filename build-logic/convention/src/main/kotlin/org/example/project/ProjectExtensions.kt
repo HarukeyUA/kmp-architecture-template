@@ -4,12 +4,42 @@ import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryTarget
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalog
 import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.plugins.BasePluginExtension
 import org.gradle.api.project.IsolatedProject
+import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.getByType
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 val Project.libs: VersionCatalog
     get() = extensions.getByType<VersionCatalogsExtension>().named("libs")
+
+/**
+ * Shared base for plain-JVM server modules (`:server:*`). Pins the toolchain to JVM 21 — the deploy
+ * target — and enables the same opt-ins as the client so Metro annotations and context parameters
+ * behave identically across the monorepo.
+ */
+fun Project.configureServerKotlinJvm() {
+    // Leaf modules share a directory name (`impl`/`public`), so by default every server jar would
+    // be `impl.jar`/`public.jar` and the :server:app distribution would collide collecting them
+    // into lib/. Derive a unique archive name from the full module path instead.
+    extensions.configure<BasePluginExtension> {
+        archivesName.set(path.removePrefix(":").replace(':', '-'))
+    }
+
+    extensions.configure<KotlinJvmProjectExtension> {
+        jvmToolchain(21)
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_21)
+            freeCompilerArgs.addAll(
+                "-Xannotation-default-target=param-property",
+                "-Xcontext-parameters",
+                "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+            )
+        }
+    }
+}
 
 fun VersionCatalog.version(alias: String): String = findVersion(alias).get().requiredVersion
 

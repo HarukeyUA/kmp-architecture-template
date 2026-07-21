@@ -214,13 +214,13 @@ replace_in_sources "$T_APP_NAME" "$NEW_APP_NAME"
 # ── Step 5: Replace display name in strings.xml ───────────────────────────────
 step "Updating display name in strings.xml"
 do_replace \
-  "$ROOT_DIR/androidApp/src/main/res/values/strings.xml" \
+  "$ROOT_DIR/client/androidApp/src/main/res/values/strings.xml" \
   "$T_DISPLAY_NAME" "$NEW_DISPLAY_NAME"
 
 # ── Step 6: Rename MyApplication.kt → <NewAppName>.kt ─────────────────────────
 step "Renaming Application class file"
-OLD_APP_KT="$ROOT_DIR/androidApp/src/main/java/$OLD_ANDROID_PATH/${T_APP_NAME}.kt"
-NEW_APP_KT="$ROOT_DIR/androidApp/src/main/java/$OLD_ANDROID_PATH/${NEW_APP_NAME}.kt"
+OLD_APP_KT="$ROOT_DIR/client/androidApp/src/main/java/$OLD_ANDROID_PATH/${T_APP_NAME}.kt"
+NEW_APP_KT="$ROOT_DIR/client/androidApp/src/main/java/$OLD_ANDROID_PATH/${NEW_APP_NAME}.kt"
 if [[ "$OLD_APP_KT" != "$NEW_APP_KT" ]]; then
   if $DRY_RUN; then
     [[ -f "$OLD_APP_KT" ]] && info "[would rename] ${T_APP_NAME}.kt → ${NEW_APP_NAME}.kt"
@@ -233,8 +233,8 @@ fi
 step "Relocating Android source directories ($OLD_ANDROID_PATH → $NEW_PKG_PATH)"
 for src_set in main test androidTest; do
   move_dir \
-    "$ROOT_DIR/androidApp/src/$src_set/java/$OLD_ANDROID_PATH" \
-    "$ROOT_DIR/androidApp/src/$src_set/java/$NEW_PKG_PATH"
+    "$ROOT_DIR/client/androidApp/src/$src_set/java/$OLD_ANDROID_PATH" \
+    "$ROOT_DIR/client/androidApp/src/$src_set/java/$NEW_PKG_PATH"
 done
 
 # ── Step 8: Relocate shared Kotlin source directories ─────────────────────────
