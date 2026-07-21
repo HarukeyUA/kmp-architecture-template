@@ -11,9 +11,9 @@ import org.example.project.core.secure.storage.SecureSessionStore
 import org.example.project.feature.auth.AuthRepository
 
 /**
- * Local fake: accepts any credentials and stores a stub session in secure storage, so the
- * logged-in flow (splash routing, logout, session observation) is exercised end to end without a
- * server. Replace with a repository backed by your API.
+ * Local fake: accepts any credentials and stores a stub session in secure storage, so the logged-in
+ * flow (splash routing, logout, session observation) is exercised end to end without a server.
+ * Replace with a repository backed by your API.
  */
 @Inject
 @ContributesBinding(AppScope::class)

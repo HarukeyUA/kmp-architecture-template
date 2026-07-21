@@ -20,8 +20,8 @@ internal expect fun httpClientEngine(): HttpClientEngineFactory<*>
 @ContributesTo(AppScope::class)
 interface HttpClientGraph {
     /**
-     * The app's single [HttpClient]. Wire an auth plugin (e.g. Ktor's `Auth` with a bearer
-     * provider backed by `SecureSessionStore`) here once the app talks to an authenticated API.
+     * The app's single [HttpClient]. Wire an auth plugin (e.g. Ktor's `Auth` with a bearer provider
+     * backed by `SecureSessionStore`) here once the app talks to an authenticated API.
      */
     @Provides
     @SingleIn(AppScope::class)

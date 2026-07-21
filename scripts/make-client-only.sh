@@ -50,8 +50,14 @@ sed -i.bak \
     -e '/include(":server/d' \
     -e '/include(":shared/d' \
     -e '/include(":client:feature:notes/d' \
+    -e '/aggregator(":server:app")/d' \
+    -e '/^\/\/ =* :shared umbrella/d' \
+    -e '/^\/\/ =* :server umbrella/d' \
+    -e '/^\/\/ Server /d' \
     settings.gradle.kts
 rm settings.gradle.kts.bak
+cat -s settings.gradle.kts > settings.gradle.kts.squashed
+mv settings.gradle.kts.squashed settings.gradle.kts
 
 echo "Pruning dependencies on stripped modules..."
 find client -name build.gradle.kts -not -path "*/build/*" -print0 |
@@ -72,6 +78,9 @@ done
 
 echo "Removing client-only tooling from the derived tree..."
 rm -rf scripts/client-only scripts/make-client-only.sh
+
+echo "Normalizing formatting (spotlessApply)..."
+./gradlew --quiet spotlessApply
 
 echo
 echo "Done. This tree is now the client-only template."
