@@ -2,6 +2,7 @@ package org.example.project.shared.notes
 
 import io.ktor.http.HttpMethod
 import io.ktor.resources.Resource
+import kotlinx.serialization.serializer
 import org.example.project.shared.common.Endpoint
 
 /**
@@ -37,7 +38,7 @@ object NotesApi {
             HttpMethod.Post,
             CreateNoteRequest.serializer(),
             NoteResponse.serializer(),
-            error = NotesCreateError::class,
+            error = serializer<NotesCreateError>(),
         )
 
     val delete: Endpoint<NotesResource.ById, Unit, Unit, Nothing> =

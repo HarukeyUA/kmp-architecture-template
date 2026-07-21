@@ -20,7 +20,6 @@ client/core/ui/public/src/commonTest/kotlin/org/example/project/core/ui/error/Ap
 client/core/network/public/src/commonMain/kotlin/org/example/project/core/network/SessionBearerAuth.kt
 
 # Server-backed auth data layer (replaced by a local fake via the overlay).
-client/feature/auth/impl/src/commonMain/kotlin/org/example/project/feature/auth/AuthClientBindings.kt
 client/feature/auth/impl/src/commonMain/kotlin/org/example/project/feature/auth/data/AuthRepositoryImpl.kt
 client/feature/auth/impl/src/commonTest/kotlin/org/example/project/feature/auth/AuthRepositoryNetworkTest.kt
 client/feature/auth/impl/src/commonTest/kotlin/org/example/project/feature/auth/InMemorySecureSessionStore.kt

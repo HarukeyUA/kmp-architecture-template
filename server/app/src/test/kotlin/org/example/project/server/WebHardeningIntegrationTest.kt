@@ -28,11 +28,9 @@ import org.example.project.server.web.WebLimitsConfig
 import org.example.project.shared.auth.AuthResource
 import org.example.project.shared.auth.LoginRequest
 import org.example.project.shared.auth.SignupRequest
-import org.example.project.shared.auth.authErrorSerializersModule
-import org.example.project.shared.common.ErrorEnvelope
 import org.example.project.shared.common.PayloadTooLarge
 import org.example.project.shared.common.RateLimited
-import org.example.project.shared.common.buildSeamJson
+import org.example.project.shared.common.seamJson
 import org.testcontainers.containers.PostgreSQLContainer
 
 /**
@@ -54,7 +52,7 @@ class WebHardeningIntegrationTest {
                 application { configureServer(graph) }
                 val client = createClient {
                     install(ContentNegotiation) {
-                        json(buildSeamJson(setOf(authErrorSerializersModule)))
+                        json(seamJson)
                     }
                     install(Resources)
                 }
@@ -78,7 +76,7 @@ class WebHardeningIntegrationTest {
                         setBody(LoginRequest("ghost@example.com", "hunter2hunter2"))
                     }
                 assertThat(limited.status).isEqualTo(HttpStatusCode.TooManyRequests)
-                val error = limited.body<ErrorEnvelope>().error
+                val error = limited.decodedError()
                 assertThat(error).isInstanceOf(RateLimited::class)
                 assertThat((error as RateLimited).retryAfterSeconds).isNotNull()
 
@@ -107,7 +105,7 @@ class WebHardeningIntegrationTest {
                 application { configureServer(graph) }
                 val client = createClient {
                     install(ContentNegotiation) {
-                        json(buildSeamJson(setOf(authErrorSerializersModule)))
+                        json(seamJson)
                     }
                     install(Resources)
                 }
@@ -120,7 +118,7 @@ class WebHardeningIntegrationTest {
                         setBody("""{"email":"big@example.com","password":"${"x".repeat(2_000)}"}""")
                     }
                 assertThat(oversized.status).isEqualTo(HttpStatusCode.PayloadTooLarge)
-                assertThat(oversized.body<ErrorEnvelope>().error).isEqualTo(PayloadTooLarge)
+                assertThat(oversized.decodedError()).isEqualTo(PayloadTooLarge)
 
                 // The cap doesn't break the happy path.
                 val signup =

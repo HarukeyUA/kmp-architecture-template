@@ -14,10 +14,12 @@ import io.ktor.http.isSuccess
 import org.example.project.core.secure.storage.ClientSession
 import org.example.project.core.secure.storage.SecureSessionStore
 import org.example.project.shared.auth.AccessTokenResponse
+import org.example.project.shared.auth.AuthApi
 import org.example.project.shared.auth.AuthResource
 import org.example.project.shared.auth.RefreshRequest
 import org.example.project.shared.auth.SessionExpired
 import org.example.project.shared.common.ErrorEnvelope
+import org.example.project.shared.common.decodeDeclaredApiError
 
 /**
  * The app's bearer provider (ADR-0009 as amended): attaches the stored access token to every
@@ -71,4 +73,10 @@ fun AuthConfig.sessionBearer(sessionStore: SecureSessionStore) {
  * not a session expiry and leaves the Session untouched.
  */
 private suspend fun HttpResponse.isSessionExpired(): Boolean =
-    catch({ body<ErrorEnvelope>().error is SessionExpired }) { false }
+    catch({
+        AuthApi.refresh.error?.let { lens ->
+            decodeDeclaredApiError(lens, body<ErrorEnvelope>().error)
+        } is SessionExpired
+    }) {
+        false
+    }

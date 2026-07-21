@@ -19,24 +19,26 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlin.test.Test
 import kotlin.time.Clock
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.serializer
 import org.example.project.core.error.CallFailure
 import org.example.project.feature.notes.data.NotesRepositoryImpl
 import org.example.project.shared.common.ErrorEnvelope
-import org.example.project.shared.common.buildSeamJson
+import org.example.project.shared.common.encodeApiError
+import org.example.project.shared.common.seamJson
 import org.example.project.shared.notes.NoteListResponse
 import org.example.project.shared.notes.NoteResponse
+import org.example.project.shared.notes.NotesCreateError
 import org.example.project.shared.notes.NotesQuotaExceeded
-import org.example.project.shared.notes.notesErrorSerializersModule
 
 /**
  * The client side of the notes domain, against a `MockEngine` server: it exercises the real
  * request-building (shared `@Resource`), the `toModel()` mapping, and — crucially for Phase 5 — the
- * seam `Json` built with [notesErrorSerializersModule], so a 4xx [NotesQuotaExceeded] parses back
- * into the *typed* error rather than degrading to `UnknownApiError`. That proves the per-domain
- * `SerializersModule` multibinding composes on the client end too.
+ * decode-based narrowing through the endpoint's sealed lens, so a 4xx [NotesQuotaExceeded] parses
+ * back into the *typed* error rather than degrading to `UnknownApiError`. That proves the
+ * sealed-lens error path works on the client end for a second domain too.
  */
 class NotesRepositoryNetworkTest {
-    private val json = buildSeamJson(setOf(notesErrorSerializersModule))
+    private val json = seamJson
     private val jsonHeaders = headersOf(HttpHeaders.ContentType, "application/json")
 
     @Test
@@ -72,7 +74,12 @@ class NotesRepositoryNetworkTest {
         val repo = repo {
             respond(
                 json.encodeToString(
-                    ErrorEnvelope(NotesQuotaExceeded(quota = 20_000, used = 18_000))
+                    ErrorEnvelope(
+                        encodeApiError(
+                            serializer<NotesCreateError>(),
+                            NotesQuotaExceeded(quota = 20_000, used = 18_000),
+                        )
+                    )
                 ),
                 HttpStatusCode.BadRequest,
                 jsonHeaders,

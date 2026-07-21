@@ -34,11 +34,9 @@ import org.example.project.shared.auth.RefreshRequest
 import org.example.project.shared.auth.SessionExpired
 import org.example.project.shared.auth.SignupRequest
 import org.example.project.shared.auth.TokensResponse
-import org.example.project.shared.auth.authErrorSerializersModule
 import org.example.project.shared.common.BadRequest
-import org.example.project.shared.common.ErrorEnvelope
 import org.example.project.shared.common.Unauthorized
-import org.example.project.shared.common.buildSeamJson
+import org.example.project.shared.common.seamJson
 import org.testcontainers.containers.PostgreSQLContainer
 
 /**
@@ -84,7 +82,7 @@ class AuthIntegrationTest {
                 application { configureServer(graph) }
                 val client = createClient {
                     install(ContentNegotiation) {
-                        json(buildSeamJson(setOf(authErrorSerializersModule)))
+                        json(seamJson)
                     }
                     install(Resources)
                 }
@@ -121,14 +119,14 @@ class AuthIntegrationTest {
                 // No token → 401.
                 val missingToken = client.get(AuthResource.Me())
                 assertThat(missingToken.status).isEqualTo(HttpStatusCode.Unauthorized)
-                assertThat(missingToken.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+                assertThat(missingToken.decodedError()).isEqualTo(Unauthorized)
 
                 // A tampered JWT (signature no longer matches) → 401, rejected by verification
                 // alone.
                 val tampered =
                     client.get(AuthResource.Me()) { bearerAuth(tokens.accessToken.dropLast(2)) }
                 assertThat(tampered.status).isEqualTo(HttpStatusCode.Unauthorized)
-                assertThat(tampered.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+                assertThat(tampered.decodedError()).isEqualTo(Unauthorized)
 
                 // The refresh token is not an access token: it means nothing to the JWT provider.
                 val refreshAsBearer =
@@ -153,7 +151,7 @@ class AuthIntegrationTest {
                         setBody(LoginRequest("alice@example.com", "wrongpassword99"))
                     }
                 assertThat(wrongPassword.status).isEqualTo(HttpStatusCode.Unauthorized)
-                assertThat(wrongPassword.body<ErrorEnvelope>().error).isEqualTo(InvalidCredentials)
+                assertThat(wrongPassword.decodedError()).isEqualTo(InvalidCredentials)
 
                 // Unknown email → byte-identical envelope to wrong-password: the collapse to the
                 // single InvalidCredentials is the information-disclosure boundary (ADR-0011), and
@@ -165,7 +163,7 @@ class AuthIntegrationTest {
                         setBody(LoginRequest("nobody@example.com", "hunter2hunter2"))
                     }
                 assertThat(unknownEmail.status).isEqualTo(HttpStatusCode.Unauthorized)
-                assertThat(unknownEmail.body<ErrorEnvelope>().error).isEqualTo(InvalidCredentials)
+                assertThat(unknownEmail.decodedError()).isEqualTo(InvalidCredentials)
 
                 // Refresh: the opaque token mints a fresh access token (the one place the session
                 // store is consulted per request cycle); the minted JWT works immediately.
@@ -187,7 +185,7 @@ class AuthIntegrationTest {
                         setBody(RefreshRequest("not-a-real-refresh-token"))
                     }
                 assertThat(badRefresh.status).isEqualTo(HttpStatusCode.Unauthorized)
-                assertThat(badRefresh.body<ErrorEnvelope>().error).isEqualTo(SessionExpired)
+                assertThat(badRefresh.decodedError()).isEqualTo(SessionExpired)
 
                 // Log out (revoke the refresh token server-side) → 204.
                 val logout =
@@ -205,7 +203,7 @@ class AuthIntegrationTest {
                         setBody(RefreshRequest(tokens.refreshToken))
                     }
                 assertThat(revokedRefresh.status).isEqualTo(HttpStatusCode.Unauthorized)
-                assertThat(revokedRefresh.body<ErrorEnvelope>().error).isEqualTo(SessionExpired)
+                assertThat(revokedRefresh.decodedError()).isEqualTo(SessionExpired)
 
                 // … while the already-minted access token keeps working until its TTL runs out —
                 // the bounded revocation staleness the JWT amendment to ADR-0009 accepts by design.
@@ -219,7 +217,7 @@ class AuthIntegrationTest {
                         setBody(credentials)
                     }
                 assertThat(duplicate.status).isEqualTo(HttpStatusCode.Conflict)
-                assertThat(duplicate.body<ErrorEnvelope>().error).isEqualTo(EmailTaken)
+                assertThat(duplicate.decodedError()).isEqualTo(EmailTaken)
 
                 // Malformed JSON is a typed 400, not a leaked 500 from the catch-all StatusPages
                 // hook.
@@ -229,8 +227,7 @@ class AuthIntegrationTest {
                         setBody("""{"email":""")
                     }
                 assertThat(malformed.status).isEqualTo(HttpStatusCode.BadRequest)
-                assertThat(malformed.body<ErrorEnvelope>().error)
-                    .isEqualTo(BadRequest("malformed_body"))
+                assertThat(malformed.decodedError()).isEqualTo(BadRequest("malformed_body"))
             }
         }
     }
@@ -270,7 +267,7 @@ class AuthIntegrationTest {
                 application { configureServer(graph) }
                 val client = createClient {
                     install(ContentNegotiation) {
-                        json(buildSeamJson(setOf(authErrorSerializersModule)))
+                        json(seamJson)
                     }
                     install(Resources)
                 }
@@ -317,7 +314,7 @@ class AuthIntegrationTest {
                             setBody(RefreshRequest(refreshToken))
                         }
                     assertThat(revoked.status).isEqualTo(HttpStatusCode.Unauthorized)
-                    assertThat(revoked.body<ErrorEnvelope>().error).isEqualTo(SessionExpired)
+                    assertThat(revoked.decodedError()).isEqualTo(SessionExpired)
                 }
 
                 // A fresh login afterwards works — revocation is not a lockout.
@@ -366,7 +363,7 @@ class AuthIntegrationTest {
                 application { configureServer(graph) }
                 val client = createClient {
                     install(ContentNegotiation) {
-                        json(buildSeamJson(setOf(authErrorSerializersModule)))
+                        json(seamJson)
                     }
                     install(Resources)
                 }
@@ -392,7 +389,7 @@ class AuthIntegrationTest {
                 assertThat(statuses)
                     .isEqualTo(listOf(HttpStatusCode.Created, HttpStatusCode.Conflict))
                 val conflict = responses.single { it.status == HttpStatusCode.Conflict }
-                assertThat(conflict.body<ErrorEnvelope>().error).isEqualTo(EmailTaken)
+                assertThat(conflict.decodedError()).isEqualTo(EmailTaken)
             }
         }
     }

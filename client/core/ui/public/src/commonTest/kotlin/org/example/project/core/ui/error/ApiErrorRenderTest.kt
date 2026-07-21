@@ -3,6 +3,7 @@ package org.example.project.core.ui.error
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
+import io.ktor.http.HttpStatusCode
 import kotlin.test.Test
 import org.example.project.client.core.ui.Res
 import org.example.project.client.core.ui.error_not_found
@@ -27,6 +28,10 @@ class ApiErrorRenderTest {
 
     @Test
     fun `an unknown variant falls through to the generic fallback`() {
-        assertThat(UnknownApiError(code = "future.teapot").toResourceResult()).isNull()
+        assertThat(
+                UnknownApiError(code = "future.teapot", status = HttpStatusCode.fromValue(418))
+                    .toResourceResult()
+            )
+            .isNull()
     }
 }

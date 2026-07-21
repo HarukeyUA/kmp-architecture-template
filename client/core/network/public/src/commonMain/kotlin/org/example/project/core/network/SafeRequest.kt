@@ -18,6 +18,8 @@ import org.example.project.core.error.NetworkError
 import org.example.project.shared.common.ApiError
 import org.example.project.shared.common.Endpoint
 import org.example.project.shared.common.ErrorEnvelope
+import org.example.project.shared.common.decodeAmbientApiError
+import org.example.project.shared.common.decodeDeclaredApiError
 
 /**
  * Executes a Ktor HTTP request safely, catching exceptions and mapping failures to [NetworkError].
@@ -92,10 +94,10 @@ suspend inline fun <reified R : Any, reified Res : Any, Err : ApiError> HttpClie
 /**
  * Maps a non-2xx response to a [CallFailure]. A parseable 4xx [ErrorEnvelope] is narrowed against
  * the endpoint's declared [Endpoint.error] lens: an instance becomes [CallFailure.Declared],
- * anything else (cross-cutting, `UnknownApiError`, or a known-but-undeclared code) becomes
- * [CallFailure.Ambient]. A 5xx or an unparseable body is [CallFailure.Transport]. The seam
- * `ContentNegotiation` Json deserializes the polymorphic error, so an unknown code degrades to
- * `UnknownApiError` rather than throwing.
+ * anything else (cross-cutting, unknown, or a known-but-undeclared code from version skew) becomes
+ * [CallFailure.Ambient]. A 5xx or an unparseable body is [CallFailure.Transport]. Decode success
+ * through the lens *is* the narrowing to Declared; an unknown code degrades to `UnknownApiError`
+ * rather than throwing.
  */
 suspend fun <Err : ApiError> Endpoint<*, *, *, Err>.toCallFailure(
     response: HttpResponse
@@ -103,19 +105,13 @@ suspend fun <Err : ApiError> Endpoint<*, *, *, Err>.toCallFailure(
     if (response.status.value !in CLIENT_ERROR_RANGE) {
         return CallFailure.Transport(NetworkError.Http(response.status.value))
     }
-    val apiError =
+    val raw =
         catch({ response.body<ErrorEnvelope>().error }) { e ->
             return CallFailure.Transport(NetworkError.Serialization(e))
         }
-    val lens = error
-    return if (lens != null && lens.isInstance(apiError)) {
-        @Suppress(
-            "UNCHECKED_CAST"
-        ) // isInstance just proved apiError is an Err (the lens is KClass<out Err>).
-        CallFailure.Declared(apiError as Err)
-    } else {
-        CallFailure.Ambient(apiError)
-    }
+    val declared = error?.let { lens -> decodeDeclaredApiError(lens, raw) }
+    return if (declared != null) CallFailure.Declared(declared)
+    else CallFailure.Ambient(decodeAmbientApiError(raw, response.status))
 }
 
 private val CLIENT_ERROR_RANGE = 400..499

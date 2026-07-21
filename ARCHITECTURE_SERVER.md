@@ -123,41 +123,35 @@ Wire evolution is **additive**: add nullable/defaulted fields freely, `ignoreUnk
 
 ## 5. Error model
 
-([ADR-0005](docs/adr/0005-error-model.md) — *partially deferred*) The wire error is an **open polymorphic `ApiError`** in an `ErrorEnvelope`, with a forward-compat `UnknownApiError` fallback so a newer server's error degrades on an old client instead of crashing it.
+([ADR-0005](docs/adr/0005-error-model.md), mechanism amended by [ADR-0012](docs/adr/0012-sealed-lens-error-serialization.md)) The wire error is an `ApiError` in an `ErrorEnvelope`, serialized through **sealed lenses** — no registered polymorphism — with a forward-compat `UnknownApiError` fallback so a newer server's error degrades on an old client instead of crashing it. Every variant declares its own **HTTP status**: the status is part of the wire contract, so it lives at the declaration and cannot drift from it.
 
 ```kotlin
 // :shared:common
-interface ApiError                                  // open polymorphic base
-@Serializable @SerialName("common.unauthorized")  data object Unauthorized : ApiError
-@Serializable @SerialName("common.not_found")      data class NotFound(val resource: String) : ApiError
-@Serializable @SerialName("common.conflict")       data class Conflict(val reason: String? = null) : ApiError
-@Serializable @SerialName("common.validation")     data class Validation(val fields: List<FieldError>) : ApiError
-@Serializable @SerialName("common.rate_limited")   data class RateLimited(val retryAfterSeconds: Long? = null) : ApiError
-@Serializable @SerialName("common.internal")       data object Internal : ApiError
-data class UnknownApiError(val code: String, val raw: JsonObject?) : ApiError   // via default deserializer
+interface ApiError { val status: HttpStatusCode }
+@Serializable sealed interface CommonApiError : ApiError     // the cross-cutting lens
+@Serializable @SerialName("common.unauthorized")  data object Unauthorized : CommonApiError { … 401 }
+@Serializable @SerialName("common.not_found")      data class NotFound(val resource: String) : CommonApiError { … 404 }
+@Serializable @SerialName("common.conflict")       data class Conflict(val reason: String? = null) : CommonApiError { … 409 }
+@Serializable @SerialName("common.validation")     data class Validation(val fields: List<FieldError>) : CommonApiError { … 422 }
+@Serializable @SerialName("common.rate_limited")   data class RateLimited(val retryAfterSeconds: Long? = null) : CommonApiError { … 429 }
+@Serializable @SerialName("common.internal")       data object Internal : CommonApiError { … 500 }
+data class UnknownApiError(val code: String, val raw: JsonObject?, override val status: HttpStatusCode) : ApiError  // client-side decode artifact
 
-@Serializable data class ErrorEnvelope(val error: ApiError, val requestId: String? = null)
+@Serializable data class ErrorEnvelope(val error: JsonObject, val requestId: String? = null)
 ```
 
-**Registration is assembled outside `:shared`** (the dependency direction forbids `:shared:common` knowing its domains). Each domain exposes a `SerializersModule`; each side's `:impl` contributes it via Metro `@ContributesIntoSet`; `:client:core:network` and `:server:core:web` build one `Json` from the multibound set. A duplicate `@SerialName` fails at module-build time → global uniqueness for free. `@SerialName`s are namespaced (`notes.quota_exceeded`) and frozen by a **golden-set test**.
+**No registration exists.** Every Declared-error lens is a `@Serializable sealed interface`, so the compiler generates a closed `SealedClassSerializer`; `Endpoint.error` carries that lens as a `KSerializer` (its constructor rejects a non-SEALED serializer — the tripwire for a lens missing `@Serializable`). Both sides use one static `seamJson`; `ErrorEnvelope.error` is raw JSON because narrowing needs the lens, which only the call site holds. The client narrows by decoding: try the endpoint's lens (`Declared`), fall back to the sealed `CommonApiError` set, then to `UnknownApiError(code, raw, status)`. `@SerialName`s are namespaced (`notes.quota_exceeded`) and frozen — codes *and statuses* — by per-domain **declared-contract freeze tests**; global code uniqueness is pinned by `UniqueErrorCodesTest` in `:server:app` (the one module that sees every domain).
 
-> **Implemented (Phase 3).** Both sides build their `Json` via the shared `buildSeamJson(domainModules)` (folds the multibound set onto `commonApiErrorSerializersModule`), so the wire format is byte-identical. `UnknownApiError` is produced by a `defaultDeserializer` on the polymorphic `ApiError`. One Kotlin/Native subtlety, pre-solved: a bare `serializer<ApiError>()` can't resolve an *interface* serializer at runtime on Native, so `ApiError` always crosses the wire **inside `ErrorEnvelope`** — whose generated serializer wires the polymorphic field at compile time on every target. (Serialize a bare `ApiError` only via `PolymorphicSerializer(ApiError::class)`.)
-
-**Server side** — services return `Either<Failure<Err>, T>` ([ADR-0011](docs/adr/0011-per-endpoint-declared-errors.md)): the `Declared` arm is compile-checked against the endpoint's declared set, the `Ambient` arm carries cross-cutting errors (`declared(e)` / `ambient(e)` Raise helpers). `Route.serve` unwraps to `ApiError` — which stays *semantic*; the route maps it to a status:
+**Server side** — services return `Either<Failure<Err>, T>` ([ADR-0011](docs/adr/0011-per-endpoint-declared-errors.md)): the `Declared` arm is compile-checked against the endpoint's declared set, the `Ambient` arm carries cross-cutting errors (`declared(e)` / `ambient(e)` Raise helpers). At the HTTP boundary `Route.serve` keeps the arms apart — a `Declared` error encodes through the endpoint's sealed lens while still typed, an `Ambient` one through the `CommonApiError` lens — each answering **its own `ApiError.status`**. There is no status mapper anywhere:
 
 ```kotlin
 // :server:core:web — the ONE place ApiError meets HTTP
-fun ApiError.toStatus() = when (this) {
-    is Validation    -> HttpStatusCode.UnprocessableEntity
-    Unauthorized     -> HttpStatusCode.Unauthorized
-    is NotFound      -> HttpStatusCode.NotFound
-    is Conflict      -> HttpStatusCode.Conflict
-    is RateLimited   -> HttpStatusCode.TooManyRequests
-    Internal, is UnknownApiError -> HttpStatusCode.InternalServerError
-    else             -> HttpStatusCode.BadRequest
-}
-suspend fun ApplicationCall.respondError(e: ApiError) = respond(e.toStatus(), ErrorEnvelope(e, requestId()))
+suspend fun ApplicationCall.respondError(error: CommonApiError) =
+    respond(error.status, ErrorEnvelope(encodeApiError(commonApiErrorSerializer, error), callId))
+// Route.serve → respondEither(endpoint.error, result) { … }  — Declared errors ride the endpoint's lens
 ```
+
+An error that is neither the endpoint's Declared error nor a `CommonApiError` — a foreign domain's error smuggled into the Ambient arm — is by definition a server fault: logged at WARN, answered `500 Internal`.
 
 `Either` for *expected* failures; **StatusPages only for unexpected exceptions** → log + generic `Internal`, never leak. `ApiError` is the **information-disclosure boundary** (no `UserNotFound` vs `WrongPassword` — both collapse to the single Declared `auth.invalid_credentials`; `Unauthorized` means exactly one thing: Access token missing/expired/invalid).
 
@@ -248,7 +242,7 @@ class NotesRoutes(private val service: NotesService) : RouteRegistrar {
     }
 }
 @ContributesIntoSet(AppScope::class) @Provides fun notesTables(): TableSet = TableSet(Notes)
-@ContributesIntoSet(AppScope::class) @Provides fun notesErrors(): SerializersModule = notesErrorModule
+// errors need no registration: serialization and statuses ride the sealed lens in :shared:notes
 ```
 
 `main()` builds the Metro graph, runs `databaseBootstrap.start()` (Flyway migrate → Exposed connect), then installs the multibound `Set<PluginInstaller>` (sorted) and `Set<RouteRegistrar>` before starting Netty.
@@ -270,7 +264,7 @@ class NotesRoutes(private val service: NotesService) : RouteRegistrar {
 
 ## 8. Dependency injection
 
-([ADR-0008](docs/adr/0008-metro-di-everywhere.md)) **Metro everywhere** — the same compile-time KSP DI as the client, one mental model across the monorepo. `:server:app` defines a `@DependencyGraph(AppScope)` server graph (analogous to the client's `JvmAppGraph`), exposing the assembled `Set<RouteRegistration>`, `Set<TableSet>`, `Set<SerializersModule>`, and the configured services as entry points. `main()` creates the graph, runs Flyway, installs Ktor, and starts Netty.
+([ADR-0008](docs/adr/0008-metro-di-everywhere.md)) **Metro everywhere** — the same compile-time KSP DI as the client, one mental model across the monorepo. `:server:app` defines a `@DependencyGraph(AppScope)` server graph (analogous to the client's `JvmAppGraph`), exposing the assembled `Set<RouteRegistration>`, `Set<TableSet>`, and the configured services as entry points. `main()` creates the graph, runs Flyway, installs Ktor, and starts Netty.
 
 ---
 

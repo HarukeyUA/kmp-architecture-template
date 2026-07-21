@@ -2,6 +2,7 @@ package org.example.project.shared.auth
 
 import io.ktor.http.HttpMethod
 import io.ktor.resources.Resource
+import kotlinx.serialization.serializer
 import org.example.project.shared.common.Endpoint
 
 /**
@@ -37,7 +38,7 @@ object AuthApi {
             HttpMethod.Post,
             SignupRequest.serializer(),
             TokensResponse.serializer(),
-            error = AuthSignupError::class,
+            error = serializer<AuthSignupError>(),
         )
 
     val login: Endpoint<AuthResource.Login, LoginRequest, TokensResponse, AuthLoginError> =
@@ -45,7 +46,7 @@ object AuthApi {
             HttpMethod.Post,
             LoginRequest.serializer(),
             TokensResponse.serializer(),
-            error = AuthLoginError::class,
+            error = serializer<AuthLoginError>(),
         )
 
     val refresh:
@@ -54,7 +55,7 @@ object AuthApi {
             HttpMethod.Post,
             RefreshRequest.serializer(),
             AccessTokenResponse.serializer(),
-            error = AuthRefreshError::class,
+            error = serializer<AuthRefreshError>(),
         )
 
     val logout: Endpoint<AuthResource.Logout, LogoutRequest, Unit, Nothing> =

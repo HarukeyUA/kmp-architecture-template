@@ -32,12 +32,10 @@ import org.example.project.shared.common.Unauthorized
  */
 @Inject
 @ContributesIntoSet(AppScope::class)
-class StatusPagesPluginInstaller(private val statusMappers: Set<ApiErrorStatusMapper>) :
-    PluginInstaller {
+class StatusPagesPluginInstaller : PluginInstaller {
     override val order: PluginOrder = PluginOrder.STATUS_PAGES
 
     override fun Application.install() {
-        installApiErrorStatusMappers(statusMappers)
         install(StatusPages) {
             // The bearer challenge emits a body-less 401 (an OutgoingContent.NoContent); normalise
             // only that into the standard envelope. A 401 the app itself produced via respondError

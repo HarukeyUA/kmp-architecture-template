@@ -21,20 +21,24 @@ import kotlin.test.Test
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.serializer
 import org.example.project.core.error.CallFailure
 import org.example.project.core.network.sessionBearer
 import org.example.project.core.secure.storage.ClientSession
 import org.example.project.feature.auth.data.AuthRepositoryImpl
 import org.example.project.shared.auth.AccessTokenResponse
 import org.example.project.shared.auth.AccountResponse
+import org.example.project.shared.auth.AuthLoginError
+import org.example.project.shared.auth.AuthRefreshError
 import org.example.project.shared.auth.AuthResource
 import org.example.project.shared.auth.InvalidCredentials
 import org.example.project.shared.auth.SessionExpired
 import org.example.project.shared.auth.TokensResponse
-import org.example.project.shared.auth.authErrorSerializersModule
 import org.example.project.shared.common.ErrorEnvelope
 import org.example.project.shared.common.Unauthorized
-import org.example.project.shared.common.buildSeamJson
+import org.example.project.shared.common.commonApiErrorSerializer
+import org.example.project.shared.common.encodeApiError
+import org.example.project.shared.common.seamJson
 
 /**
  * The client side of the auth gate, against a `MockEngine` server: it exercises the real
@@ -43,7 +47,7 @@ import org.example.project.shared.common.buildSeamJson
  * Ktor refresh flow plus the "refresh rejected → clear session" interceptor (ADR-0009 as amended).
  */
 class AuthRepositoryNetworkTest {
-    private val json = buildSeamJson(setOf(authErrorSerializersModule))
+    private val json = seamJson
     private val jsonHeaders = headersOf(HttpHeaders.ContentType, "application/json")
 
     @Test
@@ -76,7 +80,11 @@ class AuthRepositoryNetworkTest {
         val (repo, store) =
             fixture {
                 respond(
-                    json.encodeToString(ErrorEnvelope(InvalidCredentials)),
+                    json.encodeToString(
+                        ErrorEnvelope(
+                            encodeApiError(serializer<AuthLoginError>(), InvalidCredentials)
+                        )
+                    ),
                     HttpStatusCode.Unauthorized,
                     jsonHeaders,
                 )
@@ -111,7 +119,11 @@ class AuthRepositoryNetworkTest {
                         )
                     else ->
                         respond(
-                            json.encodeToString(ErrorEnvelope(Unauthorized)),
+                            json.encodeToString(
+                                ErrorEnvelope(
+                                    encodeApiError(commonApiErrorSerializer, Unauthorized)
+                                )
+                            ),
                             HttpStatusCode.Unauthorized,
                             jsonHeaders,
                         )
@@ -132,7 +144,11 @@ class AuthRepositoryNetworkTest {
         val client =
             client(store) {
                 respond(
-                    json.encodeToString(ErrorEnvelope(SessionExpired)),
+                    json.encodeToString(
+                        ErrorEnvelope(
+                            encodeApiError(serializer<AuthRefreshError>(), SessionExpired)
+                        )
+                    ),
                     HttpStatusCode.Unauthorized,
                     jsonHeaders,
                 )

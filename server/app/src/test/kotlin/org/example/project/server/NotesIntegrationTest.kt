@@ -25,17 +25,14 @@ import org.example.project.server.observability.MetricsConfig
 import org.example.project.shared.auth.AuthResource
 import org.example.project.shared.auth.SignupRequest
 import org.example.project.shared.auth.TokensResponse
-import org.example.project.shared.auth.authErrorSerializersModule
-import org.example.project.shared.common.ErrorEnvelope
 import org.example.project.shared.common.Unauthorized
-import org.example.project.shared.common.buildSeamJson
+import org.example.project.shared.common.seamJson
 import org.example.project.shared.notes.CreateNoteRequest
 import org.example.project.shared.notes.NoteListResponse
 import org.example.project.shared.notes.NoteResponse
 import org.example.project.shared.notes.NoteText
 import org.example.project.shared.notes.NotesQuotaExceeded
 import org.example.project.shared.notes.NotesResource
-import org.example.project.shared.notes.notesErrorSerializersModule
 import org.testcontainers.containers.PostgreSQLContainer
 
 /**
@@ -83,11 +80,7 @@ class NotesIntegrationTest {
                 application { configureServer(graph) }
                 val client = createClient {
                     install(ContentNegotiation) {
-                        json(
-                            buildSeamJson(
-                                setOf(authErrorSerializersModule, notesErrorSerializersModule)
-                            )
-                        )
+                        json(seamJson)
                     }
                     install(Resources)
                 }
@@ -105,7 +98,7 @@ class NotesIntegrationTest {
                 // Unauthenticated access is rejected by the JWT middleware.
                 val unauthenticated = client.get(NotesResource())
                 assertThat(unauthenticated.status).isEqualTo(HttpStatusCode.Unauthorized)
-                assertThat(unauthenticated.body<ErrorEnvelope>().error).isEqualTo(Unauthorized)
+                assertThat(unauthenticated.decodedError()).isEqualTo(Unauthorized)
 
                 // Create → 201, and the author email came from the cross-domain AuthService call.
                 val created = client.createNote(token, "Milk, eggs")
@@ -136,7 +129,7 @@ class NotesIntegrationTest {
                 repeat(notesToFill) { client.createNote(token, "🦀".repeat(NoteText.MAX_LENGTH)) }
                 val capped = client.createNote(token, "one over budget")
                 assertThat(capped.status).isEqualTo(HttpStatusCode.Conflict)
-                assertThat(capped.body<ErrorEnvelope>().error)
+                assertThat(capped.decodedError())
                     .isEqualTo(
                         NotesQuotaExceeded(NotesService.QUOTA, notesToFill * NoteText.MAX_LENGTH)
                     )
