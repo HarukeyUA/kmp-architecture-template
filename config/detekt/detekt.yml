@@ -15,6 +15,10 @@ complexity:
   LongMethod:
     active: true
     allowedLines: 80
+    excludes:
+      - "**/src/*Test/**"
+      - "**/src/androidTest/**"
+      - "**/src/test/**"
   LongParameterList:
     active: true
     allowedFunctionParameters: 8
