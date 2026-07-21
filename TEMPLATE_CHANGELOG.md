@@ -7,6 +7,14 @@ project without shared git history, add this repo as a remote and diff the paths
 
 ## 2026-07
 
+- **Sealed-lens error serialization (ADR-0012, ported from witchy-notes).** Errors cross the seam
+  through compiler-generated sealed serializers instead of a registered polymorphic module, and
+  every `ApiError` variant declares its own HTTP status. Deleted wholesale: per-domain
+  `SerializersModule`s and their client/server `@Provides` bindings, the `ApiErrorStatusMapper`
+  multibinding, and `buildSeamJson` (now one static `seamJson` on both ends). Adding a Declared
+  error is now the variant declaration plus one deliberate freeze-golden edit. New guarantees as
+  tests: per-domain `*DeclaredErrorFreezeTest` pins `operation → {code → status}`, and
+  `UniqueErrorCodesTest` in `:server:app` pins global code uniqueness. Wire format unchanged.
 - **Merged the full-stack prototype back into the template.** The repo now contains the `:server:*`
   umbrella (Ktor + Exposed + Flyway + Metro composition root, JWT/session auth, S3 blob store,
   advisory-lock scheduler, isolated metrics port) and the `:shared:*` seam (typed
@@ -48,7 +56,6 @@ Generic infrastructure proven downstream, to be ported in follow-up changes. Sou
   `Environment`), Coil convention plugin, AboutLibraries, path-filtered server CI, release
   workflow.
 
-Intentionally not ported: `UniqueErrorCodesTest` (only meaningful under witchy's sealed-lens
-serialization, ADR-0018 — this template's polymorphic seam `Json` already fails fast on duplicate
-wire codes and pins them with golden tests), and the whole E2EE sync/crypto domain (product
-architecture, not template infrastructure).
+Intentionally not ported: the whole E2EE sync/crypto domain (product architecture, not template
+infrastructure). Witchy's sealed-lens error serialization and `UniqueErrorCodesTest` have since
+been adopted (see the 2026-07 entry above).
