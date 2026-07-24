@@ -17,7 +17,9 @@ import org.gradle.api.tasks.TaskAction
  *
  * Rules enforced (derived from module path):
  * - The umbrella law: `:client` -> `:client`/`:shared`, `:server` -> `:server`/`:shared`, `:shared`
- *   -> `:shared` only; `:client` <-> `:server` is forbidden (ADR-0001).
+ *   -> `:shared` only; `:client` <-> `:server` is forbidden (ADR-0001). The test-only
+ *   `:integration` umbrella may depend on everything, and nothing may depend on it — it exists so
+ *   client↔server integration tests never put a `:server` dependency inside `:client`.
  * - `:public` may depend only on `:public` or a `:shared` contract.
  * - `:impl` may depend only on `:public` or a `:shared` contract.
  * - `:testing` may depend only on its sibling `:public`.
@@ -116,6 +118,9 @@ private fun umbrellaViolation(sourcePath: String, targetPath: String): String? {
             "client" -> setOf("client", "shared")
             "server" -> setOf("server", "shared")
             "shared" -> setOf("shared")
+            // The one place both worlds may meet: nothing depends on :integration (no umbrella
+            // lists it), so the openness cannot leak back into :client or :server.
+            "integration" -> setOf("client", "server", "shared", "integration")
             else -> emptySet()
         }
     return if (target !in allowed) {
@@ -129,6 +134,7 @@ private fun umbrellaOf(path: String): String? =
         path.startsWith(":client:") -> "client"
         path.startsWith(":server:") -> "server"
         path.startsWith(":shared:") -> "shared"
+        path.startsWith(":integration:") -> "integration"
         else -> null
     }
 

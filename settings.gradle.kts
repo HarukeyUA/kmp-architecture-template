@@ -131,6 +131,10 @@ include(":shared:auth")
 
 include(":shared:notes")
 
+// ===================== :integration umbrella (client↔server tests) =====================
+// May depend on everything; nothing depends on it — both worlds meet only here.
+include(":integration:client-server")
+
 // ===================== :server umbrella (Ktor server) =====================
 include(":server:app")
 

@@ -2,9 +2,10 @@
 # repository root. Directories are removed recursively. Lines starting with #
 # and blank lines are ignored.
 
-# The server and the shared seam.
+# The server, the shared seam, and the client↔server integration tests that need both.
 server
 shared
+integration
 
 # The notes feature exists to prove the seam replicates; it has no meaning
 # without the server.

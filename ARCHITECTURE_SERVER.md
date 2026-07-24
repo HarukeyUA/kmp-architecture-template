@@ -8,14 +8,15 @@ The goal: a Compose Multiplatform client and a Ktor server in **one Gradle build
 
 ---
 
-## 1. Module topology — three umbrellas
+## 1. Module topology — three umbrellas (plus a test-only fourth)
 
-One Gradle build, three top-level umbrellas. The umbrella name *is* the dependency rule. ([ADR-0001](docs/adr/0001-three-umbrella-structure.md))
+One Gradle build, three top-level production umbrellas. The umbrella name *is* the dependency rule. ([ADR-0001](docs/adr/0001-three-umbrella-structure.md))
 
 ```
-:client:*    Compose Multiplatform app   (today's :core:* and :feature:* move under here)
-:shared:*    the Seam (contracts)          per-domain modules + :shared:common
-:server:*    Ktor server
+:client:*        Compose Multiplatform app   (today's :core:* and :feature:* move under here)
+:shared:*        the Seam (contracts)          per-domain modules + :shared:common
+:server:*        Ktor server
+:integration:*   client↔server integration tests — test-only; the one place both worlds meet
 ```
 
 ### Dependency law
@@ -25,7 +26,10 @@ One Gradle build, three top-level umbrellas. The umbrella name *is* the dependen
 | `:client:*`| `:shared:*`, other `:client:*`                 |
 | `:server:*`| `:shared:*`, other `:server:*`                 |
 | `:shared:*`| `:shared:*` only                               |
+| `:integration:*`| anything — and **nothing may depend on it** |
 | —          | `:client:*` ↔ `:server:*` is **forbidden**     |
+
+`:integration` exists so client↔server integration tests never put a `:server` dependency inside `:client` (not even a test one): in-process round-trip tests inevitably carry the whole server on their test classpath, so they live in a module whose umbrella is honest about seeing both worlds.
 
 `:shared`'s external dependency surface is **rationed** to `kotlinx.serialization`, `ktor-resources`, `arrow-core`, `kotlinx.datetime` — and nothing else. No Compose/Decompose, no Ktor client/server engines, no Exposed, no DataStore. This single rule keeps the Seam from rotting into a god module.
 
@@ -261,6 +265,7 @@ class NotesIntegrationTest {
 - **`serverTest(...)`** boots a fresh `ServerGraph` (fresh session cache) through `configureServer` and hands the block the seam `HttpClient` — the same `@Resource` routes and seam `Json` the client app consumes, so every suite also pins wire compatibility. The graph's own pool is released in a `finally`, so the accumulated-pools footgun is unrepresentable rather than a per-suite discipline. `storageConfig` / `webLimitsConfig` / `jwtConfig` default to roomy production-shaped values; a test probing the limits passes tight ones. `serverGraphTest` additionally exposes the graph for the rare routeless service call (`SessionStore.revokeAllFor`). Shared fixtures: `signupViaApi(...)`, `HttpResponse.decodedError()`.
 - **`TestMinio`** — a process-wide MinIO container for suites that exercise the presigned-URL protocol end-to-end: `serverTest(storageConfig = TestMinio.storageConfig())`.
 - **Published fakes** — `:server:core:storage:testing` ships `FakeBlobStore` for service unit tests in a blob-owning domain (via `convention.server.testing`, which pins a server `:testing` module to its sibling `:public` exactly like the client convention). `MigrationDriftTest` deliberately stays on its own throwaway container — it needs a virgin database.
+- **Client↔server integration tests** — `:integration:client-server` (the test-only fourth umbrella, § 1) drives the real client repositories over `serverTest`'s in-process transport: `clientStack()` wires `AuthRepositoryImpl`/`NotesRepositoryImpl` exactly like the app graph (seam `Json`, `sessionBearer` over an in-memory session store), with the `testApplication` client as the wire into the booted stack. `NotesRepositoryIntegrationTest` proves the *pair* of seam implementations agree: repository in → Postgres out, cross-domain author round trip, and the server's Declared error narrowing into the client's typed `CallFailure.Declared` through the same sealed lens. No engine, no network, no running dev stack.
 
 ---
 

@@ -7,6 +7,20 @@ project without shared git history, add this repo as a remote and diff the paths
 
 ## 2026-07
 
+- **Client↔server integration tests in a test-only `:integration` umbrella.** Witchy runs its
+  repository-vs-real-server tests from client test source sets that depend on the server harness;
+  this template instead adds a fourth top-level umbrella: `:integration:*` may depend on
+  everything, and nothing may depend on it (enforced in `assertModuleDependencies`), so `:client`
+  never carries a `:server` dependency — not even a test one. `:integration:client-server` drives
+  the real client repositories over `serverTest`'s in-process transport: `clientStack()` wires
+  `AuthRepositoryImpl`/`NotesRepositoryImpl` like the app graph (seam `Json`, `sessionBearer`,
+  in-memory session store) with the `testApplication` client as the wire into the booted
+  `:server:*` stack. `NotesRepositoryIntegrationTest` pins the seam pair end-to-end: signup →
+  create → list (cross-domain author email) → delete, plus the server's `notes.quota_exceeded`
+  narrowing into the client's typed `CallFailure.Declared` through the same sealed lens. The
+  tradeoff vs witchy is colocation: these suites live beside the seam they prove, not inside the
+  feature (whose `commonTest` keeps its MockEngine tests). The client-only variant strips the
+  umbrella wholesale.
 - **Client network hardening (ported from witchy-notes; no runtime override, no 401 reporter).**
   The client `HttpClient` gains cold-start-sized timeouts (60s request / 30s connect / 60s socket —
   sized to outlast a sleeping PaaS instance's wake-up) and DEV-only wire logging through Kermit

@@ -49,10 +49,13 @@ echo "Pruning settings.gradle.kts includes..."
 sed -i.bak \
     -e '/include(":server/d' \
     -e '/include(":shared/d' \
+    -e '/include(":integration/d' \
     -e '/include(":client:feature:notes/d' \
     -e '/aggregator(":server:app")/d' \
     -e '/^\/\/ =* :shared umbrella/d' \
     -e '/^\/\/ =* :server umbrella/d' \
+    -e '/^\/\/ =* :integration umbrella/d' \
+    -e '/^\/\/ May depend on everything; nothing depends on it/d' \
     -e '/^\/\/ Server /d' \
     settings.gradle.kts
 rm settings.gradle.kts.bak

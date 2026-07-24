@@ -24,7 +24,12 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
                 // `:shared:*` modules are flat, all-public contracts named after their domain
                 // (`:shared:common`, `:shared:auth`), so the leaf-name and sibling-public rules
                 // below — which police the public/impl split — do not apply to them.
-                if (leaf.path.startsWith(":shared:")) return@forEach
+                // `:integration:*`
+                // modules are likewise flat, named after the worlds they join
+                // (`:integration:client-server`).
+                if (leaf.path.startsWith(":shared:") || leaf.path.startsWith(":integration:")) {
+                    return@forEach
+                }
 
                 if (leaf.name !in ALLOWED_LEAF_NAMES) {
                     violations +=

@@ -63,7 +63,7 @@ The rules above are enforced at build time and are compatible with Gradle projec
 | Rule                                                                           | Where                                                                                                                                    |
 |--------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
 | Module dependency rules + `:client:core` → `:client:feature`                                 | `assertModuleDependencies` task per module (runs as part of `check`). Inspects declared `project(...)` dependencies in main source sets. |
-| Every leaf module is named `public`/`impl`/`testing`/`robots`/`composeApp`/`androidApp`/`desktopApp` | `convention.module-structure-assert.settings` — fails at settings evaluation.                                                            |
+| Every leaf module is named `public`/`impl`/`testing`/`robots`/`composeApp`/`androidApp`/`desktopApp` (`:shared:*` and `:integration:*` are exempt — flat modules named after their domain/pairing) | `convention.module-structure-assert.settings` — fails at settings evaluation.                                                            |
 | Every `:impl` has a sibling `:public`                                          | Same settings plugin.                                                                                                                    |
 
 Run directly with `./gradlew assertModuleDependencies` or any `check` task.
