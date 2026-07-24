@@ -1,4 +1,4 @@
-# KMP Architecture Template
+# KMP Architecture Template (Client-Only)
 
 An opinionated Kotlin Multiplatform application template for building Compose Multiplatform apps with a strongly
 modular architecture, shared component logic, typed failures, and process-death-safe state.
@@ -53,8 +53,9 @@ build-logic/       Convention plugins and architecture enforcement
 scripts/           Project rename and feature generation helpers
 ```
 
-> The template is a fullstack monorepo: `:client:*` (above) is joined to a Ktor server
-> (`:server:*`) by a shared contract (`:shared:*`). See [ARCHITECTURE_SERVER.md](ARCHITECTURE_SERVER.md).
+> This tree is the client-only variant, derived mechanically from a full-stack template (client +
+> Ktor server joined by a typed shared contract). If your app grows a backend, consider starting
+> the server from the full-stack tree instead of bolting one on.
 
 ## Tech Stack
 
@@ -68,29 +69,6 @@ scripts/           Project rename and feature generation helpers
 - AndroidX DataStore
 - kotlin-test, AssertK, Turbine, kotlinx.coroutines-test
 - Roborazzi screenshot testing
-
-## Running the Full Stack Locally
-
-Everything runs on localhost with zero configuration:
-
-```bash
-scripts/dev-stack.sh              # Postgres + MinIO (docker compose) + the Ktor server on :8080
-```
-
-Then run any client — the per-platform `ApiConfig` defaults already point at the local server
-(the platform gotchas are pre-solved: the Android emulator reaches the host via `10.0.2.2`,
-iOS simulator and desktop via `localhost`, and debug builds allow cleartext HTTP):
-
-```bash
-./gradlew :client:desktopApp:run          # desktop
-./gradlew :client:androidApp:installDebug # Android emulator
-# iosApp via Xcode on a simulator
-```
-
-`scripts/dev-stack.sh --down` stops the containers keeping data; `--nuke` also drops the volumes
-(fresh DB + bucket); `--lan` serves on your LAN IP for physical devices and makes presigned blob
-URLs reachable off-machine. Details in
-[ARCHITECTURE_SERVER.md § Local dev & config](ARCHITECTURE_SERVER.md).
 
 ## Creating a Feature
 
@@ -118,21 +96,6 @@ Nested and core module generation are also supported:
 ```
 
 Use `--display-name` to customize the launcher name and `--dry-run` to preview changes first.
-
-## Client-Only Variant
-
-This full-stack tree is the single source of truth; a client-only template is derived from it
-mechanically. In a fresh clone, worktree, or CI checkout:
-
-```bash
-./scripts/make-client-only.sh
-```
-
-The script removes `:server:*`, `:shared:*`, and the client pieces that only exist to exercise the
-server contract, then swaps in client-only counterparts (a local fake auth repository, seam-less
-networking, a two-tab main screen) from `scripts/client-only/overlay/`. The `client-only-variant`
-CI job runs the script and builds the result on every PR, so the variant cannot silently rot. When
-a PR changes seam-coupled client code, update `scripts/client-only/` in the same PR.
 
 ## Module Rules
 

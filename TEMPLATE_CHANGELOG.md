@@ -7,6 +7,14 @@ project without shared git history, add this repo as a remote and diff the paths
 
 ## 2026-07
 
+- **One-command local dev stack (ported from witchy-notes).** `scripts/dev-stack.sh` boots
+  Postgres + MinIO + `:server:app` with port pre-flight (names the squatter instead of compose's
+  opaque failure), auto-created `.env`, health-waited containers, and env export; `--down` keeps
+  data, `--nuke` drops it, `--lan` serves on the LAN IP so physical devices — and the presigned
+  blob URLs the server mints (SigV4 signs the host) — work off-machine. New `LOG_LEVEL` logback
+  knob (the script defaults it to DEBUG; framework loggers stay pinned at INFO). README gained the
+  full-stack local loop (server + each client platform); the client-only variant now overlays its
+  own README instead of inheriting the full-stack one.
 - **Sealed-lens error serialization (ADR-0012, ported from witchy-notes).** Errors cross the seam
   through compiler-generated sealed serializers instead of a registered polymorphic module, and
   every `ApiError` variant declares its own HTTP status. Deleted wholesale: per-domain

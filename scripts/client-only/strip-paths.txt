@@ -33,3 +33,4 @@ docker-compose.yml
 Dockerfile
 .env.example
 scripts/check-migration-order.sh
+scripts/dev-stack.sh

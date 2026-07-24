@@ -6,7 +6,9 @@
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <!-- LOG_LEVEL is a local-dev knob (scripts/dev-stack.sh exports DEBUG); deployments that
+         don't set it get INFO. Framework loggers below stay pinned so DEBUG means *our* code. -->
+    <root level="${LOG_LEVEL:-INFO}">
         <appender-ref ref="STDOUT"/>
     </root>
 

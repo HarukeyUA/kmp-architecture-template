@@ -319,11 +319,19 @@ Connection pool configurable; `instances × poolSize ≤ Postgres max_connection
 A root `docker-compose.yml` brings up **Postgres + MinIO** (S3-compatible, so the `BlobStore` works locally exactly as in prod). A throwaway `minio-init` container creates the default bucket once MinIO is healthy — the app never creates buckets (that's an infra/ops concern), so blobs work with zero manual setup. Testcontainers remains for the test suite.
 
 ```
+scripts/dev-stack.sh            # containers + health-wait + .env export + :server:app:run
+```
+
+One command boots the whole backend: it pre-flights the published ports (naming the squatter instead of compose's opaque failure), auto-creates `.env` from `.env.example`, waits for Postgres/MinIO health, exports the env (`ServerConfig` reads process env only), defaults `LOG_LEVEL=DEBUG` (framework loggers stay pinned at INFO in `logback.xml`), and runs the server. `--down` stops the containers keeping data; `--nuke` also drops the volumes (fresh DB — running clients bounce to Login via `auth.session_expired` on their next refresh, the designed path). The two underlying commands still work standalone:
+
+```
 docker compose up -d            # Postgres + MinIO (+ bucket auto-created)
 ./gradlew :server:app:run       # auto-runs Flyway; works with ZERO config via localhost defaults
 ```
 
 Ktor dev-mode auto-reload is enabled for the server.
+
+**LAN mode** (`scripts/dev-stack.sh --lan`) exists because of the presigned-URL transfer model (§ Blob storage): SigV4 signs the host, so a presigned URL minted as `localhost:9000` cannot be rewritten client-side and is unreachable from emulators and physical devices. LAN mode exports `S3_ENDPOINT=http://<lan-ip>:9000` before boot so every minted URL is reachable from the network. The failure smell is always "everything works except blobs" — restart with `--lan`.
 
 ### Config — one typed, fail-fast `ServerConfig`
 
