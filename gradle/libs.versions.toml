@@ -39,6 +39,7 @@ junit = "4.13.2"
 
 assertk = "0.28.1"
 turbine = "1.2.1"
+kermit = "2.1.0"
 
 # Instrumented E2E suite (client/androidApp androidTest)
 androidx-test-runner = "1.7.0"
@@ -133,6 +134,9 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 # Platform-secure key/value storage (OS keystore-backed: Keychain / Keystore / encrypted file)
 ksafe = { module = "eu.anifantakis:ksafe", version.ref = "ksafe" }
 
+# Multiplatform logging (client)
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+
 # Ktor server
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
@@ -216,6 +220,7 @@ convention-kmp-feature-public = { id = "convention.kmp.feature.public" }
 convention-kmp-compose-feature-public = { id = "convention.kmp.compose.feature.public" }
 convention-kmp-feature-impl = { id = "convention.kmp.feature.impl" }
 convention-kmp-feature-robots = { id = "convention.kmp.feature.robots" }
+convention-server-testing = { id = "convention.server.testing" }
 convention-robots-aggregator = { id = "convention.robots-aggregator" }
 convention-kmp-compose-feature-impl = { id = "convention.kmp.compose.feature.impl" }
 convention-metro = { id = "convention.metro" }

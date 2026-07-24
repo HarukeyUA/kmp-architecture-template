@@ -10,17 +10,16 @@ plugins { alias(libs.plugins.convention.server.app) }
 dependencies {
     implementation(project(":server:core:lifecycle:public"))
 
+    // The integration suites boot the stack through :server:testing's single-boot `serverTest`
+    // harness (shared Testcontainers Postgres, seam client, auth fixtures).
+    testImplementation(project(":server:testing"))
+
     // Migration drift test: diff the aggregated Exposed schema (graph.tableSets) against a
     // Testcontainers Postgres with all migrations applied. Lives here because only the app graph
     // assembles every domain's tables (ADR-0007).
     testImplementation(libs.exposed.migration.jdbc)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.postgresql)
-
-    // Auth integration test drives the real routes through the Ktor test client, using the shared
-    // @Resource (client + server consume one source of truth) and the seam Json.
-    testImplementation(libs.ktor.client.content.negotiation)
-    testImplementation(libs.ktor.client.resources)
 }
 
 val testRuntimeClasspath =

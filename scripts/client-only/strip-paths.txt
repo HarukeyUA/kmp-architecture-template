@@ -18,6 +18,7 @@ client/core/ui/public/src/commonTest/kotlin/org/example/project/core/ui/error/Ap
 
 # Session bearer/refresh rides the auth endpoints of the seam.
 client/core/network/public/src/commonMain/kotlin/org/example/project/core/network/SessionBearerAuth.kt
+client/core/network/public/src/commonTest/kotlin/org/example/project/core/network/SessionBearerAuthTest.kt
 
 # Server-backed auth data layer (replaced by a local fake via the overlay).
 client/feature/auth/impl/src/commonMain/kotlin/org/example/project/feature/auth/data/AuthRepositoryImpl.kt

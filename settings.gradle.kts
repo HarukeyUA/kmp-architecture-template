@@ -134,6 +134,8 @@ include(":shared:notes")
 // ===================== :server umbrella (Ktor server) =====================
 include(":server:app")
 
+include(":server:testing")
+
 // Server core modules
 include(":server:core:database:public")
 
@@ -156,6 +158,8 @@ include(":server:core:auth:impl")
 include(":server:core:storage:public")
 
 include(":server:core:storage:impl")
+
+include(":server:core:storage:testing")
 
 include(":server:core:scheduler:public")
 

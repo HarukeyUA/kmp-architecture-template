@@ -111,6 +111,10 @@ gradlePlugin {
             id = "convention.server.feature.impl"
             implementationClass = "ServerFeatureImplConventionPlugin"
         }
+        register("serverTesting") {
+            id = "convention.server.testing"
+            implementationClass = "ServerTestingConventionPlugin"
+        }
         register("serverApp") {
             id = "convention.server.app"
             implementationClass = "ServerAppConventionPlugin"

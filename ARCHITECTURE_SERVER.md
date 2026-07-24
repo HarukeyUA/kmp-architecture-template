@@ -247,6 +247,21 @@ class NotesRoutes(private val service: NotesService) : RouteRegistrar {
 
 `main()` builds the Metro graph, runs `databaseBootstrap.start()` (Flyway migrate → Exposed connect), then installs the multibound `Set<PluginInstaller>` (sorted) and `Set<RouteRegistrar>` before starting Netty.
 
+### Integration testing — one way to boot the stack
+
+`:server:testing` is the single harness every `:server:app` suite boots through (kept out of the module-graph asserts, like `:server:app` is unrestricted, so it can declare cross-cutting server deps):
+
+```kotlin
+class NotesIntegrationTest {
+    @Test fun `notes CRUD`() = serverTest { client -> /* seam-framed requests */ }
+}
+```
+
+- **`TestPostgres`** — one process-wide Testcontainers Postgres, Flyway-migrated once; each `serverTest` rebinds it as the ambient Exposed default and truncates every base table (the list is derived from the live catalog, so a new migration can never silently escape the reset). No per-test container or per-test Flyway tax.
+- **`serverTest(...)`** boots a fresh `ServerGraph` (fresh session cache) through `configureServer` and hands the block the seam `HttpClient` — the same `@Resource` routes and seam `Json` the client app consumes, so every suite also pins wire compatibility. The graph's own pool is released in a `finally`, so the accumulated-pools footgun is unrepresentable rather than a per-suite discipline. `storageConfig` / `webLimitsConfig` / `jwtConfig` default to roomy production-shaped values; a test probing the limits passes tight ones. `serverGraphTest` additionally exposes the graph for the rare routeless service call (`SessionStore.revokeAllFor`). Shared fixtures: `signupViaApi(...)`, `HttpResponse.decodedError()`.
+- **`TestMinio`** — a process-wide MinIO container for suites that exercise the presigned-URL protocol end-to-end: `serverTest(storageConfig = TestMinio.storageConfig())`.
+- **Published fakes** — `:server:core:storage:testing` ships `FakeBlobStore` for service unit tests in a blob-owning domain (via `convention.server.testing`, which pins a server `:testing` module to its sibling `:public` exactly like the client convention). `MigrationDriftTest` deliberately stays on its own throwaway container — it needs a virgin database.
+
 ---
 
 ## 7. Persistence & migrations
@@ -368,6 +383,7 @@ A `convention.server.*` family mirrors the client's plugins:
 | `server.core.public` / `server.core.impl` | JVM server core module base |
 | `server.feature.public` / `server.feature.impl` | JVM server domain module base (adds Metro, Arrow, Exposed in impl) |
 | `server.app` | application plugin, main class, Ktor, distribution/Docker |
+| `server.testing` | JVM server `:testing` module publishing fakes of its sibling `:public` |
 
 `module-graph-assert` + `module-structure-assert` are extended to police the umbrella dependency law, the `:shared` dep-surface, and server `public`/`impl` naming.
 

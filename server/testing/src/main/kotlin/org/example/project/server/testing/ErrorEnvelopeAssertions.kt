@@ -1,4 +1,4 @@
-package org.example.project.server
+package org.example.project.server.testing
 
 import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse

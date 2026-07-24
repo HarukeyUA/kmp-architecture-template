@@ -7,6 +7,34 @@ project without shared git history, add this repo as a remote and diff the paths
 
 ## 2026-07
 
+- **Client network hardening (ported from witchy-notes; no runtime override, no 401 reporter).**
+  The client `HttpClient` gains cold-start-sized timeouts (60s request / 30s connect / 60s socket —
+  sized to outlast a sleeping PaaS instance's wake-up) and DEV-only wire logging through Kermit
+  (tag `ktor`): the Logging plugin is not installed at all in PROD, and the Authorization header is
+  redacted even in DEV. Witchy's `UnauthorizedPolicy` + rejected-credential (401) reporting
+  interceptor was deliberately **not** ported: it exists because witchy's device tokens have no
+  refresh path, so any bearer 401 is a final credential rejection there — in this template a
+  bearer 401 is routine access-token expiry, and porting the reporter would log users out on every
+  expiry. The equivalent behavior already lives at the right point (`sessionBearer` clears the
+  session only when the *refresh endpoint* declares `auth.session_expired`) and is now pinned by
+  `SessionBearerAuthTest` (MockEngine): refresh-mints-and-retries, session-expired-clears,
+  ambient-failure-keeps-session. The runtime dev-server override remains unported (needs settings
+  storage).
+- **Server test harness (ported from witchy-notes).** New `:server:testing` module — the single
+  way a suite boots the `:server:*` stack. `serverTest { client -> … }` resets the process-wide,
+  once-migrated Testcontainers Postgres (`TestPostgres`, ambient-Exposed rebind + catalog-derived
+  truncation), builds a fresh `ServerGraph`, installs it into `testApplication`, hands the block
+  the seam-framed client, and closes the graph's pool in a `finally`. Overridable
+  `storageConfig`/`webLimitsConfig`/`jwtConfig`; `serverGraphTest` exposes the graph for routeless
+  service calls; `TestMinio` for presigned-URL suites; fixtures `signupViaApi` +
+  `HttpResponse.decodedError()` (moved out of `:server:app` tests). The three integration suites
+  (auth, notes, web hardening) migrated: ~30 lines of per-test graph boilerplate each became one
+  `serverTest` line, and only the first suite pays the container+Flyway cost (notes: 0.2s,
+  hardening: 0.5s). Also new: `convention.server.testing` and `:server:core:storage:testing` with
+  `FakeBlobStore` for blob-owning domains. Witchy's `FakeTransactionRunner` was not ported — the
+  template has no `TransactionRunner` abstraction (repositories own transactions via
+  `dbTransaction`, ADR-0006), so there is no interface to fake. `MigrationDriftTest` deliberately
+  keeps its own throwaway container (it needs a virgin database).
 - **Robots E2E framework (ported from witchy-notes; no headless client).** Instrumented Android
   E2E infrastructure driving the real app against the real dev server. New `:client:core:robots`
   (`Robot`/`Wait` base, host-agnostic via `SemanticsNodeInteractionsProvider`) and per-feature
@@ -79,14 +107,12 @@ Generic infrastructure proven downstream, to be ported in follow-up changes. Sou
 - **Client persistence core** — `:client:core:database`: Room 3 KMP with
   `TransactionRunner`/`RaiseableTransaction`, `DatabaseWiper`, DAO fakes in a `:testing` module;
   optional SQLCipher encryption at rest.
-- **Server test harness refinements** — single-boot `serverTest(...)` seam with
-  `TestPostgres`/`TestMinio`, published seam fakes (`FakeBlobStore`, `FakeTransactionRunner`).
 - **Design system components** — `AppTopBar` + scroll behavior, `AppListScaffold`,
   `AdaptiveBottomSheetOrDialog`, `ThemeMode`/`DynamicColor` theming (MaterialKolor).
-- **Network hardening** — Kermit logging in the client `HttpClient`, `UnauthorizedPolicy` with
-  rejected-credential (401) reporting interceptor, cold-start-sized timeouts. The runtime
-  dev-server override (developer-settings screen reading a persisted URL in `resolveApiConfig`)
-  needs the client settings storage first.
+- **Runtime dev-server override** — the developer-settings screen reading a persisted URL in
+  `resolveApiConfig` (DEV only) needs client settings storage first (DataStore local-storage or
+  the Room persistence core). The rest of witchy's network hardening has been adopted or
+  deliberately skipped — see the 2026-07 entry.
 - **`AppDispatchers` interface style** — witchy replaced dispatcher qualifiers with an
   `AppDispatchers` interface plus `TestAppDispatchers`; adopting it is a design migration across DI
   and the detekt `InjectDispatcher` config, to be decided deliberately.
