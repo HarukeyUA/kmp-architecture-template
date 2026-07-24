@@ -24,19 +24,15 @@ kotlin {
 }
 
 dependencies {
-    // The `:server:*` stack, booted in-process via configureServer(buildTestGraph(...)).
+    // The `:server:*` stack, booted in-process via configureServer(buildTestGraph(...)). This
+    // dependency is also the aggregator: convention.impl-aggregator exports every :server:*:impl
+    // from the app as `api`, and each domain chain (impl → public → :shared:<domain> →
+    // :shared:common) is `api` all the way down — so the config types, the seam contracts, and
+    // every new domain's DTOs/lenses reach the harness and its consumers with no hand-maintained
+    // module registry here. Only lifecycle:public sits outside that chain (the app holds it as
+    // plain `implementation`), and it is real harness ABI: serverTest's `finally` calls closeAll.
     api(project(":server:app"))
     api(project(":server:core:lifecycle:public"))
-    api(project(":server:core:database:public"))
-    // FlywayMigrator: the shared container is migrated exactly like production boots.
-    api(project(":server:core:database:impl"))
-    api(project(":server:core:storage:public"))
-    api(project(":server:core:auth:public"))
-    api(project(":server:core:web:public"))
-    api(project(":server:core:observability:public"))
-    api(project(":shared:common"))
-    api(project(":shared:auth"))
-    api(project(":shared:notes"))
 
     api(libs.ktor.server.test.host)
     api(libs.ktor.client.core)
