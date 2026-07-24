@@ -24,6 +24,13 @@ client/feature/auth/impl/src/commonMain/kotlin/org/example/project/feature/auth/
 client/feature/auth/impl/src/commonTest/kotlin/org/example/project/feature/auth/AuthRepositoryNetworkTest.kt
 client/feature/auth/impl/src/commonTest/kotlin/org/example/project/feature/auth/InMemorySecureSessionStore.kt
 
+# Server-coupled E2E pieces: the health-gate rule and the note round-trip flow need a live dev
+# server, and the launch script exists to guard one. The robots infrastructure itself stays; the
+# overlay supplies a server-less E2eTest base and an offline login-flow example.
+client/androidApp/src/androidTest/java/com/rainy/myapplication/e2e/DevServerHealthRule.kt
+client/androidApp/src/androidTest/java/com/rainy/myapplication/e2e/NoteRoundTripTest.kt
+scripts/e2e-android.sh
+
 # Server documentation, infra, and tooling.
 ARCHITECTURE_SERVER.md
 CONTEXT.md

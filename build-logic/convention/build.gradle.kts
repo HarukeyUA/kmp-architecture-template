@@ -71,6 +71,14 @@ gradlePlugin {
             id = "convention.screenshot.testing"
             implementationClass = "ScreenshotTestingConventionPlugin"
         }
+        register("kmpFeatureRobots") {
+            id = "convention.kmp.feature.robots"
+            implementationClass = "KmpFeatureRobotsConventionPlugin"
+        }
+        register("robotsAggregator") {
+            id = "convention.robots-aggregator"
+            implementationClass = "RobotsAggregatorConventionPlugin"
+        }
         register("implAggregator") {
             id = "convention.impl-aggregator"
             implementationClass = "ImplAggregatorConventionPlugin"

@@ -65,6 +65,18 @@ fun Project.siblingPublicModule(): String {
     return path.removeSuffix(":impl") + ":public"
 }
 
+/**
+ * Determines the sibling :impl module path from a :robots module. e.g., :client:feature:auth:robots
+ * -> :client:feature:auth:impl
+ */
+fun Project.siblingImplModule(): String {
+    val path = project.path
+    require(path.endsWith(":robots")) {
+        "siblingImplModule() should only be called from :robots modules, but was called from $path"
+    }
+    return path.removeSuffix(":robots") + ":impl"
+}
+
 fun Project.namespace(): String {
     val group = "org.example.project"
 
@@ -83,6 +95,7 @@ enum class ModuleType {
     PUBLIC,
     IMPL,
     TESTING,
+    ROBOTS,
     UNKNOWN,
 }
 
@@ -91,6 +104,7 @@ fun moduleTypeOf(path: String): ModuleType =
         "public" -> ModuleType.PUBLIC
         "impl" -> ModuleType.IMPL
         "testing" -> ModuleType.TESTING
+        "robots" -> ModuleType.ROBOTS
         else -> ModuleType.UNKNOWN
     }
 

@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -64,7 +65,7 @@ internal fun NotesScreenContent(state: NotesComponent.State) {
             onValueChange = { state.eventSink(NotesComponent.Event.TextChanged(it)) },
             label = { Text("Write a note…") },
             enabled = !state.isSubmitting,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag(NotesScreenTestTags.INPUT),
         )
 
         // The Declared quota failure shows its budget inline; anything else rides the generic
@@ -78,7 +79,7 @@ internal fun NotesScreenContent(state: NotesComponent.State) {
         Button(
             onClick = { state.eventSink(NotesComponent.Event.AddClicked) },
             enabled = !state.isSubmitting && state.textInput.isNotBlank(),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag(NotesScreenTestTags.ADD),
         ) {
             Text("Add note")
         }

@@ -102,7 +102,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
-      - run: ./gradlew :client:androidApp:assembleDebug
+      # assembleDevDebugAndroidTest compiles the instrumented suite APK (robots + flows)
+      # without a device; run it locally via connectedDevDebugAndroidTest.
+      - run: ./gradlew :client:androidApp:assembleDebug :client:androidApp:assembleDevDebugAndroidTest
 
   build-jvm:
     name: Build JVM

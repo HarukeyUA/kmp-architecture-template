@@ -140,7 +140,9 @@ jobs:
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
       - run: ./scripts/make-client-only.sh
-      - run: ./gradlew spotlessCheck detekt jvmTest :client:androidApp:assembleDebug
+      - run: >-
+          ./gradlew spotlessCheck detekt jvmTest :client:androidApp:assembleDebug
+          :client:androidApp:assembleDevDebugAndroidTest
       - name: Upload test reports
         if: failure()
         uses: actions/upload-artifact@v7
@@ -160,7 +162,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
-      - run: ./gradlew :client:androidApp:assembleDebug
+      # assembleDevDebugAndroidTest compiles the E2E suite APK (robots + flows) without a
+      # device; the suite itself runs locally via scripts/e2e-android.sh.
+      - run: ./gradlew :client:androidApp:assembleDebug :client:androidApp:assembleDevDebugAndroidTest
 
   build-jvm:
     name: Build JVM

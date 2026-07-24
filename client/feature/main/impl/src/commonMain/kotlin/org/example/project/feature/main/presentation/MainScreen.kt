@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.fade
@@ -42,18 +43,21 @@ class DefaultMainScreen : MainScreen {
                         onClick = { state.eventSink(MainComponent.Event.HomeTabClick) },
                         icon = { Text(TabItem.Home.icon) },
                         label = { Text(TabItem.Home.title) },
+                        modifier = Modifier.testTag(MainScreenTestTags.HOME_TAB),
                     )
                     NavigationBarItem(
                         selected = activeTab is MainComponent.Tab.Notes,
                         onClick = { state.eventSink(MainComponent.Event.NotesTabClick) },
                         icon = { Text(TabItem.Notes.icon) },
                         label = { Text(TabItem.Notes.title) },
+                        modifier = Modifier.testTag(MainScreenTestTags.NOTES_TAB),
                     )
                     NavigationBarItem(
                         selected = activeTab is MainComponent.Tab.Profile,
                         onClick = { state.eventSink(MainComponent.Event.ProfileTabClick) },
                         icon = { Text(TabItem.Profile.icon) },
                         label = { Text(TabItem.Profile.title) },
+                        modifier = Modifier.testTag(MainScreenTestTags.PROFILE_TAB),
                     )
                 }
             },

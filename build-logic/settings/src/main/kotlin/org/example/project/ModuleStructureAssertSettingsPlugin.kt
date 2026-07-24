@@ -54,6 +54,15 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
 
     private companion object {
         val ALLOWED_LEAF_NAMES =
-            setOf("public", "impl", "testing", "composeApp", "androidApp", "desktopApp", "app")
+            setOf(
+                "public",
+                "impl",
+                "testing",
+                "robots",
+                "composeApp",
+                "androidApp",
+                "desktopApp",
+                "app",
+            )
     }
 }

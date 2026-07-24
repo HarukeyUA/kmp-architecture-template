@@ -7,6 +7,24 @@ project without shared git history, add this repo as a remote and diff the paths
 
 ## 2026-07
 
+- **Robots E2E framework (ported from witchy-notes; no headless client).** Instrumented Android
+  E2E infrastructure driving the real app against the real dev server. New `:client:core:robots`
+  (`Robot`/`Wait` base, host-agnostic via `SemanticsNodeInteractionsProvider`) and per-feature
+  `:robots` modules (auth/main/notes) reading test tags declared next to the screens in their
+  sibling `:impl`; wired into `:client:androidApp`'s `androidTest` automatically by the new
+  robots-aggregator settings+convention plugin pair (same pattern as the impl aggregator). The
+  suite runs under the Test Orchestrator (`clearPackageData` — isolation by account-per-test,
+  `animationsDisabled`), is dev-flavor-only (`beforeVariants` disables prod androidTest), captures
+  failure screenshots into test-services storage, and health-gates on the dev server
+  (`DevServerHealthRule`). `scripts/e2e-android.sh` guards the run (server health, adb, device)
+  and bakes `DEV_SERVER_HOST=10.0.2.2`. One example flow, `NoteRoundTripTest`: signup → create
+  note → note card + server-resolved author email appear. Module rules extended: `robots` leaf
+  name, `:robots` → sibling `:impl` + `:client:core:robots` only. CI compiles the suite APK
+  (`assembleDevDebugAndroidTest`) in both variants; the client-only variant keeps the robots
+  infrastructure and swaps in an offline `LoginFlowTest` (fake auth), stripping the
+  server-coupled pieces. Witchy's `:client:core:integration-testing` headless-client harness was
+  deliberately not ported — it exists for multi-device sync convergence, and the template is one
+  server/one client.
 - **Per-target prod/dev environments (ported from witchy-notes; no runtime override).** Every
   client target now decides its backend at build time — Android `prod`/`dev` product flavors
   (distinct `applicationId`, " Dev" label, dev-only cleartext allowance, baked
@@ -63,9 +81,6 @@ Generic infrastructure proven downstream, to be ported in follow-up changes. Sou
   optional SQLCipher encryption at rest.
 - **Server test harness refinements** — single-boot `serverTest(...)` seam with
   `TestPostgres`/`TestMinio`, published seam fakes (`FakeBlobStore`, `FakeTransactionRunner`).
-- **Robots E2E framework** — `:client:core:robots` (`Robot`/`Wait` base), per-feature `:robots`
-  modules with a robots-aggregator convention plugin, and the client↔server
-  `:client:core:integration-testing` harness.
 - **Design system components** — `AppTopBar` + scroll behavior, `AppListScaffold`,
   `AdaptiveBottomSheetOrDialog`, `ThemeMode`/`DynamicColor` theming (MaterialKolor).
 - **Network hardening** — Kermit logging in the client `HttpClient`, `UnauthorizedPolicy` with

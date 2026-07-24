@@ -48,6 +48,7 @@ Modules are split into `:public` and `:impl` submodules
 | `:public`     | Other `:public` modules only                               |
 | `:impl`       | Any `:public` module, sibling `:public` via `api`          |
 | `:testing`    | Sibling `:public` module (exposes fakes of the public API) |
+| `:robots`     | Sibling `:impl` (test tags) + `:client:core:robots` (Robot/Wait base) |
 | `:client:composeApp` | Any module (wires `:impl` together)                        |
 | `:client:androidApp` / `:client:desktopApp` | `:client:composeApp` (entry-point modules only)   |
 
@@ -62,7 +63,7 @@ The rules above are enforced at build time and are compatible with Gradle projec
 | Rule                                                                           | Where                                                                                                                                    |
 |--------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
 | Module dependency rules + `:client:core` → `:client:feature`                                 | `assertModuleDependencies` task per module (runs as part of `check`). Inspects declared `project(...)` dependencies in main source sets. |
-| Every leaf module is named `public`/`impl`/`testing`/`composeApp`/`androidApp`/`desktopApp` | `convention.module-structure-assert.settings` — fails at settings evaluation.                                                            |
+| Every leaf module is named `public`/`impl`/`testing`/`robots`/`composeApp`/`androidApp`/`desktopApp` | `convention.module-structure-assert.settings` — fails at settings evaluation.                                                            |
 | Every `:impl` has a sibling `:public`                                          | Same settings plugin.                                                                                                                    |
 
 Run directly with `./gradlew assertModuleDependencies` or any `check` task.
@@ -526,6 +527,8 @@ All navigation uses Decompose's `childStack` with `@Serializable` configuration 
 | `decompose`                  | Decompose setup                                                                                                                                                                                                                          |
 | `serialization`              | kotlinx.serialization                                                                                                                                                                                                                    |
 | `screenshot.testing`         | Roborazzi screenshot testing (androidHostTest sourceSet, Pixel 9 + Pixel Tablet, light/dark)                                                                                                                                             |
+| `kmp.feature.robots`         | `:robots` UI-test driver module (Android + JVM targets, compose-ui-test `api`, auto-depends on sibling `:impl` + `:client:core:robots`)                                                                                                  |
+| `robots-aggregator`          | On `:client:androidApp`: wires every `:client:*:robots` module into `androidTest` (list produced by `convention.robots-aggregator.settings` at settings time)                                                                            |
 
 Features that use `StackComponent` need to add `api(project(":client:core:ui:public"))` to their `:public` module's dependencies (this transitively provides `:client:core:navigation:public`).
 
@@ -861,3 +864,41 @@ class LoginScreenScreenshotTest : ScreenshotTest() {
     }
 }
 ```
+
+### E2E Testing (Robots)
+
+The instrumented E2E suite lives in `client/androidApp/src/androidTest` (dev flavor only) and
+drives the real app — real DI graph, real navigation, real dev server — through **robots**: one
+small class per screen that encapsulates how to drive that screen via semantics test tags.
+
+```
+:client:core:robots                 # Robot + Wait base (no dependencies)
+:client:feature:auth:robots         # LoginRobot   → tags from :client:feature:auth:impl
+:client:feature:main:robots         # MainRobot    → tags from :client:feature:main:impl
+:client:feature:notes:robots        # NotesRobot   → tags from :client:feature:notes:impl
+```
+
+- **Tags live in `:impl`, next to the screen they mark** (`LoginScreenTestTags` etc.), so a UI
+  change and its tag change land in the same module. A `:robots` module depends only on its
+  sibling `:impl` (for the tags) and `:client:core:robots` (the `Robot`/`Wait` base) — enforced by
+  `assertModuleDependencies`.
+- **Robots never wait for another feature's screen.** A flow like "sign up → main appears"
+  composes in the flow layer (the `E2eTest` base and its subclasses in `androidTest`); robots
+  would otherwise need cross-feature deps mirroring the nav graph.
+- **Robots are host-agnostic**: written against `SemanticsNodeInteractionsProvider` plus an
+  injected `Wait` primitive (not a concrete rule type), and built for Android + JVM targets, so a
+  future desktop `runComposeUiTest` suite can reuse them unchanged.
+- **Wiring is automatic**: `convention.robots-aggregator.settings` enumerates every
+  `:client:*:robots` module at settings-evaluation time and `convention.robots-aggregator` (on
+  `:client:androidApp`) adds each as an `androidTestImplementation` dependency — a new robots
+  module joins the suite the moment it is `include()`d.
+- **Isolation is account-per-test**: the Test Orchestrator clears app data before each test
+  (`clearPackageData`), every flow signs up a fresh account through the real UI, and animations
+  are disabled for the run (`animationsDisabled`). On failure, `FailureScreenshotRule` captures
+  the compose root into test-services storage, which survives the per-test `pm clear`.
+
+Run it with `scripts/e2e-android.sh` against a running `scripts/dev-stack.sh` (the script
+health-checks the server, checks for a device, and bakes `DEV_SERVER_HOST=10.0.2.2` so the
+emulator reaches the host deterministically). `DevServerHealthRule` re-checks reachability from
+the device as a class rule, so IDE gutter runs fail fast with instructions instead of a 15s
+timeout mid-test.

@@ -12,6 +12,10 @@ gradlePlugin {
             id = "convention.spotless"
             implementationClass = "SpotlessConventionPlugin"
         }
+        register("robotsAggregatorSettings") {
+            id = "convention.robots-aggregator.settings"
+            implementationClass = "org.example.project.RobotsAggregatorSettingsPlugin"
+        }
         register("moduleStructureAssertSettings") {
             id = "convention.module-structure-assert.settings"
             implementationClass = "org.example.project.ModuleStructureAssertSettingsPlugin"

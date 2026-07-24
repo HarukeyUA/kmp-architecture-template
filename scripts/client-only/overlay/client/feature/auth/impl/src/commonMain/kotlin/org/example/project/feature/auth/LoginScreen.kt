@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -50,7 +51,7 @@ internal fun LoginScreenContent(state: LoginComponent.State) {
             label = { Text(text = "Email") },
             singleLine = true,
             enabled = !state.isSubmitting,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag(LoginScreenTestTags.EMAIL),
         )
 
         OutlinedTextField(
@@ -60,7 +61,7 @@ internal fun LoginScreenContent(state: LoginComponent.State) {
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
             enabled = !state.isSubmitting,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag(LoginScreenTestTags.PASSWORD),
         )
 
         state.error?.let { Text(text = it.message(), color = MaterialTheme.colorScheme.error) }
@@ -68,7 +69,7 @@ internal fun LoginScreenContent(state: LoginComponent.State) {
         Button(
             onClick = { state.eventSink(LoginComponent.Event.LoginClicked) },
             enabled = !state.isSubmitting,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().testTag(LoginScreenTestTags.LOG_IN),
         ) {
             Text(text = "Log in")
         }
@@ -76,6 +77,7 @@ internal fun LoginScreenContent(state: LoginComponent.State) {
         TextButton(
             onClick = { state.eventSink(LoginComponent.Event.SignupClicked) },
             enabled = !state.isSubmitting,
+            modifier = Modifier.testTag(LoginScreenTestTags.CREATE_ACCOUNT),
         ) {
             Text(text = "Create account")
         }

@@ -99,6 +99,23 @@ Bonjour name) — see `scripts/dev-stack.sh --lan`.
 URLs reachable off-machine. Details in
 [ARCHITECTURE_SERVER.md § Local dev & config](ARCHITECTURE_SERVER.md).
 
+### Running the E2E Suite
+
+With the dev stack up and an emulator running:
+
+```bash
+scripts/e2e-android.sh            # health check → connectedDevDebugAndroidTest
+```
+
+The instrumented suite (`client/androidApp/src/androidTest`) drives the real app against the real
+dev server through per-feature **robot** classes (`:client:feature:*:robots` — see
+[ARCHITECTURE.md § E2E Robots](ARCHITECTURE.md)). The Test Orchestrator clears app data between
+tests and each flow signs up its own account, so runs are isolated without any server-side
+cleanup; failures leave a screenshot in
+`client/androidApp/build/outputs/androidTest-results/`. CI compiles the suite APK on every PR
+(`assembleDevDebugAndroidTest`); actually running it stays local, where a dev stack and a device
+exist.
+
 ## Creating a Feature
 
 Generate a new feature pair with:

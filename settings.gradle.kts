@@ -1,4 +1,5 @@
 import org.example.project.implAggregator
+import org.example.project.robotsAggregator
 
 pluginManagement {
     includeBuild("build-logic")
@@ -31,6 +32,7 @@ dependencyResolutionManagement {
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
     id("convention.impl-aggregator.settings")
+    id("convention.robots-aggregator.settings")
     id("convention.module-structure-assert.settings")
 }
 
@@ -40,6 +42,9 @@ implAggregator {
     aggregator(":client:composeApp")
     aggregator(":server:app")
 }
+
+// Wires every :client:*:robots module into the E2E host's androidTest configuration.
+robotsAggregator { aggregator(":client:androidApp") }
 
 // ===================== :client umbrella (Compose Multiplatform app) =====================
 // App modules
@@ -55,6 +60,8 @@ include(":client:core:component:public")
 include(":client:core:navigation:public")
 
 include(":client:core:buildinfo:public")
+
+include(":client:core:robots")
 
 include(":client:core:error:public")
 
@@ -77,9 +84,13 @@ include(":client:feature:auth:public")
 
 include(":client:feature:auth:impl")
 
+include(":client:feature:auth:robots")
+
 include(":client:feature:main:public")
 
 include(":client:feature:main:impl")
+
+include(":client:feature:main:robots")
 
 include(":client:feature:home:public")
 
@@ -88,6 +99,8 @@ include(":client:feature:home:impl")
 include(":client:feature:notes:public")
 
 include(":client:feature:notes:impl")
+
+include(":client:feature:notes:robots")
 
 include(":client:feature:splash:public")
 

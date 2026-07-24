@@ -40,6 +40,13 @@ junit = "4.13.2"
 assertk = "0.28.1"
 turbine = "1.2.1"
 
+# Instrumented E2E suite (client/androidApp androidTest)
+androidx-test-runner = "1.7.0"
+androidx-test-rules = "1.7.0"
+androidx-test-espresso = "3.7.0"
+androidx-test-orchestrator = "1.6.1"
+androidx-test-services = "1.6.0"
+
 spotless = "8.8.0"
 ktfmt = "0.63"
 
@@ -175,6 +182,13 @@ roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose"
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 junit = { module = "junit:junit", version.ref = "junit" }
 compose-ui-test-junit4 = { module = "org.jetbrains.compose.ui:ui-test-junit4", version.ref = "composeMultiplatform" }
+compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "composeMultiplatform" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-test-rules" }
+androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-test-espresso" }
+androidx-test-orchestrator = { module = "androidx.test:orchestrator", version.ref = "androidx-test-orchestrator" }
+androidx-test-services = { module = "androidx.test.services:test-services", version.ref = "androidx-test-services" }
+androidx-test-services-storage = { module = "androidx.test.services:storage", version.ref = "androidx-test-services" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -201,6 +215,8 @@ convention-serialization = { id = "convention.serialization" }
 convention-kmp-feature-public = { id = "convention.kmp.feature.public" }
 convention-kmp-compose-feature-public = { id = "convention.kmp.compose.feature.public" }
 convention-kmp-feature-impl = { id = "convention.kmp.feature.impl" }
+convention-kmp-feature-robots = { id = "convention.kmp.feature.robots" }
+convention-robots-aggregator = { id = "convention.robots-aggregator" }
 convention-kmp-compose-feature-impl = { id = "convention.kmp.compose.feature.impl" }
 convention-metro = { id = "convention.metro" }
 convention-molecule = { id = "convention.molecule" }
