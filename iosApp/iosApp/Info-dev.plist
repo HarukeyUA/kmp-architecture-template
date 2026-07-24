@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<!--
+		Dev builds talk to a local server over plain HTTP. NSAllowsLocalNetworking relaxes ATS
+		for local hosts only, and the usage description is what makes a physical iPhone show the
+		iOS 14+ Local Network permission prompt instead of silently failing to reach the Mac.
+		This plist is referenced only by the Debug-dev/Release-dev build configurations.
+	-->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>The dev build connects to a development server running on your local network.</string>
+	<!--
+		Build machine's Bonjour name / LAN IP, emitted into Generated.xcconfig by
+		scripts/generate-ios-version-xcconfig.sh (a pre-build scheme action) and expanded here at
+		build time. Swift reads it and passes it into createAppGraph as the default dev server
+		host; empty (offline build, or a fresh clone before the script ran) falls back to
+		localhost. Prod builds never read this — Info.plist has no such key.
+	-->
+	<key>DevServerHost</key>
+	<string>$(DEV_SERVER_HOST)</string>
+</dict>
+</plist>

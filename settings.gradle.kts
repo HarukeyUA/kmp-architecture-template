@@ -54,6 +54,8 @@ include(":client:core:component:public")
 
 include(":client:core:navigation:public")
 
+include(":client:core:buildinfo:public")
+
 include(":client:core:error:public")
 
 include(":client:core:network:public")

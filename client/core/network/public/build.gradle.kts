@@ -15,5 +15,9 @@ kotlin {
             // Typed `HttpClient.call(Endpoint, …)` builds the request from a shared `@Resource`.
             api(libs.ktor.client.resources)
         }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.assertk)
+        }
     }
 }

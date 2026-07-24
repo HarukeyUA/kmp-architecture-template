@@ -77,15 +77,22 @@ Everything runs on localhost with zero configuration:
 scripts/dev-stack.sh              # Postgres + MinIO (docker compose) + the Ktor server on :8080
 ```
 
-Then run any client — the per-platform `ApiConfig` defaults already point at the local server
-(the platform gotchas are pre-solved: the Android emulator reaches the host via `10.0.2.2`,
-iOS simulator and desktop via `localhost`, and debug builds allow cleartext HTTP):
+Then run any client's **dev variant** — every target has a prod/dev environment switch decided at
+build time (Android product flavor, iOS scheme, desktop packaging flag), and the dev variant
+points at the local server with the platform gotchas pre-solved (the Android emulator reaches the
+host via `10.0.2.2` and the dev flavor allows cleartext HTTP; iOS simulator and desktop use
+`localhost`, with the dev plist relaxing ATS for local hosts):
 
 ```bash
-./gradlew :client:desktopApp:run          # desktop
-./gradlew :client:androidApp:installDebug # Android emulator
-# iosApp via Xcode on a simulator
+./gradlew -PappEnv=dev :client:desktopApp:run    # desktop
+./gradlew :client:androidApp:installDevDebug     # Android emulator
+# iosApp via Xcode on a simulator — scheme iosApp-dev
 ```
+
+Prod variants resolve to `PROD_SERVER_BASE_URL` (a placeholder in
+`client/composeApp/.../ApiConfigResolution.kt` — point it at your deployment). For physical
+devices, dev builds bake the build machine's address in automatically (Android: LAN IP; iOS:
+Bonjour name) — see `scripts/dev-stack.sh --lan`.
 
 `scripts/dev-stack.sh --down` stops the containers keeping data; `--nuke` also drops the volumes
 (fresh DB + bucket); `--lan` serves on your LAN IP for physical devices and makes presigned blob

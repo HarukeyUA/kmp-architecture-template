@@ -5,8 +5,9 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.arkivanov.decompose.extensions.compose.lifecycle.LifecycleController
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
-import dev.zacsweers.metro.createGraph
+import dev.zacsweers.metro.createGraphFactory
 import javax.swing.SwingUtilities
+import org.example.project.core.buildinfo.Environment
 import org.example.project.core.component.DefaultAppComponentContext
 
 @Suppress("TooGenericExceptionCaught")
@@ -33,9 +34,15 @@ internal fun <T> runOnUiThread(block: () -> T): T {
 }
 
 fun main() {
+    // `app.env` is baked into the launcher (and the `run` task) by the build — see
+    // `-PappEnv=dev` in build.gradle.kts. The environment is decided once per process here and
+    // injected, never sniffed at runtime; absent means prod, so a shipped artifact needs no flag.
+    val environment =
+        if (System.getProperty("app.env") == "dev") Environment.DEV else Environment.PROD
+
     val lifecycle = LifecycleRegistry()
 
-    val appGraph = runOnUiThread { createGraph<JvmAppGraph>() }
+    val appGraph = runOnUiThread { createGraphFactory<JvmAppGraph.Factory>().create(environment) }
 
     val root = runOnUiThread {
         appGraph.rootComponentFactory.create(DefaultAppComponentContext(lifecycle = lifecycle))

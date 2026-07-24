@@ -1,0 +1,4 @@
+<resources>
+    <!-- Dev-flavor launcher label, so dev and prod installs are distinguishable side by side. -->
+    <string name="app_name">My Application Dev</string>
+</resources>

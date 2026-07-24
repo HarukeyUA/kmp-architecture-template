@@ -343,13 +343,13 @@ Loaded once at startup: **localhost dev defaults** (runs out-of-the-box against 
 
 ### Client → server base URL — DI-provided `ApiConfig`
 
-Build-variant driven (debug = localhost, release = prod), injected via Metro. Platform gotchas pre-solved so they're never re-learned:
+Every target has a **prod/dev environment**, decided at build/packaging time and injected at graph creation — `Environment` (from the platform entry point) + `ApiConfigDefaults` (from the platform graph) resolve to the one `ApiConfig` in `resolveApiConfig` (`:client:composeApp`), the single place a base URL enters the app. There is **no runtime override**: PROD always resolves to `PROD_SERVER_BASE_URL` (a committed placeholder — point it at your deployment), and the environment is never sniffed from bundle ids or properties at runtime. Dev builds additionally bake in the build machine's address so a physical device finds the local server with zero setup (validated by `normalizeOriginOrNull`; anything unusable falls back to the loopback default). Platform gotchas pre-solved so they're never re-learned:
 
-| Platform | Host |
-|----------|------|
-| Android emulator | `10.0.2.2` (not `localhost`) — and debug builds allow cleartext HTTP to localhost |
-| iOS simulator | `localhost` |
-| Desktop | `localhost` |
+| Target | DEV selected by | Dev host default |
+|--------|-----------------|------------------|
+| Android | `dev` product flavor (`installDevDebug`; distinct `applicationId`, " Dev" label) | baked LAN IP (`DEV_SERVER_HOST` env or auto-detected) → falls back to emulator alias `10.0.2.2`; dev flavor allows cleartext HTTP via its `network_security_config` |
+| iOS | `iosApp-dev` scheme → `Debug-dev`/`Release-dev` configurations (`DEV` Swift compilation condition, `.dev` bundle id) | Bonjour name from `Generated.xcconfig` via the `DevServerHost` key in `Info-dev.plist` → falls back to `localhost`; dev plist relaxes ATS for local networking |
+| Desktop | `-PappEnv=dev` (baked into the launcher/`run` task as the `app.env` system property) | `localhost` |
 
 An optional debug-only base-URL override allows pointing a dev build at staging.
 

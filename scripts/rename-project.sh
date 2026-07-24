@@ -216,6 +216,10 @@ step "Updating display name in strings.xml"
 do_replace \
   "$ROOT_DIR/client/androidApp/src/main/res/values/strings.xml" \
   "$T_DISPLAY_NAME" "$NEW_DISPLAY_NAME"
+# The dev flavor's label override ("<display name> Dev") keeps its suffix.
+do_replace \
+  "$ROOT_DIR/client/androidApp/src/dev/res/values/strings.xml" \
+  "$T_DISPLAY_NAME" "$NEW_DISPLAY_NAME"
 
 # ── Step 6: Rename MyApplication.kt → <NewAppName>.kt ─────────────────────────
 step "Renaming Application class file"

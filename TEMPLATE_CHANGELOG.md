@@ -7,6 +7,20 @@ project without shared git history, add this repo as a remote and diff the paths
 
 ## 2026-07
 
+- **Per-target prod/dev environments (ported from witchy-notes; no runtime override).** Every
+  client target now decides its backend at build time — Android `prod`/`dev` product flavors
+  (distinct `applicationId`, " Dev" label, dev-only cleartext allowance, baked
+  `BuildConfig.DEV_SERVER_HOST`), iOS `Debug-dev`/`Release-dev` Xcode configurations + `iosApp-dev`
+  scheme (`DEV` compilation condition, `.dev` bundle id, `DevServerHost` via `Info-dev.plist` +
+  `Generated.xcconfig`), desktop `-PappEnv=dev` (baked `app.env` launcher property) — and injects
+  `Environment` + platform `ApiConfigDefaults` at graph creation; `resolveApiConfig` in
+  `:client:composeApp` is the single place a base URL enters the app. Dev builds bake the build
+  machine's address (Android: LAN IP auto-detect or `DEV_SERVER_HOST`; iOS: Bonjour name) so
+  physical devices reach the local server with zero setup, validated by `normalizeOriginOrNull`
+  (new, `:client:core:network:public`) with loopback fallback. `PROD_SERVER_BASE_URL` is a
+  committed placeholder. New `:client:core:buildinfo:public` module holds `Environment`. The
+  hardcoded per-platform `ApiConfigGraph` providers are gone. Unlike witchy-notes there is no
+  runtime dev-server override — that needs the client settings storage (see pending ports).
 - **One-command local dev stack (ported from witchy-notes).** `scripts/dev-stack.sh` boots
   Postgres + MinIO + `:server:app` with port pre-flight (names the squatter instead of compose's
   opaque failure), auto-created `.env`, health-waited containers, and env export; `--down` keeps
@@ -55,14 +69,15 @@ Generic infrastructure proven downstream, to be ported in follow-up changes. Sou
 - **Design system components** — `AppTopBar` + scroll behavior, `AppListScaffold`,
   `AdaptiveBottomSheetOrDialog`, `ThemeMode`/`DynamicColor` theming (MaterialKolor).
 - **Network hardening** — Kermit logging in the client `HttpClient`, `UnauthorizedPolicy` with
-  rejected-credential (401) reporting interceptor, cold-start-sized timeouts,
-  `ApiConfig`/`ServerOrigin` split.
+  rejected-credential (401) reporting interceptor, cold-start-sized timeouts. The runtime
+  dev-server override (developer-settings screen reading a persisted URL in `resolveApiConfig`)
+  needs the client settings storage first.
 - **`AppDispatchers` interface style** — witchy replaced dispatcher qualifiers with an
   `AppDispatchers` interface plus `TestAppDispatchers`; adopting it is a design migration across DI
   and the detekt `InjectDispatcher` config, to be decided deliberately.
-- **Smaller modules** — `:client:core:datetime`, `:client:core:buildinfo` (BuildKonfig
-  `Environment`), Coil convention plugin, AboutLibraries, path-filtered server CI, release
-  workflow.
+- **Smaller modules** — `:client:core:datetime`, BuildKonfig version/commit fields in
+  `:client:core:buildinfo` (the module and `Environment` are already adopted), Coil convention
+  plugin, AboutLibraries, path-filtered server CI, release workflow.
 
 Intentionally not ported: the whole E2EE sync/crypto domain (product architecture, not template
 infrastructure). Witchy's sealed-lens error serialization and `UniqueErrorCodesTest` have since

@@ -13,14 +13,24 @@ kotlin { jvmToolchain(21) }
 
 dependencies {
     api(project(":client:composeApp"))
+    implementation(project(":client:core:buildinfo:public"))
 
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutines.swing)
 }
 
+// `-PappEnv=dev` bakes the DEV environment into the launcher (and the `run` task): `main()` reads
+// the `app.env` system property once at startup and injects the Environment into the graph.
+// Defaults to prod so release packaging needs no flag; local iteration runs with
+// `./gradlew -PappEnv=dev :client:desktopApp:run`. A real app would also suffix the package /
+// bundle names here so a dev install can sit beside the personal prod one.
+val isDevDesktop = providers.gradleProperty("appEnv").orNull == "dev"
+
 compose.desktop {
     application {
         mainClass = "org.example.project.MainKt"
+
+        jvmArgs += "-Dapp.env=${if (isDevDesktop) "dev" else "prod"}"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)

@@ -26,6 +26,11 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":client:core:ui:public"))
+            // `resolveApiConfig` — Environment + platform ApiConfigDefaults → the graph's
+            // ApiConfig. `api` because the platform graph factories expose both types to the
+            // entry-point modules (androidApp / desktopApp / the iOS framework).
+            api(project(":client:core:buildinfo:public"))
+            api(project(":client:core:network:public"))
 
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
@@ -48,6 +53,10 @@ kotlin {
             api(libs.essenty.backhandler)
             api(libs.essenty.statekeeper)
             implementation(libs.essenty.lifecycle.coroutines)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.assertk)
         }
     }
 }

@@ -23,7 +23,20 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     private var stateKeeper = StateKeeperDispatcherKt.StateKeeperDispatcher(savedState: nil)
     var backDispatcher: BackDispatcher = BackDispatcherKt.BackDispatcher()
 
-    private lazy var appGraph = IosAppGraphKt.createAppGraph()
+    // `DEV` is set in SWIFT_ACTIVE_COMPILATION_CONDITIONS by the Debug-dev/Release-dev build
+    // configurations (scheme iosApp-dev), so the environment is decided by the scheme at compile
+    // time. DevServerHost carries the build Mac's Bonjour name (dev plist only; expanded from
+    // Generated.xcconfig at build time).
+    private lazy var appGraph: IosAppGraph = {
+        #if DEV
+        let isDev = true
+        #else
+        let isDev = false
+        #endif
+        let devServerHost =
+            Bundle.main.object(forInfoDictionaryKey: "DevServerHost") as? String
+        return IosAppGraphKt.createAppGraph(isDev: isDev, devServerHost: devServerHost)
+    }()
 
     lazy var root: RootComponent = appGraph.rootComponentFactory.create(
         componentContext: DefaultAppComponentContext(

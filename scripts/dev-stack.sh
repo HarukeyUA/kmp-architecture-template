@@ -128,10 +128,13 @@ if [ "$MODE" = "lan" ]; then
  console  http://localhost:9001   (minio / minio12345)
  logs     $LOG_LEVEL (override with LOG_LEVEL=INFO)
 
- Point a physical device at this host by editing that platform's ApiConfig
- provider to http://$LAN_HOST:8080:
-   client/core/network/impl/src/<platform>Main/.../ApiConfigGraph.kt
- (Emulator/simulator/desktop defaults keep working unchanged.)
+ Deterministic client builds (especially on VPN/multi-NIC machines):
+   DEV_SERVER_HOST=$LAN_HOST ./gradlew :client:androidApp:installDevDebug
+   DEV_SERVER_HOST=$LAN_HOST xcodebuild ... -scheme iosApp-dev
+
+ Without the variable, Android auto-detects a LAN IP and iOS bakes its Bonjour
+ name. The host is a build-time snapshot — rebuild and reinstall to change it
+ (the template has no runtime server override).
 
  First LAN run: macOS will ask to allow incoming connections for "java".
  Deny it and devices time out with no useful error.
@@ -147,10 +150,10 @@ else
  console  http://localhost:9001   (minio / minio12345)
  logs     $LOG_LEVEL (override with LOG_LEVEL=INFO)
 
- Clients — the per-platform ApiConfig defaults already point here:
-   ./gradlew :client:desktopApp:run
-   ./gradlew :client:androidApp:installDebug    # emulator reaches the host via 10.0.2.2
-   iosApp via Xcode on a simulator              # simulator shares the host's localhost
+ Clients — dev builds point here out of the box:
+   ./gradlew -PappEnv=dev :client:desktopApp:run
+   ./gradlew :client:androidApp:installDevDebug   # emulator reaches the host via 10.0.2.2
+   iosApp via Xcode, scheme iosApp-dev            # simulator shares the host's localhost
 
  Presigned blob URLs say localhost:9000, which emulators and devices cannot
  reach — "everything works except blobs" means restart with --lan.
