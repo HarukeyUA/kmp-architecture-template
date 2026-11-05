@@ -9,7 +9,7 @@ plugins {
     alias(libs.plugins.convention.detekt)
 }
 
-kotlin { jvmToolchain(21) }
+kotlin { jvmToolchain(libs.versions.jdk.get().toInt()) }
 
 dependencies {
     api(project(":client:composeApp"))

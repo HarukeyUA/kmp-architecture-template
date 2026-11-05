@@ -11,12 +11,12 @@ import org.example.project.core.local.storage.model.SettingsLocalModel
 @ContributesBinding(AppScope::class)
 @Inject
 class SettingsLocalDataSourceImpl(
-    @ForScope(DataStoreScope::class) private val dataStore: DataStore<SettingsLocalModel>
+    @ForScope(DataStoreScope::class) private val dataStore: DataStore<SettingsLocalModel>,
 ) : SettingsLocalDataSource {
     override val settingsFlow = dataStore.data
 
     override suspend fun updateSettings(
-        block: suspend (settings: SettingsLocalModel) -> SettingsLocalModel
+        block: suspend (settings: SettingsLocalModel) -> SettingsLocalModel,
     ) {
         dataStore.updateData(block)
     }

@@ -54,7 +54,7 @@ class ModuleGraphAssertConventionPlugin : Plugin<Project> {
                                         .map(ProjectDependency::getPath)
                                 }
                                 .toSet()
-                        }
+                        },
                     )
                 }
 
@@ -82,7 +82,7 @@ class ModuleGraphAssertConventionPlugin : Plugin<Project> {
                                             .map { dep -> "${dep.group}:${dep.name}" }
                                     }
                                     .toSet()
-                            }
+                            },
                         )
                     }
                 }
@@ -103,7 +103,7 @@ class ModuleGraphAssertConventionPlugin : Plugin<Project> {
                                         .map(ProjectDependency::getPath)
                                 }
                                 .toSet()
-                        }
+                        },
                     )
                 }
             }

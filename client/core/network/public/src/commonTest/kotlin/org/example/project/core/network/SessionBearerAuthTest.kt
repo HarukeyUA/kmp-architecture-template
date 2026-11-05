@@ -106,7 +106,7 @@ class SessionBearerAuthTest {
                                             encodeApiError(
                                                 checkNotNull(AuthApi.refresh.error),
                                                 SessionExpired,
-                                            )
+                                            ),
                                         ),
                                     ),
                                 status = HttpStatusCode.Unauthorized,

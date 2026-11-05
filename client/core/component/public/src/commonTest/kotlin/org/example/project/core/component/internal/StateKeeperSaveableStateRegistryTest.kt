@@ -424,7 +424,7 @@ class StateKeeperSaveableStateRegistryTest {
     }
 
     private fun createRegistry(
-        stateKeeper: StateKeeperDispatcher = StateKeeperDispatcher()
+        stateKeeper: StateKeeperDispatcher = StateKeeperDispatcher(),
     ): StateKeeperSaveableStateRegistry {
         return StateKeeperSaveableStateRegistry(stateKeeper, REGISTRY_KEY)
     }

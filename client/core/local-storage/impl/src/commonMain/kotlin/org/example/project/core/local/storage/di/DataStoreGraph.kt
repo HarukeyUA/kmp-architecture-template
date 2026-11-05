@@ -19,7 +19,7 @@ interface DataStoreGraph {
     @SingleIn(AppScope::class)
     @ForScope(DataStoreScope::class)
     fun provideDataStore(
-        @ForScope(DataStoreScope::class) storage: OkioStorage<SettingsLocalModel>
+        @ForScope(DataStoreScope::class) storage: OkioStorage<SettingsLocalModel>,
     ): DataStore<SettingsLocalModel> =
         DataStore.Builder(storage = storage, context = Dispatchers.IO + SupervisorJob())
             .setCorruptionHandler(ReplaceFileCorruptionHandler { SettingsLocalModel() })

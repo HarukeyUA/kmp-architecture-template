@@ -79,8 +79,8 @@ fun testServerConfig(
 
 /**
  * Builds the real [ServerGraph] around [databaseConfig], threading the sub-configs like `main`. A
- * blob-exercising test passes a MinIO-backed [storageConfig] so presign/HEAD/delete legs hit a real
- * S3-compatible store.
+ * blob-exercising test passes a RustFS-backed [storageConfig] so presign/HEAD/delete legs hit a
+ * real S3-compatible store.
  */
 fun buildTestGraph(
     databaseConfig: DatabaseConfig,

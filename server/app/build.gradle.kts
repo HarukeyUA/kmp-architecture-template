@@ -57,13 +57,13 @@ tasks.register<JavaExec>("generateMigrationDraft") {
         providers.gradleProperty("migrationOutput").orNull?.let { file(it).absolutePath }
     val migrationOutputDir =
         providers.gradleProperty("migrationModule").orNull?.let { module ->
-            val moduleDir =
-                if (module.startsWith(":")) {
-                    project(module).projectDir
-                } else {
-                    rootProject.file(module)
-                }
-            moduleDir.resolve("src/main/resources/db/migration").absolutePath
+            // Accepts a project path or a relative directory; resolved from the root directory
+            // because isolated projects forbid reaching into another project's model.
+            isolated.rootProject.projectDirectory
+                .dir(module.removePrefix(":").replace(':', '/'))
+                .dir("src/main/resources/db/migration")
+                .asFile
+                .absolutePath
         }
 
     doFirst {
@@ -78,7 +78,7 @@ tasks.register<JavaExec>("generateMigrationDraft") {
             else ->
                 error(
                     "Pass -PmigrationModule=:server:feature:notes:impl " +
-                        "or -PmigrationOutput=/path/to/V...__description.sql"
+                        "or -PmigrationOutput=/path/to/V...__description.sql",
                 )
         }
     }

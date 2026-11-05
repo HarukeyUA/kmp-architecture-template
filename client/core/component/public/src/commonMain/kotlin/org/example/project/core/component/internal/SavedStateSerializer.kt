@@ -188,7 +188,7 @@ private object AnyValueSerializer : KSerializer<Any?> {
 
                                 SerializableTypes.SAVED_STATE ->
                                     savedState(
-                                        decodeSerializableElement(descriptor, 1, AnyMapSerializer)
+                                        decodeSerializableElement(descriptor, 1, AnyMapSerializer),
                                     )
 
                                 null ->

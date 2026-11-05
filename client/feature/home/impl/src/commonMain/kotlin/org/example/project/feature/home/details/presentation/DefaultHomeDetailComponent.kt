@@ -22,7 +22,7 @@ class DefaultHomeDetailComponent(
     override fun produceState(): HomeDetailComponent.State {
         LaunchedEffect(Unit) {
             this@DefaultHomeDetailComponent.snackbarHandler.showSnackbar(
-                SnackbarMessage(text = "Message")
+                SnackbarMessage(text = "Message"),
             )
         }
 

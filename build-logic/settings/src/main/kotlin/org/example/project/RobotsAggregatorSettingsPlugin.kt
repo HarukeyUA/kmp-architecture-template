@@ -56,14 +56,15 @@ class RobotsAggregatorSettingsPlugin : Plugin<Settings> {
                     .map { it.path }
 
             aggregatorPaths.forEach { aggregatorPath ->
-                val aggregator =
-                    runCatching { target.project(aggregatorPath) }
-                        .getOrElse {
-                            error(
-                                "robotsAggregator: aggregator project `$aggregatorPath` is not " +
-                                    "included in settings.gradle.kts."
-                            )
-                        }
+                val aggregator = runCatching {
+                    target.project(aggregatorPath)
+                }
+                    .getOrElse {
+                        error(
+                            "robotsAggregator: aggregator project `$aggregatorPath` is not " +
+                                "included in settings.gradle.kts.",
+                        )
+                    }
                 val outputFile = aggregator.projectDir.resolve(AGGREGATOR_OUTPUT_REL_PATH)
                 outputFile.parentFile?.mkdirs()
                 outputFile.writeText(robotsPaths.sorted().joinToString(separator = "\n"))

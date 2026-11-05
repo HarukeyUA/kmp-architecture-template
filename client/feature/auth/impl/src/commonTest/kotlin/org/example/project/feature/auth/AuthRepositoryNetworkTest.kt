@@ -61,7 +61,7 @@ class AuthRepositoryNetworkTest {
                             accessTokenExpiresAt = Clock.System.now() + 1.hours,
                             refreshToken = "login-refresh",
                             refreshTokenExpiresAt = Clock.System.now() + 720.hours,
-                        )
+                        ),
                     ),
                     HttpStatusCode.OK,
                     jsonHeaders,
@@ -82,8 +82,8 @@ class AuthRepositoryNetworkTest {
                 respond(
                     json.encodeToString(
                         ErrorEnvelope(
-                            encodeApiError(serializer<AuthLoginError>(), InvalidCredentials)
-                        )
+                            encodeApiError(serializer<AuthLoginError>(), InvalidCredentials),
+                        ),
                     ),
                     HttpStatusCode.Unauthorized,
                     jsonHeaders,
@@ -106,7 +106,7 @@ class AuthRepositoryNetworkTest {
                     request.url.encodedPath.endsWith("/auth/refresh") ->
                         respond(
                             json.encodeToString(
-                                AccessTokenResponse("minted-access", Clock.System.now() + 1.hours)
+                                AccessTokenResponse("minted-access", Clock.System.now() + 1.hours),
                             ),
                             HttpStatusCode.OK,
                             jsonHeaders,
@@ -121,8 +121,8 @@ class AuthRepositoryNetworkTest {
                         respond(
                             json.encodeToString(
                                 ErrorEnvelope(
-                                    encodeApiError(commonApiErrorSerializer, Unauthorized)
-                                )
+                                    encodeApiError(commonApiErrorSerializer, Unauthorized),
+                                ),
                             ),
                             HttpStatusCode.Unauthorized,
                             jsonHeaders,
@@ -146,8 +146,8 @@ class AuthRepositoryNetworkTest {
                 respond(
                     json.encodeToString(
                         ErrorEnvelope(
-                            encodeApiError(serializer<AuthRefreshError>(), SessionExpired)
-                        )
+                            encodeApiError(serializer<AuthRefreshError>(), SessionExpired),
+                        ),
                     ),
                     HttpStatusCode.Unauthorized,
                     jsonHeaders,
@@ -162,7 +162,7 @@ class AuthRepositoryNetworkTest {
     }
 
     private fun fixture(
-        handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData
+        handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
     ): Pair<AuthRepositoryImpl, InMemorySecureSessionStore> {
         val store = InMemorySecureSessionStore()
         return AuthRepositoryImpl(client(store, handler), store) to store

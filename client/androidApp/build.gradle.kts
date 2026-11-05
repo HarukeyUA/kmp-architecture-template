@@ -18,27 +18,26 @@ plugins {
  * instead of being served stale.
  */
 abstract class LanIpValueSource : ValueSource<String, ValueSourceParameters.None> {
-    override fun obtain(): String? =
-        runCatching {
-                NetworkInterface.getNetworkInterfaces()
-                    .asSequence()
-                    .filter { runCatching { it.isUp && !it.isLoopback }.getOrDefault(false) }
-                    // Physical NICs first: en* (macOS), wlan*/eth* (Linux) — keeps VPN tunnels and
-                    // container bridges from winning when several site-local addresses exist.
-                    .sortedBy { nic ->
-                        when {
-                            nic.name.startsWith("en") -> 0
-                            nic.name.startsWith("wlan") -> 1
-                            nic.name.startsWith("eth") -> 2
-                            else -> 3
-                        }
-                    }
-                    .flatMap { it.inetAddresses.asSequence() }
-                    .filterIsInstance<Inet4Address>()
-                    .firstOrNull { it.isSiteLocalAddress }
-                    ?.hostAddress
+    override fun obtain(): String? = runCatching {
+        NetworkInterface.getNetworkInterfaces()
+            .asSequence()
+            .filter { runCatching { it.isUp && !it.isLoopback }.getOrDefault(false) }
+            // Physical NICs first: en* (macOS), wlan*/eth* (Linux) — keeps VPN tunnels and
+            // container bridges from winning when several site-local addresses exist.
+            .sortedBy { nic ->
+                when {
+                    nic.name.startsWith("en") -> 0
+                    nic.name.startsWith("wlan") -> 1
+                    nic.name.startsWith("eth") -> 2
+                    else -> 3
+                }
             }
-            .getOrNull()
+            .flatMap { it.inetAddresses.asSequence() }
+            .filterIsInstance<Inet4Address>()
+            .firstOrNull { it.isSiteLocalAddress }
+            ?.hostAddress
+    }
+        .getOrNull()
 }
 
 fun gitCommitCount(): Int {
@@ -51,7 +50,7 @@ fun gitCommitCount(): Int {
 }
 
 fun versionNameFromFile(): String {
-    val versionFile = rootProject.layout.projectDirectory.file("version.properties")
+    val versionFile = isolated.rootProject.projectDirectory.file("version.properties")
 
     return providers
         .fileContents(versionFile)
@@ -66,12 +65,12 @@ fun versionNameFromFile(): String {
 
 android {
     namespace = "com.rainy.myapplication"
-    compileSdk { version = release(36) }
+    compileSdk { version = release(libs.versions.android.compileSdk.get().toInt()) }
 
     defaultConfig {
         applicationId = "com.rainy.myapplication"
-        minSdk = 26
-        targetSdk = 36
+        minSdk = libs.versions.android.minSdk.get().toInt()
+        targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = gitCommitCount()
         versionName = versionNameFromFile()
 
@@ -129,8 +128,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.toVersion(libs.versions.jdk.get())
+        targetCompatibility = JavaVersion.toVersion(libs.versions.jdk.get())
     }
     buildFeatures {
         compose = true

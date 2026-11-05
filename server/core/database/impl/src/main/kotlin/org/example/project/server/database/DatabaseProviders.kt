@@ -27,7 +27,7 @@ interface DatabaseProviders {
                 password = config.password
                 maximumPoolSize = config.maxPoolSize
                 driverClassName = "org.postgresql.Driver"
-            }
+            },
         )
 
     /** Releases the app's single connection pool when the server resource scope exits. */

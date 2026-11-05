@@ -53,7 +53,7 @@ class ImplAggregatorConventionPlugin : Plugin<Project> {
             ?: error(
                 "Impl module list not found at `$AGGREGATOR_OUTPUT_REL_PATH`. " +
                     "Apply `convention.impl-aggregator.settings` in settings.gradle.kts " +
-                    "and register the aggregator via `implAggregator { aggregator(...) }`."
+                    "and register the aggregator via `implAggregator { aggregator(...) }`.",
             )
 
     private companion object {

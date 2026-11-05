@@ -59,9 +59,9 @@ abstract class AssertModuleDependenciesTask : DefaultTask() {
                         "Rules: :client and :server meet only through :shared; :public and :impl " +
                             "depend only on :public or :shared; :testing only on its sibling " +
                             ":public; :robots only on its sibling :impl or $CORE_ROBOTS_PATH; " +
-                            ":client:core never on :client:feature."
+                            ":client:core never on :client:feature.",
                     )
-                }
+                },
             )
         }
         stampFile.get().asFile.apply {

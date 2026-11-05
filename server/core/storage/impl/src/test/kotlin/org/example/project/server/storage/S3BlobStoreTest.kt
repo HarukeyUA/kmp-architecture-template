@@ -20,37 +20,34 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.runBlocking
-import org.testcontainers.containers.MinIOContainer
+import org.example.project.server.storage.testing.RustFsContainer
 
 /**
- * A blob round-trips through real object storage end-to-end. A MinIO Testcontainer stands in for S3
- * (both speak the same path-style protocol), and the test drives the **presigned-URL** transfer
+ * A blob round-trips through real object storage end-to-end. A RustFS Testcontainer stands in for
+ * S3 (both speak the same path-style protocol), and the test drives the **presigned-URL** transfer
  * model the [BlobStore] exposes — the bytes go straight to the store over HTTP, never through the
  * app — proving the interface works against a real backend, not a mock.
  */
 class S3BlobStoreTest {
-    private lateinit var minio: MinIOContainer
+    private lateinit var rustFs: RustFsContainer
     private lateinit var client: S3Client
     private lateinit var store: BlobStore
     private lateinit var http: HttpClient
 
     @BeforeTest
     fun setUp(): Unit = runBlocking {
-        // Pinned (not `:latest`) so the storage gate is reproducible — a new MinIO release can't
-        // silently change presign/HEAD behavior and break or falsely pass CI, matching the
-        // `postgres:17-alpine` pinning the rest of the suite uses.
-        minio = MinIOContainer("minio/minio:RELEASE.2025-09-07T16-13-09Z")
-        minio.start()
+        rustFs = RustFsContainer()
+        rustFs.start()
         val config =
             StorageConfig(
-                endpoint = minio.s3URL,
+                endpoint = rustFs.s3Url,
                 region = "us-east-1",
                 bucket = "test-bucket",
-                accessKey = minio.userName,
-                secretKey = minio.password,
+                accessKey = rustFs.accessKey,
+                secretKey = rustFs.secretKey,
             )
         client = buildS3Client(config)
-        // MinIO doesn't auto-provision buckets; create it before the round-trip.
+        // The store doesn't auto-provision buckets; create it before the round-trip.
         client.createBucket { bucket = config.bucket }
         store = S3BlobStore(client, config)
         http = HttpClient(OkHttp)
@@ -60,7 +57,7 @@ class S3BlobStoreTest {
     fun tearDown() {
         client.close()
         http.close()
-        minio.stop()
+        rustFs.stop()
     }
 
     @Test

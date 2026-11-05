@@ -56,7 +56,7 @@ class DefaultLoginComponentTest {
                 lifecycle = lifecycle,
                 authRepository =
                     FakeAuthRepository(
-                        loginResult = CallFailure.Declared(InvalidCredentials).left()
+                        loginResult = CallFailure.Declared(InvalidCredentials).left(),
                     ),
             )
 

@@ -70,7 +70,7 @@ class NotesRepositoryIntegrationTest {
                 NotesQuotaExceeded(
                     quota = NotesService.QUOTA,
                     used = notesToFill * NoteText.MAX_LENGTH,
-                )
+                ),
             )
     }
 }

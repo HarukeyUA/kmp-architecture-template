@@ -75,7 +75,7 @@ class SessionCacheTest {
                     cache.resolve(TOKEN_HASH) {
                         loads += 1
                         null
-                    }
+                    },
                 )
                 .isNull()
         }
@@ -112,7 +112,7 @@ class SessionCacheTest {
                 cache.resolve(TOKEN_HASH) {
                     reloads += 1
                     null
-                }
+                },
             )
             .isNull()
         assertThat(reloads).isEqualTo(0)

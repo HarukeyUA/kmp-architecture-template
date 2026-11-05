@@ -9,25 +9,25 @@ import aws.sdk.kotlin.services.s3.model.S3Exception
 import aws.smithy.kotlin.runtime.net.url.Url
 import kotlinx.coroutines.runBlocking
 import org.example.project.server.storage.StorageConfig
-import org.testcontainers.containers.MinIOContainer
+import org.example.project.server.storage.testing.RustFsContainer
 
 /**
- * Process-wide MinIO Testcontainer for integration tests that exercise the bucket protocol
+ * Process-wide RustFS Testcontainer for integration tests that exercise the bucket protocol
  * end-to-end (a domain that owns blobs — an avatar feature, say — presigning/HEADing/deleting
  * against a real S3-compatible store). Mirrors [TestPostgres]: one container reused across the JVM,
  * lazy-started, shut down by a JVM hook. Each test should call [resetBucket] (or use a fresh bucket
  * name) to start clean.
  *
  * [storageConfig] is the graph factory's [StorageConfig] pointed at this container — a
- * `serverTest(storageConfig = TestMinio.storageConfig())` boots the `:server:app` graph with its
+ * `serverTest(storageConfig = TestRustFs.storageConfig())` boots the `:server:app` graph with its
  * `BlobStore`/S3 client built from it. Suites that never touch the bucket leg keep the default
  * throwaway [testStorageConfig]; the S3 client is lazy, so nothing connects.
  */
-object TestMinio {
+object TestRustFs {
     private const val BUCKET_NAME = "template-integration"
 
-    private val container: MinIOContainer by lazy {
-        val c = MinIOContainer("minio/minio:latest").withReuse(false)
+    private val container: RustFsContainer by lazy {
+        val c = RustFsContainer().withReuse(false)
         c.start()
         Runtime.getRuntime().addShutdownHook(Thread { runCatching { c.stop() } })
         runBlocking { ensureBucketExists(c) }
@@ -38,10 +38,10 @@ object TestMinio {
         val c = container
         return StorageConfig(
             bucket = BUCKET_NAME,
-            endpoint = c.s3URL,
+            endpoint = c.s3Url,
             region = "us-east-1",
-            accessKey = c.userName,
-            secretKey = c.password,
+            accessKey = c.accessKey,
+            secretKey = c.secretKey,
         )
     }
 
@@ -61,14 +61,14 @@ object TestMinio {
         }
     }
 
-    private suspend fun ensureBucketExists(c: MinIOContainer) {
+    private suspend fun ensureBucketExists(c: RustFsContainer) {
         val cfg =
             StorageConfig(
                 bucket = BUCKET_NAME,
-                endpoint = c.s3URL,
+                endpoint = c.s3Url,
                 region = "us-east-1",
-                accessKey = c.userName,
-                secretKey = c.password,
+                accessKey = c.accessKey,
+                secretKey = c.secretKey,
             )
         adminClient(cfg).use { client ->
             try {

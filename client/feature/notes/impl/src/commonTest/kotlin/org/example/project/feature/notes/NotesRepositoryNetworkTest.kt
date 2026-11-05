@@ -53,9 +53,9 @@ class NotesRepositoryNetworkTest {
                                 text = "Milk, eggs",
                                 authorEmail = "alice@example.com",
                                 createdAt = Clock.System.now(),
-                            )
-                        )
-                    )
+                            ),
+                        ),
+                    ),
                 ),
                 HttpStatusCode.OK,
                 jsonHeaders,
@@ -78,8 +78,8 @@ class NotesRepositoryNetworkTest {
                         encodeApiError(
                             serializer<NotesCreateError>(),
                             NotesQuotaExceeded(quota = 20_000, used = 18_000),
-                        )
-                    )
+                        ),
+                    ),
                 ),
                 HttpStatusCode.BadRequest,
                 jsonHeaders,
@@ -93,12 +93,12 @@ class NotesRepositoryNetworkTest {
     }
 
     private fun repo(
-        handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData
+        handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
     ): NotesRepositoryImpl =
         NotesRepositoryImpl(
             HttpClient(MockEngine(handler)) {
                 install(ContentNegotiation) { json(json) }
                 install(Resources)
-            }
+            },
         )
 }

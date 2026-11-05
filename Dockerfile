@@ -9,7 +9,7 @@
 #   docker run --rm -p 8080:8080 --env-file .env kmp-server
 #
 # `installDist` writes a self-contained dir (bin/ launcher + lib/ jars) — no Gradle in the image.
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 
 WORKDIR /app
 COPY server/app/build/install/server/ /app/

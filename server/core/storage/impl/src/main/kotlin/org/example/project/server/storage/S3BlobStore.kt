@@ -61,7 +61,7 @@ class S3BlobStore(private val client: S3Client, private val config: StorageConfi
                     HeadObjectRequest {
                         bucket = config.bucket
                         this.key = key
-                    }
+                    },
                 )
                 .contentLength
         } catch (_: NotFound) {
@@ -75,7 +75,7 @@ class S3BlobStore(private val client: S3Client, private val config: StorageConfi
             DeleteObjectRequest {
                 bucket = config.bucket
                 this.key = key
-            }
+            },
         )
     }
 }

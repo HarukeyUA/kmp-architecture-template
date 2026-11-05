@@ -43,7 +43,7 @@ class CommonApiErrorFreezeTest {
                     "common.rate_limited" to 429,
                     "common.payload_too_large" to 413,
                     "common.internal" to 500,
-                )
+                ),
             )
     }
 

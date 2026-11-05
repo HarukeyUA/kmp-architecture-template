@@ -59,7 +59,7 @@ class DefaultRootScreen(
                                             backHandler = component.backHandler,
                                             onBackClick = component::onBackClick,
                                         )
-                                    }
+                                    },
                                 ) { child, otherChild, _, _ ->
                                     val isSplash =
                                         child.instance is RootComponent.Child.Splash ||

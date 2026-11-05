@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 /**
- * The in-process server harness: a process-wide Testcontainers Postgres/MinIO, the booted
+ * The in-process server harness: a process-wide Testcontainers Postgres/RustFS, the booted
  * `:server:*` Ktor stack ([installTestServer]), the seam [io.ktor.client.HttpClient] the
  * `:server:app` suites speak, and the auth fixtures. Plain kotlin-jvm (not KMP) because every
  * consumer is a JVM test source set wiring real Ktor + Testcontainers + the server graph.
@@ -19,8 +19,8 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(21)
-    compilerOptions { jvmTarget.set(JvmTarget.JVM_21) }
+    jvmToolchain(libs.versions.jdk.get().toInt())
+    compilerOptions { jvmTarget.set(JvmTarget.fromTarget(libs.versions.jdk.get())) }
 }
 
 dependencies {
@@ -33,6 +33,7 @@ dependencies {
     // plain `implementation`), and it is real harness ABI: serverTest's `finally` calls closeAll.
     api(project(":server:app"))
     api(project(":server:core:lifecycle:public"))
+    api(project(":server:core:storage:testing"))
 
     api(libs.ktor.server.test.host)
     api(libs.ktor.client.core)
@@ -43,7 +44,6 @@ dependencies {
     api(libs.kotlinx.coroutines.core)
 
     api(libs.testcontainers.postgresql)
-    api(libs.testcontainers.minio)
     api(libs.aws.sdk.kotlin.s3)
     api(libs.exposed.jdbc)
     api(libs.hikari)

@@ -46,7 +46,7 @@ private fun HomeListScreenContent(state: HomeListComponent.State) {
         modifier =
             Modifier.fillMaxSize()
                 .background(color = MaterialTheme.colorScheme.background)
-                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
+                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical)),
     ) {
         Text(
             text = "Home",
@@ -63,7 +63,7 @@ private fun HomeListScreenContent(state: HomeListComponent.State) {
                     modifier =
                         Modifier.fillMaxWidth().padding(horizontal = 16.dp).clickable {
                             state.eventSink(HomeListComponent.Event.ItemClick(item.id))
-                        }
+                        },
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),

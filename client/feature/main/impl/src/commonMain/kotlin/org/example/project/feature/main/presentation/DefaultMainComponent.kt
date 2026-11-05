@@ -66,7 +66,7 @@ class DefaultMainComponent(
                     MainComponent.Event.NotesTabClick ->
                         navigation.bringToFront(MainComponent.Tab.Notes)
                 }
-            }
+            },
         )
 
     private fun createChild(

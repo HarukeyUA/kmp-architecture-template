@@ -82,7 +82,7 @@ class ApiErrorWireTest {
         // Simulates a newer server sending an error code this client was not built against.
         val fromFutureServer =
             seamJson.decodeFromString<ErrorEnvelope>(
-                """{"error":{"type":"future.teapot","brewing":true}}"""
+                """{"error":{"type":"future.teapot","brewing":true}}""",
             )
 
         val decoded =

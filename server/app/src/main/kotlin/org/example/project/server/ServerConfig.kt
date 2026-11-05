@@ -102,7 +102,7 @@ data class ServerConfig(
                                 if (production && it.length < MIN_JWT_SECRET_LENGTH) {
                                     error(
                                         "'JWT_SECRET' must be at least $MIN_JWT_SECRET_LENGTH " +
-                                            "characters (256 bits) for HS256"
+                                            "characters (256 bits) for HS256",
                                     )
                                 }
                             },

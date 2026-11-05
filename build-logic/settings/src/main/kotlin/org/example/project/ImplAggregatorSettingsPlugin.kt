@@ -54,13 +54,14 @@ class ImplAggregatorSettingsPlugin : Plugin<Settings> {
                 target.rootProject.leafDescendants().filter { it.name == "impl" }.map { it.path }
 
             aggregatorPaths.forEach { aggregatorPath ->
-                val aggregator =
-                    runCatching { target.project(aggregatorPath) }
-                        .getOrElse {
-                            error(
-                                "Aggregator project `$aggregatorPath` is not included in settings.gradle.kts."
-                            )
-                        }
+                val aggregator = runCatching {
+                    target.project(aggregatorPath)
+                }
+                    .getOrElse {
+                        error(
+                            "Aggregator project `$aggregatorPath` is not included in settings.gradle.kts.",
+                        )
+                    }
                 val umbrellaPrefix = umbrellaPrefixOf(aggregatorPath)
                 val paths = allImplPaths.filter { it.startsWith(umbrellaPrefix) }
                 val outputFile = aggregator.projectDir.resolve(AGGREGATOR_OUTPUT_REL_PATH)

@@ -1,4 +1,5 @@
 import org.example.project.androidLibrary
+import org.example.project.jdkJvmTarget
 import org.example.project.library
 import org.example.project.libs
 import org.example.project.namespace
@@ -8,7 +9,6 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.invoke
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 /**
@@ -32,14 +32,14 @@ class KmpFeatureRobotsConventionPlugin : Plugin<Project> {
             }
 
             extensions.configure<KotlinMultiplatformExtension> {
-                jvm { compilerOptions { jvmTarget.set(JvmTarget.JVM_21) } }
+                jvm { compilerOptions { jvmTarget.set(jdkJvmTarget()) } }
 
                 androidLibrary {
                     compileSdk = libs.version("android-compileSdk").toInt()
                     minSdk = libs.version("android-minSdk").toInt()
                     namespace = namespace()
 
-                    compilerOptions { jvmTarget.set(JvmTarget.JVM_21) }
+                    compilerOptions { jvmTarget.set(jdkJvmTarget()) }
                 }
 
                 sourceSets {

@@ -65,7 +65,7 @@ abstract class ScreenshotTest {
                     .onRoot()
                     .captureRoboImage(
                         filePath =
-                            "src/androidHostTest/screenshots/${name}_${description}_${darkModeDesc}.png"
+                            "src/androidHostTest/screenshots/${name}_${description}_${darkModeDesc}.png",
                     )
             }
         }

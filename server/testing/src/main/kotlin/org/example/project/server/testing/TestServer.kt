@@ -27,7 +27,7 @@ import org.example.project.server.web.WebLimitsConfig
  *
  * [storageConfig] defaults to a throwaway config: the S3 client is provided lazily, so tests that
  * don't touch the bucket leg never construct it; a blob-exercising test passes
- * [TestMinio.storageConfig]. [webLimitsConfig] / [jwtConfig] default to roomy production-shaped
+ * [TestRustFs.storageConfig]. [webLimitsConfig] / [jwtConfig] default to roomy production-shaped
  * values — a test probing the limits themselves passes tight ones (see
  * `WebHardeningIntegrationTest`).
  *

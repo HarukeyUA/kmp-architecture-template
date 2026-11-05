@@ -64,7 +64,7 @@ class DefaultAppComponentContext(
     )
 
     constructor(
-        componentContext: ComponentContext
+        componentContext: ComponentContext,
     ) : this(
         lifecycle = componentContext.lifecycle,
         stateKeeper = componentContext.stateKeeper,

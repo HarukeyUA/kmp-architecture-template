@@ -45,7 +45,7 @@ class RobotsAggregatorConventionPlugin : Plugin<Project> {
             ?: error(
                 "Robots module list not found at `$AGGREGATOR_OUTPUT_REL_PATH`. " +
                     "Apply `convention.robots-aggregator.settings` in settings.gradle.kts " +
-                    "and register the aggregator via `robotsAggregator { aggregator(...) }`."
+                    "and register the aggregator via `robotsAggregator { aggregator(...) }`.",
             )
 
     private companion object {

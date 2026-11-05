@@ -19,8 +19,8 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(21)
-    compilerOptions { jvmTarget.set(JvmTarget.JVM_21) }
+    jvmToolchain(libs.versions.jdk.get().toInt())
+    compilerOptions { jvmTarget.set(JvmTarget.fromTarget(libs.versions.jdk.get())) }
 }
 
 dependencies {

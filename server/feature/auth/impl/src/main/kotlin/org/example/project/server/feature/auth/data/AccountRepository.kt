@@ -50,18 +50,20 @@ class DefaultAccountRepository : AccountRepository {
 
     override suspend fun create(email: String, passwordHash: String): Either<EmailTaken, Account> =
         either {
-            catch({
-                dbTransaction {
-                    val id = UUID.randomUUID()
-                    Accounts.insert {
-                        it[Accounts.id] = id
-                        it[Accounts.email] = email
-                        it[Accounts.passwordHash] = passwordHash
-                        it[createdAt] = Clock.System.now()
+            catch(
+                {
+                    dbTransaction {
+                        val id = UUID.randomUUID()
+                        Accounts.insert {
+                            it[Accounts.id] = id
+                            it[Accounts.email] = email
+                            it[Accounts.passwordHash] = passwordHash
+                            it[createdAt] = Clock.System.now()
+                        }
+                        Account(id = AccountId(id), email = email)
                     }
-                    Account(id = AccountId(id), email = email)
-                }
-            }) { e: ExposedSQLException ->
+                },
+            ) { e: ExposedSQLException ->
                 ensure(e.sqlState != UNIQUE_VIOLATION) { EmailTaken }
                 throw e
             }

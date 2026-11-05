@@ -91,7 +91,7 @@ class DefaultRootComponent(
                         componentContext = componentContext,
                         onNavigateToMain = ::navigateToMain,
                         onNavigateToLogin = ::navigateToLogin,
-                    )
+                    ),
                 )
 
             Config.Login ->
@@ -99,7 +99,7 @@ class DefaultRootComponent(
                     loginComponentFactory.create(
                         componentContext = componentContext,
                         onAuthenticated = ::navigateToMain,
-                    )
+                    ),
                 )
 
             is Config.Main ->
@@ -107,7 +107,7 @@ class DefaultRootComponent(
                     mainComponentFactory.create(
                         componentContext = componentContext,
                         onLogout = ::navigateToLogin,
-                    )
+                    ),
                 )
         }
 

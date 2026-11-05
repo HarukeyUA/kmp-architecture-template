@@ -159,7 +159,18 @@ class SavedStateSerializerTest {
         val input =
             mapOf(
                 "key" to
-                    listOf(42, "text", true, 3.14f, 100L, 2.71, 'Z', 7.toByte(), 99.toShort(), null)
+                    listOf(
+                        42,
+                        "text",
+                        true,
+                        3.14f,
+                        100L,
+                        2.71,
+                        'Z',
+                        7.toByte(),
+                        99.toShort(),
+                        null,
+                    ),
             )
         val result = roundtrip(input)
         assertThat(result).isEqualTo(input)

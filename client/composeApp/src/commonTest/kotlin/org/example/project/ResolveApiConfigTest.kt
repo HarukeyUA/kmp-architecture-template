@@ -45,7 +45,7 @@ class ResolveApiConfigTest {
                         injectedDevHost = null,
                         fallbackDevBaseUrl = "http://10.0.2.2:8080",
                     )
-                    .devBaseUrl
+                    .devBaseUrl,
             )
             .isEqualTo("http://10.0.2.2:8080")
         assertThat(
@@ -53,7 +53,7 @@ class ResolveApiConfigTest {
                         injectedDevHost = "   ",
                         fallbackDevBaseUrl = "http://localhost:8080",
                     )
-                    .devBaseUrl
+                    .devBaseUrl,
             )
             .isEqualTo("http://localhost:8080")
     }
@@ -65,7 +65,7 @@ class ResolveApiConfigTest {
                         injectedDevHost = "not a host",
                         fallbackDevBaseUrl = "http://10.0.2.2:8080",
                     )
-                    .devBaseUrl
+                    .devBaseUrl,
             )
             .isEqualTo("http://10.0.2.2:8080")
     }

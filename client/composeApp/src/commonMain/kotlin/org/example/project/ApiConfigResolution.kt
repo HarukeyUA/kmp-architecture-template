@@ -38,5 +38,6 @@ internal fun devApiConfigDefaults(
  */
 internal fun resolveApiConfig(environment: Environment, defaults: ApiConfigDefaults): ApiConfig =
     ApiConfig(
-        baseUrl = if (environment == Environment.PROD) defaults.prodBaseUrl else defaults.devBaseUrl
+        baseUrl =
+            if (environment == Environment.PROD) defaults.prodBaseUrl else defaults.devBaseUrl,
     )

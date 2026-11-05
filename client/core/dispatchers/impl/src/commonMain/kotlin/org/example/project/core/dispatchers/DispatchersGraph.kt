@@ -26,6 +26,6 @@ interface DispatchersGraph {
     @SingleIn(AppScope::class)
     @ApplicationCoroutineScope
     fun provideApplicationCoroutineScope(
-        @DefaultDispatcher dispatcher: CoroutineDispatcher
+        @DefaultDispatcher dispatcher: CoroutineDispatcher,
     ): CoroutineScope = CoroutineScope(SupervisorJob() + dispatcher)
 }

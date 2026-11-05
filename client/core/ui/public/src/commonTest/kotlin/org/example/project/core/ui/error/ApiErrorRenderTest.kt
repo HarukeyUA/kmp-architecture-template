@@ -30,7 +30,7 @@ class ApiErrorRenderTest {
     fun `an unknown variant falls through to the generic fallback`() {
         assertThat(
                 UnknownApiError(code = "future.teapot", status = HttpStatusCode.fromValue(418))
-                    .toResourceResult()
+                    .toResourceResult(),
             )
             .isNull()
     }

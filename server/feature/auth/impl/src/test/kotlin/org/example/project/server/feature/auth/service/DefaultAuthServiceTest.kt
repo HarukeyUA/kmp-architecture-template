@@ -35,7 +35,7 @@ class DefaultAuthServiceTest {
     private val accountId = AccountId(UUID.randomUUID())
     private val repo =
         FakeAccountRepository(
-            mapOf("known@example.com" to Credential(accountId, "hash:correct horse"))
+            mapOf("known@example.com" to Credential(accountId, "hash:correct horse")),
         )
     private val hasher = RecordingHasher()
     private val sessionStore = FakeSessionStore()

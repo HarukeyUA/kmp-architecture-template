@@ -6,7 +6,7 @@ import javax.sql.DataSource
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.database.FlywayMigrator
 import org.jetbrains.exposed.v1.jdbc.Database
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 
 /**
  * Process-wide Testcontainers Postgres for integration tests. The container starts on first access
@@ -20,7 +20,7 @@ import org.testcontainers.containers.PostgreSQLContainer
  * [installTestServer]).
  */
 object TestPostgres {
-    private val container: PostgreSQLContainer<*> by lazy {
+    private val container: PostgreSQLContainer by lazy {
         val c = PostgreSQLContainer("postgres:17-alpine").withReuse(false)
         c.start()
         Runtime.getRuntime().addShutdownHook(Thread { runCatching { c.stop() } })
@@ -42,7 +42,7 @@ object TestPostgres {
                     driverClassName = "org.postgresql.Driver"
                     maximumPoolSize = 5
                     connectionTimeout = 5_000
-                }
+                },
             )
         FlywayMigrator(ds).migrate()
         dataSourceRef = ds
@@ -80,7 +80,7 @@ object TestPostgres {
                 .prepareStatement(
                     "SELECT table_name FROM information_schema.tables " +
                         "WHERE table_schema = 'public' AND table_type = 'BASE TABLE' " +
-                        "AND table_name <> 'flyway_schema_history'"
+                        "AND table_name <> 'flyway_schema_history'",
                 )
                 .use { stmt ->
                     stmt.executeQuery().use { rs ->

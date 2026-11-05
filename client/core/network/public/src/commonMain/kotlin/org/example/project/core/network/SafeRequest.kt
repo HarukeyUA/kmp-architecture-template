@@ -40,7 +40,7 @@ suspend inline fun <T> executeSafe(
 
 /** Executes a request and deserializes the response body to [T]. */
 suspend inline fun <reified T> safeRequest(
-    crossinline block: suspend () -> HttpResponse
+    crossinline block: suspend () -> HttpResponse,
 ): Either<NetworkError, T> = executeSafe(block) { it.body<T>() }
 
 /**
@@ -66,15 +66,17 @@ suspend inline fun <
     body: Req,
 ): Either<CallFailure<Err>, Res> = either {
     val response =
-        catch({
-            request(resource) {
-                method = endpoint.method
-                if (endpoint.request != null) {
-                    contentType(ContentType.Application.Json)
-                    setBody(body)
+        catch(
+            {
+                request(resource) {
+                    method = endpoint.method
+                    if (endpoint.request != null) {
+                        contentType(ContentType.Application.Json)
+                        setBody(body)
+                    }
                 }
-            }
-        }) { e ->
+            },
+        ) { e ->
             raise(CallFailure.Transport(NetworkError.Connection(e)))
         }
 
@@ -100,7 +102,7 @@ suspend inline fun <reified R : Any, reified Res : Any, Err : ApiError> HttpClie
  * rather than throwing.
  */
 suspend fun <Err : ApiError> Endpoint<*, *, *, Err>.toCallFailure(
-    response: HttpResponse
+    response: HttpResponse,
 ): CallFailure<Err> {
     if (response.status.value !in CLIENT_ERROR_RANGE) {
         return CallFailure.Transport(NetworkError.Http(response.status.value))

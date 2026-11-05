@@ -20,12 +20,12 @@ import org.junit.runner.Description
 class FailureScreenshotRule(private val nodes: SemanticsNodeInteractionsProvider) : TestWatcher() {
     override fun failed(e: Throwable, description: Description) {
         runCatching {
-                val screenshot = nodes.onRoot().captureToImage().asAndroidBitmap()
-                val name = "${description.className}.${description.methodName}.png"
-                TestStorage().openOutputFile(name).use { stream ->
-                    screenshot.compress(Bitmap.CompressFormat.PNG, 100, stream)
-                }
+            val screenshot = nodes.onRoot().captureToImage().asAndroidBitmap()
+            val name = "${description.className}.${description.methodName}.png"
+            TestStorage().openOutputFile(name).use { stream ->
+                screenshot.compress(Bitmap.CompressFormat.PNG, 100, stream)
             }
+        }
             .onFailure { Log.e(TAG, "Failed to capture failure screenshot", it) }
     }
 

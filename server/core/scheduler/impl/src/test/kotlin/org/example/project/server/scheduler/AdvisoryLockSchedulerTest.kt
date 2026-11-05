@@ -19,7 +19,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 
 /**
  * A scheduled job runs **exactly once across two instances**. Two [AdvisoryLockScheduler]s point at
@@ -117,7 +117,7 @@ class AdvisoryLockSchedulerTest {
             }
         }
 
-    private fun hikariFor(postgres: PostgreSQLContainer<*>): HikariDataSource =
+    private fun hikariFor(postgres: PostgreSQLContainer): HikariDataSource =
         HikariDataSource(
             HikariConfig().apply {
                 jdbcUrl = postgres.jdbcUrl
@@ -125,7 +125,7 @@ class AdvisoryLockSchedulerTest {
                 password = postgres.password
                 maximumPoolSize = 2
                 driverClassName = "org.postgresql.Driver"
-            }
+            },
         )
 
     /**

@@ -38,7 +38,7 @@ class DefaultHomeDetailScreen : HomeDetailScreen {
 @Composable
 private fun HomeDetailScreenContent(state: HomeDetailComponent.State) {
     Column(
-        modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.background)
+        modifier = Modifier.fillMaxSize().background(color = MaterialTheme.colorScheme.background),
     ) {
         TopAppBar(
             title = { Text(text = state.title) },

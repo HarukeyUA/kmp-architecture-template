@@ -8,7 +8,7 @@ class LoginScreenScreenshotTest : ScreenshotTest() {
     fun loginScreenDefaultState() {
         capture {
             LoginScreenContent(
-                state = LoginComponent.State(email = "alice@example.com", eventSink = {})
+                state = LoginComponent.State(email = "alice@example.com", eventSink = {}),
             )
         }
     }

@@ -31,7 +31,7 @@ class JwtAuthPluginInstaller(private val config: JwtConfig) : PluginInstaller {
                     JWT.require(Algorithm.HMAC256(config.secret))
                         .withIssuer(config.issuer)
                         .withAudience(config.audience)
-                        .build()
+                        .build(),
                 )
                 validate { credential ->
                     // A non-UUID subject can only be a token we didn't mint (or a signing-key

@@ -71,7 +71,7 @@ class DefaultAuthService(
     }
 
     override suspend fun refresh(
-        refreshToken: String
+        refreshToken: String,
     ): Either<Failure<AuthRefreshError>, AccessToken> = either {
         // The only place a request touches the session store (cache → DB): a revoked or expired
         // session stops minting here, which bounds access-token staleness by its TTL. refresh

@@ -1,45 +1,47 @@
 [versions]
-agp = "9.2.1"
-coreKtx = "1.18.0"
-datastore = "1.3.0-alpha09"
-lifecycleRuntimeKtx = "2.10.0"
+agp = "9.5.0"
+coreKtx = "1.19.1"
+datastore = "1.3.0"
+lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
-kotlin = "2.4.0"
+kotlin = "2.4.21"
+# JDK release every Gradle surface targets: toolchains, Kotlin jvmTarget, Android compileOptions.
+jdk = "25"
 
-android-compileSdk = "36"
+android-compileSdk = "37"
 android-minSdk = "26"
-android-targetSdk = "36"
-androidx-lifecycle = "2.10.0"
-composeHotReload = "1.1.1"
-composeMultiplatform = "1.11.1"
-material3 = "1.11.0-alpha07"
+android-targetSdk = "37"
+androidx-lifecycle = "2.11.0"
+composeHotReload = "1.2.0"
+composeMultiplatform = "1.12.2"
+material3 = "1.12.0-alpha03"
 kotlinx-coroutines = "1.11.0"
 
 decompose = "3.5.0"
-detekt = "2.0.0-alpha.5"
-essenty = "2.5.0"
+detekt = "2.0.0-alpha.6"
+essenty = "2.7.1"
 
-kotlinx-serialization-json = "1.11.0"
-kotlinx-datetime = "0.7.1"
+kotlinx-serialization-json = "1.12.0"
+kotlinx-datetime = "0.8.0"
 ksafe = "2.1.0"
 
-metro = "1.3.1"
+metro = "1.5.2"
 
 molecule = "2.2.0"
 
-arrow = "2.2.3"
+arrow = "2.3.0.1"
 
-ktor = "3.5.1"
+ktor = "3.6.1"
 
 androidx-splash-splash-screen = "1.2.0"
 
-roborazzi = "1.68.0"
-robolectric = "4.16.1"
+roborazzi = "1.77.0"
+robolectric = "4.17"
 junit = "4.13.2"
 
 assertk = "0.28.1"
 turbine = "1.2.1"
-kermit = "2.1.0"
+kermit = "2.2.0"
 
 # Instrumented E2E suite (client/androidApp androidTest)
 androidx-test-runner = "1.7.0"
@@ -48,20 +50,20 @@ androidx-test-espresso = "3.7.0"
 androidx-test-orchestrator = "1.6.1"
 androidx-test-services = "1.6.0"
 
-spotless = "8.8.0"
-ktfmt = "0.63"
+spotless = "8.11.0"
+ktfmt = "0.65"
 
 # Server
-exposed = "1.3.0"
-hikari = "7.0.2"
-postgresql = "42.7.11"
-flyway = "12.7.0"
-micrometer = "1.16.5"
-logback = "1.5.33"
-caffeine = "3.2.4"
+exposed = "1.6.1"
+hikari = "7.1.0"
+postgresql = "42.7.14"
+flyway = "13.12.1"
+micrometer = "1.17.2"
+logback = "1.6.6"
+caffeine = "3.3.1"
 argon2 = "2.12"
-testcontainers = "1.21.4"
-awsSdkKotlin = "1.6.84"
+testcontainers = "2.0.5"
+awsSdkKotlin = "1.9.30"
 
 [libraries]
 # Gradle plugins for build-logic
@@ -176,10 +178,10 @@ micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-p
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
 # Server testing
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
-testcontainers-minio = { module = "org.testcontainers:minio", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 
-ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
+ktfmt = { module = "org.jetbrains.kotlinx:ktfmt", version.ref = "ktfmt" }
 
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }

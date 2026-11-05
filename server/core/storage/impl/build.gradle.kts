@@ -5,7 +5,7 @@ dependencies {
 
     implementation(libs.aws.sdk.kotlin.s3)
 
-    // The round-trip test uploads/downloads through real presigned URLs against a MinIO container.
-    testImplementation(libs.testcontainers.minio)
+    // The round-trip test uploads/downloads through real presigned URLs against a RustFS container.
+    testImplementation(project(":server:core:storage:testing"))
     testImplementation(libs.ktor.client.okhttp)
 }

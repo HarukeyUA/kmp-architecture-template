@@ -73,10 +73,12 @@ fun AuthConfig.sessionBearer(sessionStore: SecureSessionStore) {
  * not a session expiry and leaves the Session untouched.
  */
 private suspend fun HttpResponse.isSessionExpired(): Boolean =
-    catch({
-        AuthApi.refresh.error?.let { lens ->
-            decodeDeclaredApiError(lens, body<ErrorEnvelope>().error)
-        } is SessionExpired
-    }) {
+    catch(
+        {
+            AuthApi.refresh.error?.let { lens ->
+                decodeDeclaredApiError(lens, body<ErrorEnvelope>().error)
+            } is SessionExpired
+        },
+    ) {
         false
     }

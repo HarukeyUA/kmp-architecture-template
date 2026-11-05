@@ -52,9 +52,9 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
                         violations.forEach { appendLine("  - $it") }
                         append(
                             "Rules: leaf modules outside :shared and :integration use an allowed " +
-                                "name, and every :impl has a sibling :public."
+                                "name, and every :impl has a sibling :public.",
                         )
-                    }
+                    },
                 )
             }
         }

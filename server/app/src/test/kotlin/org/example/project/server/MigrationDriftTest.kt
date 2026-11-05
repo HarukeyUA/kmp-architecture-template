@@ -12,7 +12,7 @@ import org.example.project.server.testing.testJwtConfig
 import org.example.project.server.testing.testStorageConfig
 import org.example.project.server.testing.testWebLimitsConfig
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.postgresql.PostgreSQLContainer
 
 /**
  * The migration drift safety net: apply every Flyway migration to a throwaway Postgres, then assert

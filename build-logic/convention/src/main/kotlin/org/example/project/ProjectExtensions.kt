@@ -15,10 +15,16 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 val Project.libs: VersionCatalog
     get() = extensions.getByType<VersionCatalogsExtension>().named("libs")
 
+/** Repo-wide JDK release, from the `jdk` catalog entry, the one place the version is defined. */
+fun Project.jdkVersion(): Int = libs.version("jdk").toInt()
+
+/** [jdkVersion] as the Kotlin compiler's bytecode target. */
+fun Project.jdkJvmTarget(): JvmTarget = JvmTarget.fromTarget(libs.version("jdk"))
+
 /**
- * Shared base for plain-JVM server modules (`:server:*`). Pins the toolchain to JVM 21 — the deploy
- * target — and enables the same opt-ins as the client so Metro annotations and context parameters
- * behave identically across the monorepo.
+ * Shared base for plain-JVM server modules (`:server:*`). Pins the toolchain to the repo-wide JDK,
+ * which is also the deploy target, and enables the same opt-ins as the client so Metro annotations
+ * and context parameters behave identically across the monorepo.
  */
 fun Project.configureServerKotlinJvm() {
     // Leaf modules share a directory name (`impl`/`public`), so by default every server jar would
@@ -29,9 +35,9 @@ fun Project.configureServerKotlinJvm() {
     }
 
     extensions.configure<KotlinJvmProjectExtension> {
-        jvmToolchain(21)
+        jvmToolchain(jdkVersion())
         compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_21)
+            jvmTarget.set(jdkJvmTarget())
             freeCompilerArgs.addAll(
                 "-Xannotation-default-target=param-property",
                 "-Xcontext-parameters",
@@ -48,7 +54,7 @@ fun VersionCatalog.library(alias: String): String = findLibrary(alias).get().get
 fun VersionCatalog.plugin(alias: String): String = findPlugin(alias).get().get().pluginId
 
 fun KotlinMultiplatformExtension.androidLibrary(
-    action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit
+    action: KotlinMultiplatformAndroidLibraryTarget.() -> Unit,
 ) {
     extensions.getByType<KotlinMultiplatformAndroidLibraryTarget>().action()
 }
