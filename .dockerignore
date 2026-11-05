@@ -1,0 +1,29 @@
+# Context for `docker build .`. The image only builds `:server:app:installDist`, but
+# settings.gradle.kts includes every client module and Gradle refuses a project whose directory is
+# missing, so client build scripts stay while their sources, resources and screenshots go. Anything
+# else the Gradle build never reads is dropped too.
+.git
+.github
+.gradle
+.kotlin
+.idea
+.env
+local.properties
+**/*.jks
+**/*.keystore
+**/keystore.properties
+.DS_Store
+*.iml
+**/build/
+**/.gradle/
+**/.kotlin/
+scripts
+iosApp
+client/**/src
+client/**/screenshots
+client/**/composeResources
+docker-compose.yml
+renovate.json
+Dockerfile
+.dockerignore
+*.md

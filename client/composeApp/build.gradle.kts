@@ -1,0 +1,64 @@
+plugins {
+    alias(libs.plugins.convention.kmp.library)
+    alias(libs.plugins.convention.impl.aggregator)
+    alias(libs.plugins.convention.serialization)
+    alias(libs.plugins.convention.compose)
+    alias(libs.plugins.convention.compose.resources)
+    alias(libs.plugins.convention.molecule)
+    alias(libs.plugins.convention.coroutines)
+    alias(libs.plugins.serialization)
+    alias(libs.plugins.metro)
+}
+
+kotlin {
+    listOf(iosArm64(), iosSimulatorArm64()).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "ComposeApp"
+            isStatic = true
+            export(libs.decompose)
+            export(libs.essenty.lifecycle)
+            export(libs.essenty.backhandler)
+            export(libs.essenty.statekeeper)
+            export(project(":client:core:component:public"))
+        }
+    }
+
+    sourceSets {
+        commonMain.dependencies {
+            api(project(":client:core:ui:public"))
+            // `resolveApiConfig` — Environment + platform ApiConfigDefaults → the graph's
+            // ApiConfig. `api` because the platform graph factories expose both types to the
+            // entry-point modules (androidApp / desktopApp / the iOS framework).
+            api(project(":client:core:buildinfo:public"))
+            api(project(":client:core:network:public"))
+            // RootComponent.State carries the persisted theme, and desktop's title bar reads it.
+            api(project(":client:core:local-storage:public"))
+
+            implementation(libs.kermit)
+
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.material3)
+            implementation(libs.compose.ui)
+            implementation(libs.compose.resources)
+            implementation(libs.compose.ui.tooling.preview)
+            implementation(libs.androidx.lifecycle.viewmodelCompose)
+            implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.kotlinx.serialization.json)
+
+            api(libs.decompose)
+            implementation(libs.decompose.compose)
+            implementation(libs.decompose.compose.experimental)
+            api(libs.essenty.lifecycle)
+            api(libs.essenty.backhandler)
+            api(libs.essenty.statekeeper)
+            implementation(libs.essenty.lifecycle.coroutines)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.assertk)
+        }
+    }
+}
+
+dependencies { "androidRuntimeClasspath"(libs.compose.ui.tooling) }

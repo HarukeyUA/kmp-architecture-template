@@ -21,6 +21,16 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
             val allowedList = ALLOWED_LEAF_NAMES.sorted().joinToString(", ")
 
             target.rootProject.leafDescendants().forEach { leaf ->
+                // `:shared:*` modules are flat, all-public contracts named after their domain
+                // (`:shared:common`, `:shared:auth`), so the leaf-name and sibling-public rules
+                // below — which police the public/impl split — do not apply to them.
+                // `:integration:*`
+                // modules are likewise flat, named after the worlds they join
+                // (`:integration:client-server`).
+                if (leaf.path.startsWith(":shared:") || leaf.path.startsWith(":integration:")) {
+                    return@forEach
+                }
+
                 if (leaf.name !in ALLOWED_LEAF_NAMES) {
                     violations +=
                         "Leaf module '${leaf.path}' has unrecognized name '${leaf.name}'. " +
@@ -40,8 +50,11 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
                     buildString {
                         appendLine("Module structure violations:")
                         violations.forEach { appendLine("  - $it") }
-                        append("See ARCHITECTURE.md § Module Structure.")
-                    }
+                        append(
+                            "Rules: leaf modules outside :shared and :integration use an allowed " +
+                                "name, and every :impl has a sibling :public.",
+                        )
+                    },
                 )
             }
         }
@@ -49,6 +62,16 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
 
     private companion object {
         val ALLOWED_LEAF_NAMES =
-            setOf("public", "impl", "testing", "composeApp", "androidApp", "desktopApp")
+            setOf(
+                "public",
+                "impl",
+                "testing",
+                "robots",
+                "e2e",
+                "composeApp",
+                "androidApp",
+                "desktopApp",
+                "app",
+            )
     }
 }

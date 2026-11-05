@@ -3,7 +3,9 @@ import org.example.project.library
 import org.example.project.libs
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 class ScreenshotTestingConventionPlugin : Plugin<Project> {
@@ -27,7 +29,14 @@ class ScreenshotTestingConventionPlugin : Plugin<Project> {
                     implementation(libs.library("robolectric"))
                     implementation(libs.library("junit"))
                     implementation(libs.library("compose-ui-test-junit4"))
-                    implementation(project(":core:screenshot-testing:public"))
+                    implementation(project(":client:core:screenshot-testing:public"))
+                }
+            }
+
+            tasks.withType<Test>().configureEach {
+                if (name == "testAndroidHostTest") {
+                    filter.includeTestsMatching("*ScreenshotTest")
+                    filter.isFailOnNoMatchingTests = false
                 }
             }
         }

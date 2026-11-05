@@ -13,7 +13,7 @@ class KmpComposeFeaturePublicConventionPlugin : Plugin<Project> {
             }
 
             extensions.configure<KotlinMultiplatformExtension> {
-                sourceSets.commonMain.dependencies { api(project(":core:component:public")) }
+                sourceSets.commonMain.dependencies { api(project(":client:core:component:public")) }
             }
         }
     }

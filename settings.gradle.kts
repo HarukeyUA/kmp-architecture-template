@@ -1,4 +1,5 @@
 import org.example.project.implAggregator
+import org.example.project.robotsAggregator
 
 pluginManagement {
     includeBuild("build-logic")
@@ -31,72 +32,156 @@ dependencyResolutionManagement {
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
     id("convention.impl-aggregator.settings")
+    id("convention.robots-aggregator.settings")
     id("convention.module-structure-assert.settings")
 }
 
-rootProject.name = "MyApplication"
+rootProject.name = "Template"
 
-implAggregator { aggregatorProjectPath.set(":composeApp") }
+implAggregator {
+    aggregator(":client:composeApp")
+    aggregator(":server:app")
+}
 
+// Wires every :client:*:robots module into the E2E driver module.
+robotsAggregator { aggregator(":client:e2e") }
+
+// ===================== :client umbrella (Compose Multiplatform app) =====================
 // App modules
-include(":androidApp")
+include(":client:androidApp")
 
-include(":desktopApp")
+include(":client:desktopApp")
 
-include(":composeApp")
+include(":client:composeApp")
+
+include(":client:e2e")
 
 // Core modules
-include(":core:component:public")
+include(":client:core:component:public")
 
-include(":core:navigation:public")
+include(":client:core:navigation:public")
 
-include(":core:error:public")
+include(":client:core:buildinfo:public")
 
-include(":core:network:public")
+include(":client:core:datetime:public")
 
-include(":core:network:impl")
+include(":client:core:robots")
 
-include(":core:ui:public")
+include(":client:core:error:public")
 
-include(":core:dispatchers:public")
+include(":client:core:network:public")
 
-include(":core:dispatchers:impl")
+include(":client:core:network:impl")
 
-include(":core:local-storage:public")
+include(":client:core:ui:public")
 
-include(":core:local-storage:impl")
+include(":client:core:dispatchers:public")
+
+include(":client:core:dispatchers:impl")
+
+include(":client:core:local-storage:public")
+
+include(":client:core:local-storage:impl")
+
+include(":client:core:database:public")
+
+include(":client:core:database:impl")
+
+include(":client:core:database:testing")
 
 // Feature modules
-include(":feature:auth:public")
+include(":client:feature:auth:public")
 
-include(":feature:auth:impl")
+include(":client:feature:auth:impl")
 
-include(":feature:main:public")
+include(":client:feature:auth:robots")
 
-include(":feature:main:impl")
+include(":client:feature:main:public")
 
-include(":feature:home:public")
+include(":client:feature:main:impl")
 
-include(":feature:home:impl")
+include(":client:feature:main:robots")
 
-include(":feature:search:public")
+include(":client:feature:settings:public")
 
-include(":feature:search:impl")
+include(":client:feature:settings:impl")
 
-include(":feature:splash:public")
+include(":client:feature:settings:robots")
 
-include(":feature:splash:impl")
+include(":client:feature:splash:public")
 
-include(":feature:profile:public")
+include(":client:feature:splash:impl")
 
-include(":feature:profile:impl")
+include(":client:feature:session:public")
 
-include(":feature:user-data:public")
+include(":client:feature:session:impl")
 
-include(":feature:user-data:impl")
+include(":client:feature:session:testing")
 
-include(":feature:user-data:testing")
+include(":client:feature:tasks:public")
 
-include(":core:testing:public")
+include(":client:feature:tasks:impl")
 
-include(":core:screenshot-testing:public")
+include(":client:feature:tasks:testing")
+
+include(":client:feature:tasks:robots")
+
+include(":client:core:testing:public")
+
+include(":client:core:screenshot-testing:public")
+
+// ===================== :shared umbrella (the Seam — contracts) =====================
+include(":shared:common")
+
+include(":shared:auth")
+
+include(":shared:tasks")
+
+// ===================== :integration umbrella (client↔server tests) =====================
+// May depend on everything; nothing depends on it — both worlds meet only here.
+include(":integration:client-server")
+
+// ===================== :server umbrella (Ktor server) =====================
+include(":server:app")
+
+include(":server:testing")
+
+// Server core modules
+include(":server:core:database:public")
+
+include(":server:core:database:impl")
+
+include(":server:core:lifecycle:public")
+
+include(":server:core:web:public")
+
+include(":server:core:web:impl")
+
+include(":server:core:observability:public")
+
+include(":server:core:observability:impl")
+
+include(":server:core:auth:public")
+
+include(":server:core:auth:impl")
+
+include(":server:core:storage:public")
+
+include(":server:core:storage:impl")
+
+include(":server:core:storage:testing")
+
+include(":server:core:testing")
+
+include(":server:core:scheduler:public")
+
+include(":server:core:scheduler:impl")
+
+// Server domain modules
+include(":server:feature:auth:public")
+
+include(":server:feature:auth:impl")
+
+include(":server:feature:tasks:public")
+
+include(":server:feature:tasks:impl")

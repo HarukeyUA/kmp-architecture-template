@@ -2,6 +2,16 @@ config:
   validation: true
   warningsAsErrors: false
 
+comments:
+  OutdatedDocumentation:
+    active: true
+  DocumentationOverPrivateFunction:
+    active: true
+  DocumentationOverPrivateProperty:
+    active: true
+  KDocReferencesNonPublicProperty:
+    active: true
+
 complexity:
   CognitiveComplexMethod:
     active: true
@@ -20,8 +30,17 @@ complexity:
     allowedFunctionParameters: 8
     allowedConstructorParameters: 8
     ignoreDefaultParameters: true
-    ignoreAnnotatedParameter:
+    # Injected constructors and composable slots are wiring width, not logic width.
+    ignoreAnnotated:
+      - Inject
+      - AssistedInject
       - Composable
+    excludes:
+      - "**/src/*Test/**"
+      - "**/src/androidTest/**"
+      - "**/src/test/**"
+      - "**/testing/**"
+      - "**/*-testing/**"
   TooManyFunctions:
     active: true
     allowedFunctionsPerFile: 16
@@ -29,6 +48,10 @@ complexity:
     allowedFunctionsPerInterface: 8
     ignoreAnnotatedFunctions:
       - Preview
+    excludes:
+      - "**/src/*Test/**"
+      - "**/src/androidTest/**"
+      - "**/src/test/**"
 
 coroutines:
   GlobalCoroutineUsage:
@@ -37,7 +60,11 @@ coroutines:
     active: true
     excludes:
       - "**/core/dispatchers/impl/src/**"
-      - "**/core/testing/public/src/**"
+      - "**/src/*Test/**"
+      - "**/src/androidTest/**"
+      - "**/src/test/**"
+      - "**/testing/**"
+      - "**/*-testing/**"
   SuspendFunInFinallySection:
     active: true
   SuspendFunSwallowedCancellation:
@@ -56,14 +83,48 @@ exceptions:
 naming:
   FunctionNaming:
     functionPattern: "[a-zA-Z][a-zA-Z0-9]*"
+    excludes:
+      - "**/src/*Test/**"
+      - "**/src/androidTest/**"
+      - "**/src/test/**"
   MatchingDeclarationName:
     active: false
   TopLevelPropertyNaming:
     constantPattern: "[A-Z][A-Za-z0-9_]*"
 
 potential-bugs:
+  MissingUseCall:
+    active: true
+    excludes:
+      - "**/src/*Test/**"
+      - "**/src/androidTest/**"
+      - "**/src/test/**"
+      - "**/testing/**"
+      - "**/*-testing/**"
+  NullableToStringCall:
+    active: true
   CastNullableToNonNullableType:
     active: true
+    excludes:
+      - "**/src/*Test/**"
+      - "**/src/androidTest/**"
+      - "**/src/test/**"
+      - "**/testing/**"
+      - "**/*-testing/**"
+  MapGetWithNotNullAssertionOperator:
+    excludes:
+      - "**/src/*Test/**"
+      - "**/src/androidTest/**"
+      - "**/src/test/**"
+      - "**/testing/**"
+      - "**/*-testing/**"
+  UnsafeCallOnNullableType:
+    excludes:
+      - "**/src/*Test/**"
+      - "**/src/androidTest/**"
+      - "**/src/test/**"
+      - "**/testing/**"
+      - "**/*-testing/**"
   CastToNullableType:
     active: true
   DontDowncastCollectionTypes:
@@ -72,6 +133,53 @@ potential-bugs:
     active: true
 
 style:
+  AbstractClassCanBeConcreteClass:
+    excludes:
+      - "**/src/*Test/**"
+      - "**/src/androidTest/**"
+      - "**/src/test/**"
+      - "**/testing/**"
+      - "**/*-testing/**"
+  AlsoCouldBeApply:
+    active: true
+  CanBeNonNullable:
+    active: true
+  DoubleNegativeLambda:
+    active: true
+  ForbiddenMethodCall:
+    active: true
+    methods:
+      - reason: "Use the logger; stdout is invisible on Android and iOS."
+        value: "kotlin.io.println"
+      - reason: "Use the logger; stdout is invisible on Android and iOS."
+        value: "kotlin.io.print"
+    excludes:
+      - "**/src/*Test/**"
+      - "**/src/androidTest/**"
+      - "**/src/test/**"
+      - "**/testing/**"
+      - "**/*-testing/**"
+  UseCheckOrError:
+    excludes:
+      - "**/src/*Test/**"
+      - "**/src/androidTest/**"
+      - "**/src/test/**"
+      - "**/testing/**"
+      - "**/*-testing/**"
+  UseCheckNotNull:
+    excludes:
+      - "**/src/*Test/**"
+      - "**/src/androidTest/**"
+      - "**/src/test/**"
+      - "**/testing/**"
+      - "**/*-testing/**"
+  UnnecessaryLet:
+    active: true
+  UnusedPrivateFunction:
+    ignoreAnnotated:
+      - Preview
+  UseIfInsteadOfWhen:
+    active: true
   DataClassContainsFunctions:
     active: true
   DataClassShouldBeImmutable:
@@ -89,3 +197,7 @@ style:
     active: false
   ReturnCount:
     active: false
+
+performance:
+  UnnecessaryInitOnArray:
+    active: true

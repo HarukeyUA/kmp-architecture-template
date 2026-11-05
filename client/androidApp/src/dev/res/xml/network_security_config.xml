@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Dev builds talk to the local dev server over plain HTTP at whatever address it happens to
+    live on (10.0.2.2, a LAN IP, a Bonjour name) — an allowlist of domains can't enumerate that,
+    so cleartext is permitted wholesale. Dev flavor only: prod keeps the platform default
+    (cleartext blocked), and this file does not exist in its source set.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

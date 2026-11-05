@@ -7,6 +7,8 @@ dependencies {
     compileOnly(libs.composeCompiler.gradlePlugin)
     compileOnly(libs.serialization.gradlePlugin)
     compileOnly(libs.detekt.gradlePlugin)
+    compileOnly(libs.ksp.gradlePlugin)
+    compileOnly(libs.room.gradlePlugin)
 }
 
 gradlePlugin {
@@ -31,9 +33,17 @@ gradlePlugin {
             id = "convention.kmp.feature.impl"
             implementationClass = "KmpFeatureImplConventionPlugin"
         }
+        register("kmpFeatureTesting") {
+            id = "convention.kmp.feature.testing"
+            implementationClass = "KmpFeatureTestingConventionPlugin"
+        }
         register("metro") {
             id = "convention.metro"
             implementationClass = "MetroConventionPlugin"
+        }
+        register("room") {
+            id = "convention.room"
+            implementationClass = "RoomConventionPlugin"
         }
         register("molecule") {
             id = "convention.molecule"
@@ -71,6 +81,18 @@ gradlePlugin {
             id = "convention.screenshot.testing"
             implementationClass = "ScreenshotTestingConventionPlugin"
         }
+        register("kmpFeatureRobots") {
+            id = "convention.kmp.feature.robots"
+            implementationClass = "KmpFeatureRobotsConventionPlugin"
+        }
+        register("kmpE2e") {
+            id = "convention.kmp.e2e"
+            implementationClass = "KmpE2eConventionPlugin"
+        }
+        register("robotsAggregator") {
+            id = "convention.robots-aggregator"
+            implementationClass = "RobotsAggregatorConventionPlugin"
+        }
         register("implAggregator") {
             id = "convention.impl-aggregator"
             implementationClass = "ImplAggregatorConventionPlugin"
@@ -82,6 +104,34 @@ gradlePlugin {
         register("detekt") {
             id = "convention.detekt"
             implementationClass = "DetektConventionPlugin"
+        }
+        register("sharedContract") {
+            id = "convention.shared.contract"
+            implementationClass = "SharedContractConventionPlugin"
+        }
+        register("serverCorePublic") {
+            id = "convention.server.core.public"
+            implementationClass = "ServerCorePublicConventionPlugin"
+        }
+        register("serverCoreImpl") {
+            id = "convention.server.core.impl"
+            implementationClass = "ServerCoreImplConventionPlugin"
+        }
+        register("serverFeaturePublic") {
+            id = "convention.server.feature.public"
+            implementationClass = "ServerFeaturePublicConventionPlugin"
+        }
+        register("serverFeatureImpl") {
+            id = "convention.server.feature.impl"
+            implementationClass = "ServerFeatureImplConventionPlugin"
+        }
+        register("serverTesting") {
+            id = "convention.server.testing"
+            implementationClass = "ServerTestingConventionPlugin"
+        }
+        register("serverApp") {
+            id = "convention.server.app"
+            implementationClass = "ServerAppConventionPlugin"
         }
     }
 }

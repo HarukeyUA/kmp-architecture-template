@@ -1,0 +1,24 @@
+package {{PACKAGE_PATH}}.robots
+
+import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
+import dev.zacsweers.metro.ClassKey
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.Inject
+import {{BASE_PACKAGE}}.core.robots.E2eScope
+import {{BASE_PACKAGE}}.core.robots.Robot
+import {{BASE_PACKAGE}}.core.robots.Wait
+import {{PACKAGE_PATH}}.{{FEATURE_NAME}}ScreenTestTags
+
+/** Drives the screen through its semantics tags. */
+@Inject
+@ClassKey
+@ContributesIntoMap(E2eScope::class)
+class {{FEATURE_NAME}}Robot(nodes: SemanticsNodeInteractionsProvider, wait: Wait) : Robot(nodes, wait) {
+    fun awaitShown() {
+        awaitTag("{{FEATURE_NAME_LOWER}} screen", {{FEATURE_NAME}}ScreenTestTags.COUNT_BUTTON)
+    }
+
+    fun clickCount() {
+        clickTag({{FEATURE_NAME}}ScreenTestTags.COUNT_BUTTON)
+    }
+}

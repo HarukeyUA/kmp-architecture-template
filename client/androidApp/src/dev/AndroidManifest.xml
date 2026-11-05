@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Dev-flavor overlay: merged into the main manifest. Adds the cleartext allowance and the
+    Android 17+ local network permission (the dev server lives on a LAN / emulator-host address;
+    grant manually with Settings > Nearby devices or `adb shell pm grant`).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+
+    <application android:networkSecurityConfig="@xml/network_security_config" />
+
+</manifest>

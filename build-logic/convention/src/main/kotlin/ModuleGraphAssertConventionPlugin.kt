@@ -1,6 +1,7 @@
 import org.example.project.AssertModuleDependenciesTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ExternalModuleDependency
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
@@ -23,7 +24,8 @@ class ModuleGraphAssertConventionPlugin : Plugin<Project> {
                 tasks.register<AssertModuleDependenciesTask>("assertModuleDependencies") {
                     group = LifecycleBasePlugin.VERIFICATION_GROUP
                     description =
-                        "Assert declared project dependencies match ARCHITECTURE.md rules."
+                        "Assert declared project dependencies obey the umbrella, " +
+                            "public/impl and layering rules."
                     sourcePath.set(project.path)
                     stampFile.set(layout.buildDirectory.file("module-graph-assert/stamp.txt"))
                 }
@@ -52,7 +54,56 @@ class ModuleGraphAssertConventionPlugin : Plugin<Project> {
                                         .map(ProjectDependency::getPath)
                                 }
                                 .toSet()
-                        }
+                        },
+                    )
+                }
+
+                // The Seam's rationed external surface is policed only for `:shared:*` modules.
+                if (path.startsWith(":shared:")) {
+                    assertTask.configure {
+                        externalDependencyCoordinates.addAll(
+                            provider {
+                                kotlin.sourceSets
+                                    .asSequence()
+                                    .filterNot { it.name.contains("Test", ignoreCase = true) }
+                                    .flatMap { ss ->
+                                        sequenceOf(
+                                            ss.apiConfigurationName,
+                                            ss.implementationConfigurationName,
+                                            ss.compileOnlyConfigurationName,
+                                            ss.runtimeOnlyConfigurationName,
+                                        )
+                                    }
+                                    .mapNotNull { configurations.findByName(it) }
+                                    .flatMap {
+                                        it.dependencies
+                                            .withType(ExternalModuleDependency::class.java)
+                                            .asSequence()
+                                            .map { dep -> "${dep.group}:${dep.name}" }
+                                    }
+                                    .toSet()
+                            },
+                        )
+                    }
+                }
+            }
+
+            // Plain-JVM server modules (`:server:*`) declare deps on the standard non-test main
+            // configurations rather than KMP source sets.
+            pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+                assertTask.configure {
+                    dependencyPaths.addAll(
+                        provider {
+                            sequenceOf("api", "implementation", "compileOnly", "runtimeOnly")
+                                .mapNotNull { configurations.findByName(it) }
+                                .flatMap {
+                                    it.dependencies
+                                        .withType(ProjectDependency::class.java)
+                                        .asSequence()
+                                        .map(ProjectDependency::getPath)
+                                }
+                                .toSet()
+                        },
                     )
                 }
             }

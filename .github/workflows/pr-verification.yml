@@ -10,6 +10,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  migration-order:
+    name: Migration Order
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      - run: ./gradlew checkMigrationOrder -PmigrationBaseRef=origin/${{ github.base_ref }}
+
   spotless:
     name: Spotless Check
     runs-on: ubuntu-latest
@@ -18,7 +35,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
@@ -32,10 +49,11 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      # The convention plugin chains the type-resolved per-compilation tasks behind this task.
       - run: ./gradlew detekt
       - name: Upload detekt reports
         if: failure()
@@ -52,7 +70,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
@@ -78,7 +96,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
@@ -90,6 +108,26 @@ jobs:
           name: jvm-test-reports
           path: '**/build/reports/tests/jvmTest/'
 
+  server-tests:
+    name: Server Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      - run: ./gradlew test
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: server-test-reports
+          path: '**/build/reports/tests/test/'
+
   build-android:
     name: Build Android
     runs-on: ubuntu-latest
@@ -98,11 +136,13 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
-      - run: ./gradlew :androidApp:assembleDebug
+      # assembleDevDebugAndroidTest compiles the E2E suite APK (robots + flows) without a
+      # device; the suite itself runs locally via scripts/e2e-android.sh.
+      - run: ./gradlew :client:androidApp:assembleDebug :client:androidApp:assembleProdRelease :client:androidApp:assembleDevDebugAndroidTest
 
   build-jvm:
     name: Build JVM
@@ -112,11 +152,11 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
-      - run: ./gradlew :composeApp:jvmJar
+      - run: ./gradlew :client:composeApp:jvmJar :client:desktopApp:jar :client:desktopApp:test
 
   build-ios:
     name: Build iOS
@@ -127,7 +167,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: 25
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
@@ -137,3 +177,41 @@ jobs:
           -scheme iosApp
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO
+
+  init-variants:
+    # Runs init-project.sh on a copy of the tree, then builds and tests what it leaves behind. The
+    # script itself fails on any leftover template identity.
+    name: Init (${{ matrix.variant }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: default
+            flag: ""
+          - variant: no-example
+            flag: --no-example
+          - variant: no-server
+            flag: --no-server
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      - name: Init on a copy
+        run: |
+          cp -R "$GITHUB_WORKSPACE" "$RUNNER_TEMP/variant"
+          cd "$RUNNER_TEMP/variant"
+          ./scripts/init-project.sh --name DemoApp --package com.example.demoapp --display-name "Demo App" ${{ matrix.flag }}
+      - name: Build and test the result
+        working-directory: ${{ runner.temp }}/variant
+        run: >-
+          ./gradlew spotlessCheck detekt jvmTest test verifyRoborazziAndroidHostTest
+          :client:androidApp:assembleDevDebug
+          :client:androidApp:assembleDevDebugAndroidTest
+          :client:composeApp:jvmJar
+          :client:desktopApp:jar

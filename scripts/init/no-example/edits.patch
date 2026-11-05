@@ -1,0 +1,423 @@
+diff --git a/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eAppGraph.kt b/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eAppGraph.kt
+index 3f94284..b92531c 100644
+--- a/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eAppGraph.kt
++++ b/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eAppGraph.kt
+@@ -9,5 +9,4 @@ import org.example.project.AndroidAppGraph
+ import org.example.project.androidApiConfigDefaults
+ import org.example.project.core.buildinfo.Environment
+-import org.example.project.core.database.dao.TaskDao
+ import org.example.project.core.network.ApiConfigDefaults
+ 
+@@ -20,6 +19,4 @@ import org.example.project.core.network.ApiConfigDefaults
+ @DependencyGraph(AppScope::class)
+ interface E2eAppGraph : AndroidAppGraph {
+-    val taskDao: TaskDao
+-
+     @DependencyGraph.Factory
+     fun interface Factory {
+diff --git a/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eTest.kt b/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eTest.kt
+index 34d068d..2c1d266 100644
+--- a/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eTest.kt
++++ b/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eTest.kt
+@@ -15,6 +15,6 @@ import org.junit.rules.RuleChain
+ /**
+  * Base for the E2E flows, run by `scripts/e2e-android.sh` against the dev server. A flow declares
+- * its drivers as lazy delegates (`by robot<TasksRobot>()`, `by journey<AccountJourney>()`) and
+- * reads what it needs from below the UI off [e2eGraph]; nothing is wired here.
++ * its drivers as lazy delegates (`by robot<HomeRobot>()`, `by journey<AccountJourney>()`) and reads
++ * what it needs from below the UI off [e2eGraph]; nothing is wired here.
+  */
+ abstract class E2eTest {
+diff --git a/client/composeApp/src/commonMain/kotlin/org/example/project/DefaultRootScreen.kt b/client/composeApp/src/commonMain/kotlin/org/example/project/DefaultRootScreen.kt
+index 482f304..b94bbb9 100644
+--- a/client/composeApp/src/commonMain/kotlin/org/example/project/DefaultRootScreen.kt
++++ b/client/composeApp/src/commonMain/kotlin/org/example/project/DefaultRootScreen.kt
+@@ -28,5 +28,5 @@ import org.example.project.core.ui.theme.AppTheme
+ import org.example.project.core.ui.theme.resolveDarkTheme
+ import org.example.project.feature.auth.LoginScreen
+-import org.example.project.feature.main.MainScreen
++import org.example.project.feature.home.HomeScreen
+ import org.example.project.feature.splash.presentation.SplashScreen
+ 
+@@ -36,5 +36,5 @@ class DefaultRootScreen(
+     private val splashScreen: SplashScreen,
+     private val loginScreen: LoginScreen,
+-    private val mainScreen: MainScreen,
++    private val homeScreen: HomeScreen,
+     private val errorRenderer: CompositeErrorRenderer,
+ ) : RootScreen {
+@@ -80,5 +80,5 @@ class DefaultRootScreen(
+                                     splashScreen.Content(child.component)
+                                 is RootComponent.Child.Login -> loginScreen.Content(child.component)
+-                                is RootComponent.Child.Main -> mainScreen.Content(child.component)
++                                is RootComponent.Child.Home -> homeScreen.Content(child.component)
+                             }
+                         }
+diff --git a/client/composeApp/src/commonMain/kotlin/org/example/project/RootComponent.kt b/client/composeApp/src/commonMain/kotlin/org/example/project/RootComponent.kt
+index af5e02c..651126a 100755
+--- a/client/composeApp/src/commonMain/kotlin/org/example/project/RootComponent.kt
++++ b/client/composeApp/src/commonMain/kotlin/org/example/project/RootComponent.kt
+@@ -32,5 +32,5 @@ import org.example.project.core.local.storage.model.ThemeMode
+ import org.example.project.core.navigation.StackComponent
+ import org.example.project.feature.auth.LoginComponent
+-import org.example.project.feature.main.MainComponent
++import org.example.project.feature.home.HomeComponent
+ import org.example.project.feature.session.SessionEndWiper
+ import org.example.project.feature.session.SessionState
+@@ -50,5 +50,5 @@ interface RootComponent :
+         data class Login(val component: LoginComponent) : Child
+ 
+-        data class Main(val component: MainComponent) : Child
++        data class Home(val component: HomeComponent) : Child
+     }
+ 
+@@ -63,5 +63,5 @@ class DefaultRootComponent(
+     private val splashComponentFactory: SplashComponent.Factory,
+     private val loginComponentFactory: LoginComponent.Factory,
+-    private val mainComponentFactory: MainComponent.Factory,
++    private val homeComponentFactory: HomeComponent.Factory,
+     private val sessionStatus: SessionStatus,
+     private val sessionEndWiper: SessionEndWiper,
+@@ -122,5 +122,5 @@ class DefaultRootComponent(
+                     splashComponentFactory.create(
+                         componentContext = componentContext,
+-                        onNavigateToMain = ::navigateToMain,
++                        onNavigateToHome = ::navigateToHome,
+                         onNavigateToLogin = ::navigateToLogin,
+                     ),
+@@ -131,13 +131,13 @@ class DefaultRootComponent(
+                     loginComponentFactory.create(
+                         componentContext = componentContext,
+-                        onAuthenticated = ::navigateToMain,
++                        onAuthenticated = ::navigateToHome,
+                     ),
+                 )
+ 
+-            Config.Main -> RootComponent.Child.Main(mainComponentFactory.create(componentContext))
++            Config.Home -> RootComponent.Child.Home(homeComponentFactory.create(componentContext))
+         }
+ 
+-    private fun navigateToMain() {
+-        navigation.replaceAll(Config.Main)
++    private fun navigateToHome() {
++        navigation.replaceAll(Config.Home)
+     }
+ 
+@@ -152,5 +152,5 @@ class DefaultRootComponent(
+         @Serializable data object Login : Config
+ 
+-        @Serializable data object Main : Config
++        @Serializable data object Home : Config
+     }
+ 
+diff --git a/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/AppDatabase.kt b/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/AppDatabase.kt
+index f912f61..ecc1d1a 100644
+--- a/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/AppDatabase.kt
++++ b/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/AppDatabase.kt
+@@ -5,12 +5,9 @@ import androidx.room3.Database
+ import androidx.room3.RoomDatabase
+ import androidx.room3.RoomDatabaseConstructor
+-import org.example.project.core.database.dao.TaskDao
+-import org.example.project.core.database.entity.TaskEntity
++import org.example.project.core.database.entity.PlaceholderEntity
+ 
+-@Database(entities = [TaskEntity::class], version = 1)
++@Database(entities = [PlaceholderEntity::class], version = 1)
+ @ConstructedBy(AppDatabaseConstructor::class)
+-abstract class AppDatabase : RoomDatabase() {
+-    abstract fun taskDao(): TaskDao
+-}
++abstract class AppDatabase : RoomDatabase()
+ 
+ // Room's KSP processor generates the actual for each target.
+diff --git a/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/di/DatabaseGraph.kt b/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/di/DatabaseGraph.kt
+index 889487a..5c5472b 100644
+--- a/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/di/DatabaseGraph.kt
++++ b/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/di/DatabaseGraph.kt
+@@ -10,5 +10,4 @@ import dev.zacsweers.metro.SingleIn
+ import kotlinx.coroutines.CoroutineDispatcher
+ import org.example.project.core.database.AppDatabase
+-import org.example.project.core.database.dao.TaskDao
+ import org.example.project.core.dispatchers.IoDispatcher
+ 
+@@ -29,5 +28,3 @@ object DatabaseGraph {
+             .fallbackToDestructiveMigration(dropAllTables = true)
+             .build()
+-
+-    @Provides fun provideTaskDao(database: AppDatabase): TaskDao = database.taskDao()
+ }
+diff --git a/client/core/database/impl/src/jvmTest/kotlin/org/example/project/core/database/TestDatabase.kt b/client/core/database/impl/src/jvmTest/kotlin/org/example/project/core/database/TestDatabase.kt
+index e00e3f5..bfed3e3 100644
+--- a/client/core/database/impl/src/jvmTest/kotlin/org/example/project/core/database/TestDatabase.kt
++++ b/client/core/database/impl/src/jvmTest/kotlin/org/example/project/core/database/TestDatabase.kt
+@@ -11,5 +11,5 @@ import org.example.project.core.database.di.DatabaseGraph
+ 
+ /** The table these helpers write to. */
+-internal const val TEST_TABLE = "tasks"
++internal const val TEST_TABLE = "placeholder"
+ 
+ /** A file database, not an in-memory one, so reads and writes use separate connections. */
+@@ -26,8 +26,6 @@ internal suspend fun AppDatabase.insertRow(id: Long) {
+     useWriterConnection { connection ->
+         connection.immediateTransaction {
+-            usePrepared(
+-                "INSERT INTO $TEST_TABLE (id, title, done, created_at) VALUES (?, '', 0, 0)",
+-            ) { statement ->
+-                statement.bindText(1, id.toString())
++            usePrepared("INSERT INTO $TEST_TABLE (id) VALUES (?)") { statement ->
++                statement.bindLong(1, id)
+                 statement.step()
+             }
+diff --git a/client/e2e/src/commonMain/kotlin/org/example/project/e2e/journeys/AccountJourney.kt b/client/e2e/src/commonMain/kotlin/org/example/project/e2e/journeys/AccountJourney.kt
+index 2c46d2c..51ffe03 100644
+--- a/client/e2e/src/commonMain/kotlin/org/example/project/e2e/journeys/AccountJourney.kt
++++ b/client/e2e/src/commonMain/kotlin/org/example/project/e2e/journeys/AccountJourney.kt
+@@ -7,36 +7,29 @@ import org.example.project.core.robots.E2eScope
+ import org.example.project.e2e.Journey
+ import org.example.project.feature.auth.robots.LoginRobot
+-import org.example.project.feature.main.robots.MainRobot
+-import org.example.project.feature.settings.robots.SettingsRobot
++import org.example.project.feature.home.robots.HomeRobot
+ 
+-/** The trips across the session boundary: login screen to the signed-in tabs and back. */
++/** The trips across the session boundary: login screen to home and back. */
+ @Inject
+ @ClassKey
+ @ContributesIntoMap(E2eScope::class)
+-class AccountJourney(
+-    private val login: LoginRobot,
+-    private val main: MainRobot,
+-    private val settings: SettingsRobot,
+-) : Journey {
++class AccountJourney(private val login: LoginRobot, private val home: HomeRobot) : Journey {
+ 
+-    /** From the login screen, creates a fresh account. Ends on the signed-in tabs. */
++    /** From the login screen, creates a fresh account. Ends on home. */
+     fun signUp(email: String, password: String) {
+         fillCredentials(email, password)
+         login.createAccount()
+-        main.awaitShown()
++        home.awaitShown()
+     }
+ 
+-    /** From the login screen, signs in to an existing account. Ends on the signed-in tabs. */
++    /** From the login screen, signs in to an existing account. Ends on home. */
+     fun logIn(email: String, password: String) {
+         fillCredentials(email, password)
+         login.logIn()
+-        main.awaitShown()
++        home.awaitShown()
+     }
+ 
+-    /** From the signed-in tabs, through Settings. Ends on the login screen. */
++    /** From home. Ends on the login screen. */
+     fun logOut() {
+-        main.openSettingsTab()
+-        settings.awaitShown()
+-        settings.logOut()
++        home.logOut()
+         login.awaitShown()
+     }
+diff --git a/client/feature/splash/impl/src/commonMain/kotlin/org/example/project/feature/splash/DefaultSplashComponent.kt b/client/feature/splash/impl/src/commonMain/kotlin/org/example/project/feature/splash/DefaultSplashComponent.kt
+index 401c7e6..655bb12 100644
+--- a/client/feature/splash/impl/src/commonMain/kotlin/org/example/project/feature/splash/DefaultSplashComponent.kt
++++ b/client/feature/splash/impl/src/commonMain/kotlin/org/example/project/feature/splash/DefaultSplashComponent.kt
+@@ -26,5 +26,5 @@ import org.example.project.feature.splash.presentation.SplashComponent
+ class DefaultSplashComponent(
+     @Assisted componentContext: AppComponentContext,
+-    @Assisted private val onNavigateToMain: () -> Unit,
++    @Assisted private val onNavigateToHome: () -> Unit,
+     @Assisted private val onNavigateToLogin: () -> Unit,
+     private val sessions: SessionRepository,
+@@ -39,5 +39,5 @@ class DefaultSplashComponent(
+         LaunchedEffect(attempt) {
+             when (sessions.stateOrNull(log)) {
+-                is SessionState.Bound -> onNavigateToMain()
++                is SessionState.Bound -> onNavigateToHome()
+                 SessionState.Unbound -> onNavigateToLogin()
+                 // Login here would read as signed out while a session may still be on disk.
+@@ -78,5 +78,5 @@ class DefaultSplashComponent(
+         override fun create(
+             componentContext: AppComponentContext,
+-            onNavigateToMain: () -> Unit,
++            onNavigateToHome: () -> Unit,
+             onNavigateToLogin: () -> Unit,
+         ): DefaultSplashComponent
+diff --git a/client/feature/splash/impl/src/commonTest/kotlin/org/example/project/feature/splash/DefaultSplashComponentTest.kt b/client/feature/splash/impl/src/commonTest/kotlin/org/example/project/feature/splash/DefaultSplashComponentTest.kt
+index 12a187e..062d50a 100644
+--- a/client/feature/splash/impl/src/commonTest/kotlin/org/example/project/feature/splash/DefaultSplashComponentTest.kt
++++ b/client/feature/splash/impl/src/commonTest/kotlin/org/example/project/feature/splash/DefaultSplashComponentTest.kt
+@@ -21,5 +21,5 @@ class DefaultSplashComponentTest {
+ 
+     @Test
+-    fun `a stored session routes to main`() = runLifecycleTest { lifecycle ->
++    fun `a stored session routes to home`() = runLifecycleTest { lifecycle ->
+         val sessions = FakeSessionRepository(ClientSession("access", "refresh"))
+ 
+@@ -27,5 +27,5 @@ class DefaultSplashComponentTest {
+         runCurrent()
+ 
+-        assertThat(routes).isEqualTo(listOf("main"))
++        assertThat(routes).isEqualTo(listOf("home"))
+     }
+ 
+@@ -67,5 +67,5 @@ class DefaultSplashComponentTest {
+         runCurrent()
+ 
+-        assertThat(routes).isEqualTo(listOf("main"))
++        assertThat(routes).isEqualTo(listOf("home"))
+     }
+ 
+@@ -129,5 +129,5 @@ class DefaultSplashComponentTest {
+         DefaultSplashComponent(
+             componentContext = testComponentContext(lifecycle = lifecycle),
+-            onNavigateToMain = { routes += "main" },
++            onNavigateToHome = { routes += "home" },
+             onNavigateToLogin = { routes += "login" },
+             sessions = sessions,
+diff --git a/client/feature/splash/public/src/commonMain/kotlin/org/example/project/feature/splash/presentation/SplashComponent.kt b/client/feature/splash/public/src/commonMain/kotlin/org/example/project/feature/splash/presentation/SplashComponent.kt
+index e45a146..3f59455 100644
+--- a/client/feature/splash/public/src/commonMain/kotlin/org/example/project/feature/splash/presentation/SplashComponent.kt
++++ b/client/feature/splash/public/src/commonMain/kotlin/org/example/project/feature/splash/presentation/SplashComponent.kt
+@@ -26,5 +26,5 @@ interface SplashComponent : StatefulComponent<SplashComponent.State> {
+         fun create(
+             componentContext: AppComponentContext,
+-            onNavigateToMain: () -> Unit,
++            onNavigateToHome: () -> Unit,
+             onNavigateToLogin: () -> Unit,
+         ): SplashComponent
+diff --git a/integration/client-server/build.gradle.kts b/integration/client-server/build.gradle.kts
+index 95c34dc..8c7cf94 100644
+--- a/integration/client-server/build.gradle.kts
++++ b/integration/client-server/build.gradle.kts
+@@ -32,11 +32,8 @@ dependencies {
+     // ride. Depending on :impl is legal only here — :integration sees everything.
+     testImplementation(project(":client:feature:auth:impl"))
+-    testImplementation(project(":client:feature:tasks:impl"))
+-    testImplementation(project(":client:core:database:impl"))
+     testImplementation(project(":client:core:network:public"))
+     testImplementation(project(":client:feature:session:impl"))
+     testImplementation(project(":client:feature:session:testing"))
+ 
+-    testImplementation(libs.room.runtime)
+     testImplementation(libs.ktor.client.auth)
+     testImplementation(libs.kotlin.test)
+diff --git a/integration/client-server/src/test/kotlin/org/example/project/integration/ClientStack.kt b/integration/client-server/src/test/kotlin/org/example/project/integration/ClientStack.kt
+index 4c2b6cb..738ba1d 100644
+--- a/integration/client-server/src/test/kotlin/org/example/project/integration/ClientStack.kt
++++ b/integration/client-server/src/test/kotlin/org/example/project/integration/ClientStack.kt
+@@ -7,12 +7,8 @@ import io.ktor.client.plugins.resources.Resources
+ import io.ktor.serialization.kotlinx.json.json
+ import io.ktor.server.testing.ApplicationTestBuilder
+-import org.example.project.core.database.AppDatabase
+-import org.example.project.core.database.DefaultTransactionRunner
+ import org.example.project.feature.auth.AuthRepository
+ import org.example.project.feature.auth.data.AuthRepositoryImpl
+ import org.example.project.feature.session.FakeSessionRepository
+ import org.example.project.feature.session.sessionBearer
+-import org.example.project.feature.tasks.TasksRepository
+-import org.example.project.feature.tasks.data.DefaultTasksRepository
+ import org.example.project.server.testing.seamJson
+ 
+@@ -26,15 +22,4 @@ import org.example.project.server.testing.seamJson
+ class ClientStack(val http: HttpClient, val sessions: FakeSessionRepository) {
+     val auth: AuthRepository = AuthRepositoryImpl(http, sessions)
+-
+-    /**
+-     * [database] is this device's cache: the real Room schema, which the caller owns and closes.
+-     */
+-    fun tasks(database: AppDatabase): TasksRepository =
+-        DefaultTasksRepository(
+-            client = http,
+-            dao = database.taskDao(),
+-            transactions = DefaultTransactionRunner(database),
+-            sessions = sessions,
+-        )
+ }
+ 
+diff --git a/server/app/src/test/kotlin/org/example/project/server/UniqueErrorCodesTest.kt b/server/app/src/test/kotlin/org/example/project/server/UniqueErrorCodesTest.kt
+index da03f19..bea71ab 100644
+--- a/server/app/src/test/kotlin/org/example/project/server/UniqueErrorCodesTest.kt
++++ b/server/app/src/test/kotlin/org/example/project/server/UniqueErrorCodesTest.kt
+@@ -9,5 +9,4 @@ import org.example.project.shared.auth.AuthApi
+ import org.example.project.shared.common.ApiError
+ import org.example.project.shared.common.commonApiErrorSerializer
+-import org.example.project.shared.tasks.TasksApi
+ 
+ /**
+@@ -30,8 +29,4 @@ class UniqueErrorCodesTest {
+                 AuthApi.login.error,
+                 AuthApi.refresh.error,
+-                TasksApi.get.error,
+-                TasksApi.create.error,
+-                TasksApi.setDone.error,
+-                TasksApi.delete.error,
+             )
+ 
+diff --git a/server/testing/src/main/kotlin/org/example/project/server/testing/ErrorEnvelopeAssertions.kt b/server/testing/src/main/kotlin/org/example/project/server/testing/ErrorEnvelopeAssertions.kt
+index 930e234..5fe9db2 100644
+--- a/server/testing/src/main/kotlin/org/example/project/server/testing/ErrorEnvelopeAssertions.kt
++++ b/server/testing/src/main/kotlin/org/example/project/server/testing/ErrorEnvelopeAssertions.kt
+@@ -8,5 +8,4 @@ import org.example.project.shared.common.ErrorEnvelope
+ import org.example.project.shared.common.decodeAmbientApiError
+ import org.example.project.shared.common.decodeDeclaredApiError
+-import org.example.project.shared.tasks.TasksApi
+ 
+ /**
+@@ -22,6 +21,4 @@ suspend fun HttpResponse.decodedError(): ApiError {
+             AuthApi.login.error,
+             AuthApi.refresh.error,
+-            TasksApi.create.error,
+-            TasksApi.get.error,
+         )
+         .filterNotNull()
+diff --git a/settings.gradle.kts b/settings.gradle.kts
+index 54d9c12..c557094 100755
+--- a/settings.gradle.kts
++++ b/settings.gradle.kts
+@@ -97,15 +97,9 @@ include(":client:feature:auth:impl")
+ include(":client:feature:auth:robots")
+ 
+-include(":client:feature:main:public")
++include(":client:feature:home:public")
+ 
+-include(":client:feature:main:impl")
++include(":client:feature:home:impl")
+ 
+-include(":client:feature:main:robots")
+-
+-include(":client:feature:settings:public")
+-
+-include(":client:feature:settings:impl")
+-
+-include(":client:feature:settings:robots")
++include(":client:feature:home:robots")
+ 
+ include(":client:feature:splash:public")
+@@ -119,12 +113,4 @@ include(":client:feature:session:impl")
+ include(":client:feature:session:testing")
+ 
+-include(":client:feature:tasks:public")
+-
+-include(":client:feature:tasks:impl")
+-
+-include(":client:feature:tasks:testing")
+-
+-include(":client:feature:tasks:robots")
+-
+ include(":client:core:testing:public")
+ 
+@@ -136,6 +122,4 @@ include(":shared:common")
+ include(":shared:auth")
+ 
+-include(":shared:tasks")
+-
+ // ===================== :integration umbrella (client↔server tests) =====================
+ // May depend on everything; nothing depends on it — both worlds meet only here.
+@@ -182,6 +166,2 @@ include(":server:feature:auth:public")
+ 
+ include(":server:feature:auth:impl")
+-
+-include(":server:feature:tasks:public")
+-
+-include(":server:feature:tasks:impl")

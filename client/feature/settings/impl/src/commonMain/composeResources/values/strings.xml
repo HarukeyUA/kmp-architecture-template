@@ -1,0 +1,9 @@
+<resources>
+    <string name="settings_title">Settings</string>
+    <string name="settings_theme_section">Theme</string>
+    <string name="settings_theme_system">Follow system</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_log_out">Log out</string>
+    <string name="settings_log_out_failed">You're still logged in. Please try again.</string>
+</resources>

@@ -1,0 +1,1456 @@
+diff --git a/.github/workflows/pr-verification.yml b/.github/workflows/pr-verification.yml
+index 09c72ac..ff2b984 100644
+--- a/.github/workflows/pr-verification.yml
++++ b/.github/workflows/pr-verification.yml
+@@ -11,21 +11,4 @@ concurrency:
+ 
+ jobs:
+-  migration-order:
+-    name: Migration Order
+-    runs-on: ubuntu-latest
+-    if: github.event_name == 'pull_request'
+-    steps:
+-      - uses: actions/checkout@v7
+-        with:
+-          fetch-depth: 0
+-      - uses: actions/setup-java@v5
+-        with:
+-          distribution: temurin
+-          java-version: 25
+-      - uses: gradle/actions/setup-gradle@v6
+-        with:
+-          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+-      - run: ./gradlew checkMigrationOrder -PmigrationBaseRef=origin/${{ github.base_ref }}
+-
+   spotless:
+     name: Spotless Check
+@@ -109,24 +92,4 @@ jobs:
+           path: '**/build/reports/tests/jvmTest/'
+ 
+-  server-tests:
+-    name: Server Tests
+-    runs-on: ubuntu-latest
+-    steps:
+-      - uses: actions/checkout@v7
+-      - uses: actions/setup-java@v5
+-        with:
+-          distribution: temurin
+-          java-version: 25
+-      - uses: gradle/actions/setup-gradle@v6
+-        with:
+-          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+-      - run: ./gradlew test
+-      - name: Upload test reports
+-        if: failure()
+-        uses: actions/upload-artifact@v7
+-        with:
+-          name: server-test-reports
+-          path: '**/build/reports/tests/test/'
+-
+   build-android:
+     name: Build Android
+@@ -142,5 +105,5 @@ jobs:
+           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+       # assembleDevDebugAndroidTest compiles the E2E suite APK (robots + flows) without a
+-      # device; the suite itself runs locally via scripts/e2e-android.sh.
++      # device; the suite itself runs locally via connectedDevDebugAndroidTest.
+       - run: ./gradlew :client:androidApp:assembleDebug :client:androidApp:assembleProdRelease :client:androidApp:assembleDevDebugAndroidTest
+ 
+diff --git a/.gitignore b/.gitignore
+index 96dc7dd..38f4452 100755
+--- a/.gitignore
++++ b/.gitignore
+@@ -38,5 +38,2 @@ iosApp/Configuration/Generated.xcconfig
+ node_modules/
+ 
+-# Server local config (committed: .env.example)
+-.env
+-
+diff --git a/build-logic/convention/build.gradle.kts b/build-logic/convention/build.gradle.kts
+index ee2004a..b3828c9 100644
+--- a/build-logic/convention/build.gradle.kts
++++ b/build-logic/convention/build.gradle.kts
+@@ -106,32 +106,4 @@ gradlePlugin {
+             implementationClass = "DetektConventionPlugin"
+         }
+-        register("sharedContract") {
+-            id = "convention.shared.contract"
+-            implementationClass = "SharedContractConventionPlugin"
+-        }
+-        register("serverCorePublic") {
+-            id = "convention.server.core.public"
+-            implementationClass = "ServerCorePublicConventionPlugin"
+-        }
+-        register("serverCoreImpl") {
+-            id = "convention.server.core.impl"
+-            implementationClass = "ServerCoreImplConventionPlugin"
+-        }
+-        register("serverFeaturePublic") {
+-            id = "convention.server.feature.public"
+-            implementationClass = "ServerFeaturePublicConventionPlugin"
+-        }
+-        register("serverFeatureImpl") {
+-            id = "convention.server.feature.impl"
+-            implementationClass = "ServerFeatureImplConventionPlugin"
+-        }
+-        register("serverTesting") {
+-            id = "convention.server.testing"
+-            implementationClass = "ServerTestingConventionPlugin"
+-        }
+-        register("serverApp") {
+-            id = "convention.server.app"
+-            implementationClass = "ServerAppConventionPlugin"
+-        }
+     }
+ }
+diff --git a/build-logic/convention/src/main/kotlin/ImplAggregatorConventionPlugin.kt b/build-logic/convention/src/main/kotlin/ImplAggregatorConventionPlugin.kt
+index ab7cc76..be38eb0 100644
+--- a/build-logic/convention/src/main/kotlin/ImplAggregatorConventionPlugin.kt
++++ b/build-logic/convention/src/main/kotlin/ImplAggregatorConventionPlugin.kt
+@@ -3,6 +3,4 @@ import org.gradle.api.Project
+ import org.gradle.api.provider.Provider
+ import org.gradle.kotlin.dsl.configure
+-import org.gradle.kotlin.dsl.dependencies
+-import org.gradle.kotlin.dsl.project
+ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+ 
+@@ -38,12 +36,4 @@ class ImplAggregatorConventionPlugin : Plugin<Project> {
+                 }
+             }
+-
+-            // Plain-JVM aggregator (e.g. :server:app) wires impls via the standard dependencies
+-            // block.
+-            plugins.withId("org.jetbrains.kotlin.jvm") {
+-                dependencies {
+-                    aggregatedModules(modulesProvider).forEach { path -> add("api", project(path)) }
+-                }
+-            }
+         }
+     }
+diff --git a/build-logic/convention/src/main/kotlin/KtorConventionPlugin.kt b/build-logic/convention/src/main/kotlin/KtorConventionPlugin.kt
+index 1b2ec1b..3c5572b 100644
+--- a/build-logic/convention/src/main/kotlin/KtorConventionPlugin.kt
++++ b/build-logic/convention/src/main/kotlin/KtorConventionPlugin.kt
+@@ -18,5 +18,4 @@ class KtorConventionPlugin : Plugin<Project> {
+                         implementation(libs.library("ktor-serialization-kotlinx-json"))
+                         implementation(libs.library("ktor-client-logging"))
+-                        implementation(libs.library("ktor-client-auth"))
+                     }
+                 }
+diff --git a/build-logic/convention/src/main/kotlin/ModuleGraphAssertConventionPlugin.kt b/build-logic/convention/src/main/kotlin/ModuleGraphAssertConventionPlugin.kt
+index 43cdb32..948b875 100644
+--- a/build-logic/convention/src/main/kotlin/ModuleGraphAssertConventionPlugin.kt
++++ b/build-logic/convention/src/main/kotlin/ModuleGraphAssertConventionPlugin.kt
+@@ -2,5 +2,4 @@ import org.example.project.AssertModuleDependenciesTask
+ import org.gradle.api.Plugin
+ import org.gradle.api.Project
+-import org.gradle.api.artifacts.ExternalModuleDependency
+ import org.gradle.api.artifacts.ProjectDependency
+ import org.gradle.kotlin.dsl.getByType
+@@ -25,6 +24,5 @@ class ModuleGraphAssertConventionPlugin : Plugin<Project> {
+                     group = LifecycleBasePlugin.VERIFICATION_GROUP
+                     description =
+-                        "Assert declared project dependencies obey the umbrella, " +
+-                            "public/impl and layering rules."
++                        "Assert declared project dependencies obey the public/impl and layering rules."
+                     sourcePath.set(project.path)
+                     stampFile.set(layout.buildDirectory.file("module-graph-assert/stamp.txt"))
+@@ -58,36 +56,7 @@ class ModuleGraphAssertConventionPlugin : Plugin<Project> {
+                     )
+                 }
+-
+-                // The Seam's rationed external surface is policed only for `:shared:*` modules.
+-                if (path.startsWith(":shared:")) {
+-                    assertTask.configure {
+-                        externalDependencyCoordinates.addAll(
+-                            provider {
+-                                kotlin.sourceSets
+-                                    .asSequence()
+-                                    .filterNot { it.name.contains("Test", ignoreCase = true) }
+-                                    .flatMap { ss ->
+-                                        sequenceOf(
+-                                            ss.apiConfigurationName,
+-                                            ss.implementationConfigurationName,
+-                                            ss.compileOnlyConfigurationName,
+-                                            ss.runtimeOnlyConfigurationName,
+-                                        )
+-                                    }
+-                                    .mapNotNull { configurations.findByName(it) }
+-                                    .flatMap {
+-                                        it.dependencies
+-                                            .withType(ExternalModuleDependency::class.java)
+-                                            .asSequence()
+-                                            .map { dep -> "${dep.group}:${dep.name}" }
+-                                    }
+-                                    .toSet()
+-                            },
+-                        )
+-                    }
+-                }
+             }
+ 
+-            // Plain-JVM server modules (`:server:*`) declare deps on the standard non-test main
++            // Plain-JVM modules (`:client:desktopApp`) declare deps on the standard non-test main
+             // configurations rather than KMP source sets.
+             pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+diff --git a/build-logic/convention/src/main/kotlin/RoomConventionPlugin.kt b/build-logic/convention/src/main/kotlin/RoomConventionPlugin.kt
+index 0e8071f..d8bdc63 100644
+--- a/build-logic/convention/src/main/kotlin/RoomConventionPlugin.kt
++++ b/build-logic/convention/src/main/kotlin/RoomConventionPlugin.kt
+@@ -7,14 +7,8 @@ import org.gradle.kotlin.dsl.configure
+ import org.gradle.kotlin.dsl.invoke
+ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+-import org.jetbrains.kotlin.konan.target.HostManager
+-import org.jetbrains.kotlin.konan.target.TargetSupportException
+ 
+ class RoomConventionPlugin : Plugin<Project> {
+     override fun apply(target: Project) {
+         with(target) {
+-            // KSP's iOS tasks throw when created on a host Kotlin/Native does not support, and a
+-            // linux/arm64 server image configures this module without ever building it.
+-            if (!isKotlinNativeHost()) return
+-
+             with(pluginManager) {
+                 apply("com.google.devtools.ksp")
+@@ -40,10 +34,2 @@ class RoomConventionPlugin : Plugin<Project> {
+     }
+ }
+-
+-private fun isKotlinNativeHost(): Boolean =
+-    try {
+-        HostManager.host
+-        true
+-    } catch (_: TargetSupportException) {
+-        false
+-    }
+diff --git a/build-logic/convention/src/main/kotlin/org/example/project/AssertModuleDependenciesTask.kt b/build-logic/convention/src/main/kotlin/org/example/project/AssertModuleDependenciesTask.kt
+index c61abad..5433221 100644
+--- a/build-logic/convention/src/main/kotlin/org/example/project/AssertModuleDependenciesTask.kt
++++ b/build-logic/convention/src/main/kotlin/org/example/project/AssertModuleDependenciesTask.kt
+@@ -16,20 +16,12 @@ import org.gradle.api.tasks.TaskAction
+  *
+  * Rules enforced (derived from module path):
+- * - The umbrella law: `:client` -> `:client`/`:shared`, `:server` -> `:server`/`:shared`, `:shared`
+- *   -> `:shared` only; `:client` <-> `:server` is forbidden, because the two sides join only
+- *   through the `:shared` contract. The test-only `:integration` umbrella may depend on everything,
+- *   and nothing may depend on it — it exists so client↔server integration tests never put a
+- *   `:server` dependency inside `:client`.
+- * - `:public` may depend only on `:public` or a `:shared` contract.
+- * - `:impl` may depend only on `:public` or a `:shared` contract.
++ * - `:public` may depend only on `:public`.
++ * - `:impl` may depend only on `:public`.
+  * - `:testing` may depend only on its sibling `:public`.
+  * - `:robots` may depend only on its sibling `:impl` (test tags) or `:client:core:robots` (the
+  *   `Robot`/`Wait` base).
+- * - `:e2e` may depend only on `:robots`, `:public` or a `:shared` contract.
++ * - `:e2e` may depend only on `:robots` or `:public`.
+  * - No `:client:core:*` module may depend on a `:client:feature:*` module (layering rule).
+- * - A `:shared:*` module's **external** dependency surface is rationed to [ALLOWED_SHARED_EXTERNAL]
+- *   so the Seam can't rot into a god module.
+- * - Anything else (`:client:composeApp`, `:server:app`, ...) is unrestricted within the umbrella
+- *   law.
++ * - Anything else (`:client:composeApp`, ...) is unrestricted.
+  */
+ @CacheableTask
+@@ -39,7 +31,4 @@ abstract class AssertModuleDependenciesTask : DefaultTask() {
+     @get:Input abstract val dependencyPaths: SetProperty<String>
+ 
+-    /** Declared external dependency coordinates (`group:name`); only populated for `:shared:*`. */
+-    @get:Input abstract val externalDependencyCoordinates: SetProperty<String>
+-
+     @get:OutputFile abstract val stampFile: RegularFileProperty
+ 
+@@ -47,9 +36,5 @@ abstract class AssertModuleDependenciesTask : DefaultTask() {
+     fun check() {
+         val source = sourcePath.get()
+-        val violations =
+-            dependencyPaths.get().mapNotNull { target -> violation(source, target) } +
+-                externalDependencyCoordinates.get().mapNotNull { coord ->
+-                    sharedSurfaceViolation(source, coord)
+-                }
++        val violations = dependencyPaths.get().mapNotNull { target -> violation(source, target) }
+         if (violations.isNotEmpty()) {
+             throw GradleException(
+@@ -58,9 +43,8 @@ abstract class AssertModuleDependenciesTask : DefaultTask() {
+                     violations.sorted().forEach { appendLine("  - $it") }
+                     append(
+-                        "Rules: :client and :server meet only through :shared; :public and :impl " +
+-                            "depend only on :public or :shared; :testing only on its sibling " +
+-                            ":public; :robots only on its sibling :impl or $CORE_ROBOTS_MODULE; " +
+-                            ":e2e only on :robots, :public or :shared; :client:core never on " +
+-                            ":client:feature.",
++                        "Rules: :public and :impl depend only on :public; :testing only on its " +
++                            "sibling :public; :robots only on its sibling :impl or " +
++                            "$CORE_ROBOTS_MODULE; :e2e only on :robots or :public; :client:core " +
++                            "never on :client:feature.",
+                     )
+                 },
+@@ -75,23 +59,18 @@ abstract class AssertModuleDependenciesTask : DefaultTask() {
+ 
+ private fun violation(sourcePath: String, targetPath: String): String? {
+-    umbrellaViolation(sourcePath, targetPath)?.let {
+-        return it
+-    }
+-
+     if (sourcePath.startsWith(":client:core:") && targetPath.startsWith(":client:feature:")) {
+         return "'$targetPath' not allowed — :core modules may not depend on :feature modules"
+     }
+ 
+-    val targetIsContract = targetPath.startsWith(":shared:")
+     val targetType = moduleTypeOf(targetPath)
+     return when (moduleTypeOf(sourcePath)) {
+         ModuleType.UNKNOWN -> null
+         ModuleType.PUBLIC ->
+-            if (targetType != ModuleType.PUBLIC && !targetIsContract) {
+-                "'$targetPath' not allowed — :public may only depend on :public or a :shared contract"
++            if (targetType != ModuleType.PUBLIC) {
++                "'$targetPath' not allowed — :public may only depend on :public"
+             } else null
+         ModuleType.IMPL ->
+-            if (targetType != ModuleType.PUBLIC && !targetIsContract) {
+-                "'$targetPath' not allowed — :impl may only depend on :public or a :shared contract"
++            if (targetType != ModuleType.PUBLIC) {
++                "'$targetPath' not allowed — :impl may only depend on :public"
+             } else null
+         ModuleType.TESTING -> {
+@@ -112,61 +91,7 @@ private fun violation(sourcePath: String, targetPath: String): String? {
+         }
+         ModuleType.E2E ->
+-            if (
+-                targetType != ModuleType.ROBOTS &&
+-                    targetType != ModuleType.PUBLIC &&
+-                    !targetIsContract
+-            ) {
+-                "'$targetPath' not allowed — :e2e may only depend on :robots, :public or a " +
+-                    ":shared contract"
++            if (targetType != ModuleType.ROBOTS && targetType != ModuleType.PUBLIC) {
++                "'$targetPath' not allowed — :e2e may only depend on :robots or :public"
+             } else null
+     }
+ }
+-
+-private fun umbrellaViolation(sourcePath: String, targetPath: String): String? {
+-    val source = umbrellaOf(sourcePath) ?: return null
+-    val target = umbrellaOf(targetPath) ?: return null
+-    val allowed =
+-        when (source) {
+-            "client" -> setOf("client", "shared")
+-            "server" -> setOf("server", "shared")
+-            "shared" -> setOf("shared")
+-            // The one place both worlds may meet: nothing depends on :integration (no umbrella
+-            // lists it), so the openness cannot leak back into :client or :server.
+-            "integration" -> setOf("client", "server", "shared", "integration")
+-            else -> emptySet()
+-        }
+-    return if (target !in allowed) {
+-        "'$targetPath' not allowed — :$source modules may depend only on " +
+-            allowed.sorted().joinToString(", ") { ":$it" }
+-    } else null
+-}
+-
+-private fun umbrellaOf(path: String): String? =
+-    when {
+-        path.startsWith(":client:") -> "client"
+-        path.startsWith(":server:") -> "server"
+-        path.startsWith(":shared:") -> "shared"
+-        path.startsWith(":integration:") -> "integration"
+-        else -> null
+-    }
+-
+-private fun sharedSurfaceViolation(sourcePath: String, coordinate: String): String? {
+-    if (!sourcePath.startsWith(":shared:")) return null
+-    if (isAllowedSharedExternal(coordinate)) return null
+-    return "external dependency '$coordinate' not allowed — :shared is rationed to " +
+-        "kotlinx.serialization, ktor-resources, arrow-core, kotlinx.datetime"
+-}
+-
+-private fun isAllowedSharedExternal(coordinate: String): Boolean {
+-    val group = coordinate.substringBefore(':')
+-    val name = coordinate.substringAfter(':', missingDelimiterValue = "")
+-    return when {
+-        group == "org.jetbrains.kotlin" -> true // Kotlin stdlib / kotlin-test
+-        group == "org.jetbrains.kotlinx" &&
+-            (name.startsWith("kotlinx-serialization") || name.startsWith("kotlinx-datetime")) ->
+-            true
+-        coordinate == "io.ktor:ktor-resources" -> true
+-        coordinate == "io.arrow-kt:arrow-core" -> true
+-        else -> false
+-    }
+-}
+diff --git a/build-logic/convention/src/main/kotlin/org/example/project/ProjectExtensions.kt b/build-logic/convention/src/main/kotlin/org/example/project/ProjectExtensions.kt
+index 4b9ab46..9acff17 100644
+--- a/build-logic/convention/src/main/kotlin/org/example/project/ProjectExtensions.kt
++++ b/build-logic/convention/src/main/kotlin/org/example/project/ProjectExtensions.kt
+@@ -5,5 +5,4 @@ import org.gradle.api.Project
+ import org.gradle.api.artifacts.VersionCatalog
+ import org.gradle.api.artifacts.VersionCatalogsExtension
+-import org.gradle.api.plugins.BasePluginExtension
+ import org.gradle.api.project.IsolatedProject
+ import org.gradle.kotlin.dsl.configure
+@@ -11,5 +10,4 @@ import org.gradle.kotlin.dsl.getByType
+ import org.gradle.kotlin.dsl.invoke
+ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+ 
+@@ -23,38 +21,4 @@ fun Project.jdkVersion(): Int = libs.version("jdk").toInt()
+ fun Project.jdkJvmTarget(): JvmTarget = JvmTarget.fromTarget(libs.version("jdk"))
+ 
+-/**
+- * Shared base for plain-JVM server modules (`:server:*`). Pins the toolchain to the repo-wide JDK,
+- * which is also the deploy target, and enables the same opt-ins as the client so Metro annotations
+- * and context parameters behave identically across the monorepo.
+- */
+-fun Project.configureServerKotlinJvm() {
+-    // Leaf modules share a directory name (`impl`/`public`), so by default every server jar would
+-    // be `impl.jar`/`public.jar` and the :server:app distribution would collide collecting them
+-    // into lib/. Derive a unique archive name from the full module path instead.
+-    extensions.configure<BasePluginExtension> {
+-        archivesName.set(path.removePrefix(":").replace(':', '-'))
+-    }
+-
+-    extensions.configure<KotlinJvmProjectExtension> {
+-        jvmToolchain(jdkVersion())
+-        compilerOptions {
+-            jvmTarget.set(jdkJvmTarget())
+-            freeCompilerArgs.addAll(
+-                "-Xannotation-default-target=param-property",
+-                "-Xcontext-parameters",
+-                "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+-            )
+-        }
+-    }
+-}
+-
+-/** Lets the repo-wide `./gradlew jvmTest` reach a plain-JVM server module's `test` task. */
+-fun Project.registerServerJvmTestAlias() {
+-    tasks.register("jvmTest") {
+-        description = "Alias for :test so the repo-wide jvmTest convention hits this module."
+-        dependsOn("test")
+-    }
+-}
+-
+ fun VersionCatalog.version(alias: String): String = findVersion(alias).get().requiredVersion
+ 
+diff --git a/build-logic/settings/src/main/kotlin/org/example/project/ImplAggregatorSettingsPlugin.kt b/build-logic/settings/src/main/kotlin/org/example/project/ImplAggregatorSettingsPlugin.kt
+index e817711..5b72f01 100644
+--- a/build-logic/settings/src/main/kotlin/org/example/project/ImplAggregatorSettingsPlugin.kt
++++ b/build-logic/settings/src/main/kotlin/org/example/project/ImplAggregatorSettingsPlugin.kt
+@@ -9,12 +9,11 @@ import org.gradle.kotlin.dsl.getByType
+ /** DSL extension for configuring impl-module aggregators from `settings.gradle.kts`. */
+ abstract class ImplAggregatorSettingsExtension {
+-    /** Full Gradle paths of the aggregator projects (e.g. `:client:composeApp`, `:server:app`). */
++    /** Full Gradle paths of the aggregator projects (e.g. `:client:composeApp`). */
+     abstract val aggregatorProjectPaths: SetProperty<String>
+ 
+     /**
+      * Register an aggregator. It collects every leaf `:impl` module **within its own umbrella** —
+-     * the umbrella is the aggregator path's first segment (`:client:composeApp` → `:client:*:impl`,
+-     * `:server:app` → `:server:*:impl`). This keeps client and server contributions from leaking
+-     * across the umbrella boundary.
++     * the umbrella is the aggregator path's first segment (`:client:composeApp` →
++     * `:client:*:impl`).
+      */
+     fun aggregator(path: String) {
+@@ -72,5 +71,5 @@ class ImplAggregatorSettingsPlugin : Plugin<Settings> {
+     }
+ 
+-    /** `:client:composeApp` -> `:client:`, `:server:app` -> `:server:`. */
++    /** `:client:composeApp` -> `:client:`. */
+     private fun umbrellaPrefixOf(aggregatorPath: String): String =
+         ":" + aggregatorPath.removePrefix(":").substringBefore(":") + ":"
+diff --git a/build-logic/settings/src/main/kotlin/org/example/project/ModuleStructureAssertSettingsPlugin.kt b/build-logic/settings/src/main/kotlin/org/example/project/ModuleStructureAssertSettingsPlugin.kt
+index eb2482c..0c1f434 100644
+--- a/build-logic/settings/src/main/kotlin/org/example/project/ModuleStructureAssertSettingsPlugin.kt
++++ b/build-logic/settings/src/main/kotlin/org/example/project/ModuleStructureAssertSettingsPlugin.kt
+@@ -22,14 +22,4 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
+ 
+             target.rootProject.leafDescendants().forEach { leaf ->
+-                // `:shared:*` modules are flat, all-public contracts named after their domain
+-                // (`:shared:common`, `:shared:auth`), so the leaf-name and sibling-public rules
+-                // below — which police the public/impl split — do not apply to them.
+-                // `:integration:*`
+-                // modules are likewise flat, named after the worlds they join
+-                // (`:integration:client-server`).
+-                if (leaf.path.startsWith(":shared:") || leaf.path.startsWith(":integration:")) {
+-                    return@forEach
+-                }
+-
+                 if (leaf.name !in ALLOWED_LEAF_NAMES) {
+                     violations +=
+@@ -52,6 +42,6 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
+                         violations.forEach { appendLine("  - $it") }
+                         append(
+-                            "Rules: leaf modules outside :shared and :integration use an allowed " +
+-                                "name, and every :impl has a sibling :public.",
++                            "Rules: leaf modules use an allowed name, and every :impl has a " +
++                                "sibling :public.",
+                         )
+                     },
+@@ -72,5 +62,4 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
+                 "androidApp",
+                 "desktopApp",
+-                "app",
+             )
+     }
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 1bc54a6..df1cdf1 100755
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -16,16 +16,2 @@ plugins {
+     alias(libs.plugins.detekt) apply false
+ }
+-
+-tasks.register<Exec>("checkMigrationOrder") {
+-    group = "verification"
+-    description =
+-        "Fails when PR-added Flyway migrations are older than the latest migration on the base ref."
+-
+-    val baseRef =
+-        providers
+-            .gradleProperty("migrationBaseRef")
+-            .orElse(providers.environmentVariable("MIGRATION_BASE_REF"))
+-            .orElse("origin/main")
+-
+-    doFirst { commandLine("bash", "scripts/check-migration-order.sh", "--base", baseRef.get()) }
+-}
+diff --git a/client/androidApp/build.gradle.kts b/client/androidApp/build.gradle.kts
+index aeb9c37..b0511d8 100755
+--- a/client/androidApp/build.gradle.kts
++++ b/client/androidApp/build.gradle.kts
+@@ -1,4 +1,2 @@
+-import java.net.Inet4Address
+-import java.net.NetworkInterface
+ import java.util.Properties
+ 
+@@ -11,33 +9,4 @@ plugins {
+ }
+ 
+-/**
+- * The build machine's site-local IPv4, or null when off-network. Used when DEV_SERVER_HOST does not
+- * explicitly select the host shared with `scripts/dev-stack.sh --lan`. A ValueSource keeps the
+- * automatic lookup configuration-cache compatible: a changed DHCP lease invalidates the cache entry
+- * instead of being served stale.
+- */
+-abstract class LanIpValueSource : ValueSource<String, ValueSourceParameters.None> {
+-    override fun obtain(): String? = runCatching {
+-        NetworkInterface.getNetworkInterfaces()
+-            .asSequence()
+-            .filter { runCatching { it.isUp && !it.isLoopback }.getOrDefault(false) }
+-            // Physical NICs first: en* (macOS), wlan*/eth* (Linux) — keeps VPN tunnels and
+-            // container bridges from winning when several site-local addresses exist.
+-            .sortedBy { nic ->
+-                when {
+-                    nic.name.startsWith("en") -> 0
+-                    nic.name.startsWith("wlan") -> 1
+-                    nic.name.startsWith("eth") -> 2
+-                    else -> 3
+-                }
+-            }
+-            .flatMap { it.inetAddresses.asSequence() }
+-            .filterIsInstance<Inet4Address>()
+-            .firstOrNull { it.isSiteLocalAddress }
+-            ?.hostAddress
+-    }
+-        .getOrNull()
+-}
+-
+ fun gitCommitCount(): Int {
+     val gitOutput = providers.exec {
+@@ -101,5 +70,5 @@ android {
+         testInstrumentationRunner = "$appId.e2e.E2eTestRunner"
+         // Orchestrator isolation: every E2E test method gets a fresh process and cleared app data,
+-        // so each test starts at the login screen and creates its own account.
++        // so each test starts from a fresh install.
+         // `useTestStorageService` routes failure screenshots through androidx.test.services
+         // storage, which survives the per-test `pm clear` and is pulled into build outputs by
+@@ -123,31 +92,12 @@ android {
+     // same device without sharing data — Android keys app-private storage off `applicationId`, so
+     // a distinct id is all that's needed. The dev launcher label gains a " Dev" suffix via the
+-    // flavor's strings.xml override, and only the dev flavor allows cleartext HTTP (see
+-    // src/dev/AndroidManifest.xml).
++    // flavor's strings.xml override.
+     flavorDimensions += "environment"
+     productFlavors {
+-        create("prod") {
+-            dimension = "environment"
+-            // Prod never talks to a local server; the field exists so main-source code compiles.
+-            buildConfigField("String", "DEV_SERVER_HOST", "\"\"")
+-        }
++        create("prod") { dimension = "environment" }
+         create("dev") {
+             dimension = "environment"
+             applicationIdSuffix = ".dev"
+             versionNameSuffix = "-dev"
+-            // DEV_SERVER_HOST is the deterministic escape hatch for multi-NIC/VPN machines and is
+-            // also consumed by dev-stack.sh (--lan) and the iOS xcconfig generator. Automatic
+-            // detection is retained for the zero-config path; empty/off-network falls back to
+-            // 10.0.2.2 at graph creation.
+-            val explicitHost =
+-                providers.environmentVariable("DEV_SERVER_HOST").orNull?.trim()?.takeIf {
+-                    it.isNotEmpty()
+-                }
+-            val devServerHost =
+-                explicitHost ?: providers.of(LanIpValueSource::class) {}.getOrElse("")
+-            require(devServerHost.isEmpty() || devServerHost.matches(Regex("[A-Za-z0-9.-]+"))) {
+-                "DEV_SERVER_HOST must be a hostname or IPv4 address without a scheme or port"
+-            }
+-            buildConfigField("String", "DEV_SERVER_HOST", "\"$devServerHost\"")
+         }
+     }
+@@ -179,6 +129,6 @@ android {
+     buildFeatures {
+         compose = true
+-        // `BuildConfig.FLAVOR` / `DEV_SERVER_HOST` drive the injected Environment + dev host, and
+-        // `BuildConfig.DEBUG` whether Kermit logging stays on.
++        // `BuildConfig.FLAVOR` drives the injected Environment, and `BuildConfig.DEBUG` whether
++        // Kermit logging stays on.
+         buildConfig = true
+     }
+@@ -192,7 +142,5 @@ android {
+ 
+ androidComponents {
+-    // E2E tests exist only for the dev flavor: a prod-flavor instrumented run would today just
+-    // fail the dev-server health check, but if that rule ever loosened it would create junk
+-    // accounts against the production server.
++    // E2E tests exist only for the dev flavor, so a flow can never touch prod data.
+     beforeVariants(selector().withFlavor("environment", "prod")) { variant ->
+         variant.androidTest.enable = false
+@@ -210,6 +158,6 @@ dependencies {
+ 
+     // E2E suite (androidTest, dev flavor only, see `beforeVariants` above). Robots and journeys
+-    // drive the UI through test tags; run via `scripts/e2e-android.sh` against a running
+-    // `scripts/dev-stack.sh`. `:client:e2e` carries every `:robots` module and the driver graph.
++    // drive the UI through test tags; run with `:client:androidApp:connectedDevDebugAndroidTest`.
++    // `:client:e2e` carries every `:robots` module and the driver graph.
+     androidTestImplementation(project(":client:e2e"))
+     androidTestImplementation(libs.compose.ui.test.junit4)
+diff --git a/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eAppGraph.kt b/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eAppGraph.kt
+index b92531c..9036448 100644
+--- a/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eAppGraph.kt
++++ b/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eAppGraph.kt
+@@ -7,7 +7,5 @@ import dev.zacsweers.metro.Provides
+ import dev.zacsweers.metro.createGraphFactory
+ import org.example.project.AndroidAppGraph
+-import org.example.project.androidApiConfigDefaults
+ import org.example.project.core.buildinfo.Environment
+-import org.example.project.core.network.ApiConfigDefaults
+ 
+ /**
+@@ -24,15 +22,9 @@ interface E2eAppGraph : AndroidAppGraph {
+             @Provides applicationContext: Context,
+             @Provides environment: Environment,
+-            @Provides apiConfigDefaults: ApiConfigDefaults,
+         ): E2eAppGraph
+     }
+ }
+ 
+-/** Mirrors `createAndroidAppGraph`, down to how the dev server's base URL is resolved. */
+-fun createE2eAppGraph(
+-    applicationContext: Context,
+-    environment: Environment,
+-    devServerHost: String?,
+-): E2eAppGraph =
+-    createGraphFactory<E2eAppGraph.Factory>()
+-        .create(applicationContext, environment, androidApiConfigDefaults(devServerHost))
++/** Mirrors `createAndroidAppGraph`. */
++fun createE2eAppGraph(applicationContext: Context, environment: Environment): E2eAppGraph =
++    createGraphFactory<E2eAppGraph.Factory>().create(applicationContext, environment)
+diff --git a/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eTest.kt b/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eTest.kt
+index 2c1d266..ff8a9b4 100644
+--- a/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eTest.kt
++++ b/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eTest.kt
+@@ -4,16 +4,14 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+ import androidx.test.platform.app.InstrumentationRegistry
+ import dev.zacsweers.metro.createGraphFactory
+-import kotlin.random.Random
+ import org.example.project.MainActivity
+ import org.example.project.core.robots.Robot
+ import org.example.project.core.robots.Wait
+ import org.example.project.core.robots.await
+-import org.junit.ClassRule
+ import org.junit.Rule
+ import org.junit.rules.RuleChain
+ 
+ /**
+- * Base for the E2E flows, run by `scripts/e2e-android.sh` against the dev server. A flow declares
+- * its drivers as lazy delegates (`by robot<HomeRobot>()`, `by journey<AccountJourney>()`) and reads
++ * Base for the E2E flows, run by `:client:androidApp:connectedDevDebugAndroidTest`. A flow declares
++ * its drivers as lazy delegates (`by robot<HomeRobot>()`, `by journey<ShellJourney>()`) and reads
+  * what it needs from below the UI off [e2eGraph]; nothing is wired here.
+  */
+@@ -59,12 +57,3 @@ abstract class E2eTest {
+         wait.await(description, condition)
+     }
+-
+-    /** Every run needs a fresh account: the Orchestrator clears app data, not the dev database. */
+-    protected fun freshEmail(): String = "e2e-${Random.nextLong(Long.MAX_VALUE)}@example.com"
+-
+-    companion object {
+-        const val PASSWORD = "correct-horse-battery-staple"
+-
+-        @JvmField @ClassRule val devServer: DevServerHealthRule = DevServerHealthRule()
+-    }
+ }
+diff --git a/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eTestRunner.kt b/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eTestRunner.kt
+index f1517cd..6d3fbb2 100644
+--- a/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eTestRunner.kt
++++ b/client/androidApp/src/androidTest/java/org/example/project/e2e/E2eTestRunner.kt
+@@ -25,8 +25,4 @@ class E2eTestRunner : AndroidJUnitRunner() {
+ class TestTemplateApplication : TemplateApplication() {
+     override fun buildAppGraph(): AndroidAppGraph =
+-        createE2eAppGraph(
+-            applicationContext = this,
+-            environment = environment,
+-            devServerHost = devServerHost,
+-        )
++        createE2eAppGraph(applicationContext = this, environment = environment)
+ }
+diff --git a/client/androidApp/src/main/java/org/example/project/TemplateApplication.kt b/client/androidApp/src/main/java/org/example/project/TemplateApplication.kt
+index 1852fc2..de98d8f 100755
+--- a/client/androidApp/src/main/java/org/example/project/TemplateApplication.kt
++++ b/client/androidApp/src/main/java/org/example/project/TemplateApplication.kt
+@@ -14,18 +14,9 @@ open class TemplateApplication : Application() {
+      */
+     protected open fun buildAppGraph(): AndroidAppGraph =
+-        createAndroidAppGraph(
+-            applicationContext = this,
+-            environment = environment,
+-            devServerHost = devServerHost,
+-        )
++        createAndroidAppGraph(applicationContext = this, environment = environment)
+ 
+-    /** The flavor picked at install time decides which server this install talks to. */
+     protected val environment: Environment
+         get() = if (BuildConfig.FLAVOR == "dev") Environment.DEV else Environment.PROD
+ 
+-    /** The build machine's LAN IP, baked into the dev flavor; null in prod and offline builds. */
+-    protected val devServerHost: String?
+-        get() = BuildConfig.DEV_SERVER_HOST.takeIf { it.isNotEmpty() }
+-
+     override fun onCreate() {
+         super.onCreate()
+diff --git a/client/composeApp/src/androidMain/kotlin/org/example/project/AndroidAppGraph.kt b/client/composeApp/src/androidMain/kotlin/org/example/project/AndroidAppGraph.kt
+index 106cb34..0158297 100755
+--- a/client/composeApp/src/androidMain/kotlin/org/example/project/AndroidAppGraph.kt
++++ b/client/composeApp/src/androidMain/kotlin/org/example/project/AndroidAppGraph.kt
+@@ -7,5 +7,4 @@ import dev.zacsweers.metro.Provides
+ import dev.zacsweers.metro.createGraphFactory
+ import org.example.project.core.buildinfo.Environment
+-import org.example.project.core.network.ApiConfigDefaults
+ 
+ /**
+@@ -24,22 +23,8 @@ internal interface ProdAndroidAppGraph : AndroidAppGraph {
+             @Provides applicationContext: Context,
+             @Provides environment: Environment,
+-            @Provides apiConfigDefaults: ApiConfigDefaults,
+         ): ProdAndroidAppGraph
+     }
+ }
+ 
+-fun createAndroidAppGraph(
+-    applicationContext: Context,
+-    environment: Environment,
+-    devServerHost: String?,
+-): AndroidAppGraph =
+-    createGraphFactory<ProdAndroidAppGraph.Factory>()
+-        .create(applicationContext, environment, androidApiConfigDefaults(devServerHost))
+-
+-/**
+- * The base URLs an Android build talks to. [devServerHost] is the build machine's LAN IP, baked
+- * into the dev flavor's `BuildConfig`; null or unusable falls back to 10.0.2.2, the emulator's NAT
+- * alias for the host loopback. Public so the E2E runner's own graph reaches the same server.
+- */
+-fun androidApiConfigDefaults(devServerHost: String?): ApiConfigDefaults =
+-    devApiConfigDefaults(devServerHost, fallbackDevBaseUrl = "http://10.0.2.2:8080")
++fun createAndroidAppGraph(applicationContext: Context, environment: Environment): AndroidAppGraph =
++    createGraphFactory<ProdAndroidAppGraph.Factory>().create(applicationContext, environment)
+diff --git a/client/composeApp/src/commonMain/kotlin/org/example/project/AppGraph.kt b/client/composeApp/src/commonMain/kotlin/org/example/project/AppGraph.kt
+index 4e148e4..13f7533 100755
+--- a/client/composeApp/src/commonMain/kotlin/org/example/project/AppGraph.kt
++++ b/client/composeApp/src/commonMain/kotlin/org/example/project/AppGraph.kt
+@@ -4,17 +4,11 @@ import dev.zacsweers.metro.AppScope
+ import dev.zacsweers.metro.Provides
+ import dev.zacsweers.metro.SingleIn
+-import org.example.project.core.buildinfo.Environment
+ import org.example.project.core.network.ApiConfig
+-import org.example.project.core.network.ApiConfigDefaults
+ 
+ interface AppGraph {
+-    /**
+-     * The base URL every request rides, resolved once from injected build-time facts: [Environment]
+-     * from the platform entry point, [ApiConfigDefaults] from the platform graph.
+-     */
++    /** The base URL every request rides. A placeholder: point it at the API this app calls. */
+     @Provides
+     @SingleIn(AppScope::class)
+-    fun provideApiConfig(environment: Environment, defaults: ApiConfigDefaults): ApiConfig =
+-        resolveApiConfig(environment, defaults)
++    fun provideApiConfig(): ApiConfig = ApiConfig(baseUrl = "https://api.example.com")
+ 
+     val rootComponentFactory: RootComponent.Factory
+diff --git a/client/composeApp/src/commonMain/kotlin/org/example/project/DefaultRootScreen.kt b/client/composeApp/src/commonMain/kotlin/org/example/project/DefaultRootScreen.kt
+index b94bbb9..75228aa 100644
+--- a/client/composeApp/src/commonMain/kotlin/org/example/project/DefaultRootScreen.kt
++++ b/client/composeApp/src/commonMain/kotlin/org/example/project/DefaultRootScreen.kt
+@@ -27,5 +27,4 @@ import org.example.project.core.ui.navigation.defaultStackAnimator
+ import org.example.project.core.ui.theme.AppTheme
+ import org.example.project.core.ui.theme.resolveDarkTheme
+-import org.example.project.feature.auth.LoginScreen
+ import org.example.project.feature.home.HomeScreen
+ import org.example.project.feature.splash.presentation.SplashScreen
+@@ -35,5 +34,4 @@ import org.example.project.feature.splash.presentation.SplashScreen
+ class DefaultRootScreen(
+     private val splashScreen: SplashScreen,
+-    private val loginScreen: LoginScreen,
+     private val homeScreen: HomeScreen,
+     private val errorRenderer: CompositeErrorRenderer,
+@@ -79,5 +77,4 @@ class DefaultRootScreen(
+                                 is RootComponent.Child.Splash ->
+                                     splashScreen.Content(child.component)
+-                                is RootComponent.Child.Login -> loginScreen.Content(child.component)
+                                 is RootComponent.Child.Home -> homeScreen.Content(child.component)
+                             }
+diff --git a/client/composeApp/src/commonMain/kotlin/org/example/project/RootComponent.kt b/client/composeApp/src/commonMain/kotlin/org/example/project/RootComponent.kt
+index 651126a..e13c77d 100755
+--- a/client/composeApp/src/commonMain/kotlin/org/example/project/RootComponent.kt
++++ b/client/composeApp/src/commonMain/kotlin/org/example/project/RootComponent.kt
+@@ -16,8 +16,4 @@ import dev.zacsweers.metro.AssistedFactory
+ import dev.zacsweers.metro.AssistedInject
+ import dev.zacsweers.metro.ContributesBinding
+-import kotlinx.coroutines.flow.distinctUntilChanged
+-import kotlinx.coroutines.flow.drop
+-import kotlinx.coroutines.flow.map
+-import kotlinx.coroutines.launch
+ import kotlinx.serialization.Serializable
+ import org.example.project.core.component.AppComponentContext
+@@ -31,9 +27,5 @@ import org.example.project.core.local.storage.model.SettingsLocalModel
+ import org.example.project.core.local.storage.model.ThemeMode
+ import org.example.project.core.navigation.StackComponent
+-import org.example.project.feature.auth.LoginComponent
+ import org.example.project.feature.home.HomeComponent
+-import org.example.project.feature.session.SessionEndWiper
+-import org.example.project.feature.session.SessionState
+-import org.example.project.feature.session.SessionStatus
+ import org.example.project.feature.splash.presentation.SplashComponent
+ 
+@@ -48,6 +40,4 @@ interface RootComponent :
+         data class Splash(val component: SplashComponent) : Child
+ 
+-        data class Login(val component: LoginComponent) : Child
+-
+         data class Home(val component: HomeComponent) : Child
+     }
+@@ -62,8 +52,5 @@ class DefaultRootComponent(
+     @Assisted componentContext: AppComponentContext,
+     private val splashComponentFactory: SplashComponent.Factory,
+-    private val loginComponentFactory: LoginComponent.Factory,
+     private val homeComponentFactory: HomeComponent.Factory,
+-    private val sessionStatus: SessionStatus,
+-    private val sessionEndWiper: SessionEndWiper,
+     private val settings: SettingsLocalDataSource,
+ ) : RootComponent, MoleculeComponent<RootComponent.State>(componentContext) {
+@@ -83,9 +70,4 @@ class DefaultRootComponent(
+     override val stack: Value<ChildStack<*, RootComponent.Child>> = _stack
+ 
+-    init {
+-        observeSignedInState()
+-        scope.launch { sessionEndWiper.watch() }
+-    }
+-
+     @Composable
+     override fun produceState(): RootComponent.State {
+@@ -97,19 +79,4 @@ class DefaultRootComponent(
+     }
+ 
+-    private fun observeSignedInState() {
+-        scope.launch {
+-            sessionStatus
+-                .observe()
+-                .map { it is SessionState.Bound }
+-                .distinctUntilChanged()
+-                .drop(1)
+-                .collect { signedIn ->
+-                    if (!signedIn) {
+-                        navigateToLogin()
+-                    }
+-                }
+-        }
+-    }
+-
+     override fun onBackClick() {
+         navigation.pop()
+@@ -123,13 +90,4 @@ class DefaultRootComponent(
+                         componentContext = componentContext,
+                         onNavigateToHome = ::navigateToHome,
+-                        onNavigateToLogin = ::navigateToLogin,
+-                    ),
+-                )
+-
+-            Config.Login ->
+-                RootComponent.Child.Login(
+-                    loginComponentFactory.create(
+-                        componentContext = componentContext,
+-                        onAuthenticated = ::navigateToHome,
+                     ),
+                 )
+@@ -142,14 +100,8 @@ class DefaultRootComponent(
+     }
+ 
+-    private fun navigateToLogin() {
+-        navigation.replaceAll(Config.Login)
+-    }
+-
+     @Serializable
+     private sealed interface Config {
+         @Serializable data object Splash : Config
+ 
+-        @Serializable data object Login : Config
+-
+         @Serializable data object Home : Config
+     }
+diff --git a/client/composeApp/src/commonTest/kotlin/org/example/project/LoggingTest.kt b/client/composeApp/src/commonTest/kotlin/org/example/project/LoggingTest.kt
+index ffd91d0..445644b 100644
+--- a/client/composeApp/src/commonTest/kotlin/org/example/project/LoggingTest.kt
++++ b/client/composeApp/src/commonTest/kotlin/org/example/project/LoggingTest.kt
+@@ -12,5 +12,5 @@ import org.example.project.core.buildinfo.BuildType
+ /**
+  * The desktop launcher has no release build to silence it, so this is the only thing standing
+- * between a prod launch and request lines and session diagnostics on stdout.
++ * between a prod launch and request lines on stdout.
+  */
+ class LoggingTest {
+diff --git a/client/composeApp/src/iosMain/kotlin/org/example/project/IosAppGraph.kt b/client/composeApp/src/iosMain/kotlin/org/example/project/IosAppGraph.kt
+index 75a2e18..7f4d2fb 100755
+--- a/client/composeApp/src/iosMain/kotlin/org/example/project/IosAppGraph.kt
++++ b/client/composeApp/src/iosMain/kotlin/org/example/project/IosAppGraph.kt
+@@ -9,5 +9,4 @@ import kotlin.native.Platform
+ import org.example.project.core.buildinfo.BuildType
+ import org.example.project.core.buildinfo.Environment
+-import org.example.project.core.network.ApiConfigDefaults
+ 
+ @DependencyGraph(AppScope::class)
+@@ -15,8 +14,5 @@ interface IosAppGraph : AppGraph {
+     @DependencyGraph.Factory
+     fun interface Factory {
+-        fun create(
+-            @Provides environment: Environment,
+-            @Provides apiConfigDefaults: ApiConfigDefaults,
+-        ): IosAppGraph
++        fun create(@Provides environment: Environment): IosAppGraph
+     }
+ }
+@@ -27,18 +23,11 @@ interface IosAppGraph : AppGraph {
+  * `DEV` compilation condition on the `-dev` build configurations (`#if DEV` at the call site) — the
+  * environment is a compile-time fact of the scheme, never sniffed from the bundle id.
+- *
+- * [devServerHost] is the build Mac's Bonjour name (or LAN IP), read from the dev plist's
+- * `DevServerHost` key — see Info-dev.plist. Null/blank falls back to `localhost`, which is the Mac
+- * itself on the simulator; a physical iPhone relies on the Bonjour/LAN host being reachable.
+  */
+ @OptIn(ExperimentalNativeApi::class)
+-fun createAppGraph(isDev: Boolean, devServerHost: String?): IosAppGraph {
++fun createAppGraph(isDev: Boolean): IosAppGraph {
+     // The first Kotlin entry Swift calls, so logging is settled before the graph is built. The
+     // Xcode Debug config builds the debug framework, the Release config the release one.
+     configureLogging(if (Platform.isDebugBinary) BuildType.DEBUG else BuildType.RELEASE)
+     return createGraphFactory<IosAppGraph.Factory>()
+-        .create(
+-            if (isDev) Environment.DEV else Environment.PROD,
+-            devApiConfigDefaults(devServerHost, fallbackDevBaseUrl = "http://localhost:8080"),
+-        )
++        .create(if (isDev) Environment.DEV else Environment.PROD)
+ }
+diff --git a/client/composeApp/src/jvmMain/kotlin/org/example/project/JvmAppGraph.kt b/client/composeApp/src/jvmMain/kotlin/org/example/project/JvmAppGraph.kt
+index ddd7b2c..0da8eec 100644
+--- a/client/composeApp/src/jvmMain/kotlin/org/example/project/JvmAppGraph.kt
++++ b/client/composeApp/src/jvmMain/kotlin/org/example/project/JvmAppGraph.kt
+@@ -5,13 +5,7 @@ import dev.zacsweers.metro.DependencyGraph
+ import dev.zacsweers.metro.Provides
+ import org.example.project.core.buildinfo.Environment
+-import org.example.project.core.network.ApiConfigDefaults
+ 
+ @DependencyGraph(AppScope::class)
+ interface JvmAppGraph : AppGraph {
+-    /** Desktop always runs on the dev machine itself, so its dev default is plain localhost. */
+-    @Provides
+-    fun provideApiConfigDefaults(): ApiConfigDefaults =
+-        ApiConfigDefaults(devBaseUrl = "http://localhost:8080", prodBaseUrl = PROD_SERVER_BASE_URL)
+-
+     @DependencyGraph.Factory
+     fun interface Factory {
+diff --git a/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/di/DatabaseGraph.kt b/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/di/DatabaseGraph.kt
+index 5c5472b..58a4841 100644
+--- a/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/di/DatabaseGraph.kt
++++ b/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/di/DatabaseGraph.kt
+@@ -21,10 +21,4 @@ object DatabaseGraph {
+         @IoDispatcher ioDispatcher: CoroutineDispatcher,
+     ): AppDatabase =
+-        builder
+-            .setDriver(BundledSQLiteDriver())
+-            .setQueryCoroutineContext(ioDispatcher)
+-            // Everything here is a cache the server can refill, so a schema bump needs no
+-            // migration.
+-            .fallbackToDestructiveMigration(dropAllTables = true)
+-            .build()
++        builder.setDriver(BundledSQLiteDriver()).setQueryCoroutineContext(ioDispatcher).build()
+ }
+diff --git a/client/core/datetime/public/src/commonMain/kotlin/org/example/project/core/datetime/RelativeTimeBucket.kt b/client/core/datetime/public/src/commonMain/kotlin/org/example/project/core/datetime/RelativeTimeBucket.kt
+index 8b56fd7..07500c7 100644
+--- a/client/core/datetime/public/src/commonMain/kotlin/org/example/project/core/datetime/RelativeTimeBucket.kt
++++ b/client/core/datetime/public/src/commonMain/kotlin/org/example/project/core/datetime/RelativeTimeBucket.kt
+@@ -16,5 +16,5 @@ sealed interface RelativeTimeBucket {
+ 
+ fun relativeTimeBucket(deltaMillis: Long): RelativeTimeBucket {
+-    // Negative deltas (clock skew between server-stamped time and the local clock) collapse to
++    // Negative deltas (clock skew between a remote timestamp and the local clock) collapse to
+     // "just now"; rendering "-2m ago" would confuse and the magnitude is irrelevant.
+     val clamped = if (deltaMillis < 0) 0 else deltaMillis
+diff --git a/client/core/error/public/build.gradle.kts b/client/core/error/public/build.gradle.kts
+index fa0f267..60cbcc8 100644
+--- a/client/core/error/public/build.gradle.kts
++++ b/client/core/error/public/build.gradle.kts
+@@ -3,5 +3,2 @@ plugins {
+     alias(libs.plugins.convention.arrow)
+ }
+-
+-// CallFailure carries the shared ApiError (Declared/Ambient) so it rides the AppError pipeline.
+-kotlin { sourceSets { commonMain.dependencies { api(project(":shared:common")) } } }
+diff --git a/client/core/network/impl/src/commonMain/kotlin/org/example/project/core/network/HttpClientGraph.kt b/client/core/network/impl/src/commonMain/kotlin/org/example/project/core/network/HttpClientGraph.kt
+index a5624c5..12dac05 100644
+--- a/client/core/network/impl/src/commonMain/kotlin/org/example/project/core/network/HttpClientGraph.kt
++++ b/client/core/network/impl/src/commonMain/kotlin/org/example/project/core/network/HttpClientGraph.kt
+@@ -23,8 +23,4 @@ import kotlinx.serialization.json.Json
+ import org.example.project.core.buildinfo.Environment
+ 
+-// PaaS deployments (Railway et al.) sleep the server after periods of inactivity; the first
+-// request after a wake-up can spend 20–30s on cold-start before any response bytes arrive. These
+-// timeouts are sized to outlast that window so users don't see spurious failures on the first
+-// call of a session.
+ private const val REQUEST_TIMEOUT_MS = 60_000L
+ private const val CONNECT_TIMEOUT_MS = 30_000L
+@@ -33,5 +29,5 @@ private const val SOCKET_TIMEOUT_MS = 60_000L
+ @ContributesTo(AppScope::class)
+ interface HttpClientGraph {
+-    /** Empty in a build with no feature that configures the client, such as a no-server app. */
++    /** Empty until a feature configures the client. */
+     @Multibinds(allowEmpty = true) fun httpClientConfigurers(): Set<HttpClientConfigurer>
+ 
+@@ -43,10 +39,10 @@ interface HttpClientGraph {
+     @SingleIn(AppScope::class)
+     fun provideHttpClient(
+-        seamJson: Json,
++        json: Json,
+         apiConfig: ApiConfig,
+         environment: Environment,
+         configurers: Set<HttpClientConfigurer>,
+     ): HttpClient = HttpClient {
+-        install(ContentNegotiation) { json(seamJson) }
++        install(ContentNegotiation) { json(json) }
+         install(Resources)
+         install(HttpTimeout) {
+diff --git a/client/core/network/public/build.gradle.kts b/client/core/network/public/build.gradle.kts
+index 4c9f7bc..49c9d4e 100644
+--- a/client/core/network/public/build.gradle.kts
++++ b/client/core/network/public/build.gradle.kts
+@@ -9,5 +9,5 @@ kotlin {
+         commonMain.dependencies {
+             api(project(":client:core:error:public"))
+-            // Typed `HttpClient.call(Endpoint, …)` builds the request from a shared `@Resource`.
++            // Lets a request be built from a typed `@Resource` route.
+             api(libs.ktor.client.resources)
+         }
+diff --git a/client/core/network/public/src/commonMain/kotlin/org/example/project/core/network/ApiConfig.kt b/client/core/network/public/src/commonMain/kotlin/org/example/project/core/network/ApiConfig.kt
+index 7b5ef3f..db619de 100644
+--- a/client/core/network/public/src/commonMain/kotlin/org/example/project/core/network/ApiConfig.kt
++++ b/client/core/network/public/src/commonMain/kotlin/org/example/project/core/network/ApiConfig.kt
+@@ -2,12 +2,7 @@ package org.example.project.core.network
+ 
+ /**
+- * Client → server connection config: the base URL every API request is resolved against. Resolved
+- * once at graph creation from the injected environment and the platform's [ApiConfigDefaults] (see
+- * `resolveApiConfig` in `:client:composeApp`) — the environment is a build/packaging-time fact,
+- * never sniffed at runtime.
+- *
+- * [baseUrl] must be origin-only (scheme + host + port, no path segment) — dev-host injection
+- * validates candidates with [normalizeOriginOrNull], and a path prefix would silently prefix every
+- * shared `@Resource` route resolved against it.
++ * The base URL every API request is resolved against, provided by the app graph. [baseUrl] must be
++ * origin-only (scheme + host + port, no path segment): a path prefix would silently prefix every
++ * `@Resource` route resolved against it.
+  */
+ data class ApiConfig(val baseUrl: String)
+diff --git a/client/core/ui/public/src/commonMain/composeResources/values/strings.xml b/client/core/ui/public/src/commonMain/composeResources/values/strings.xml
+index 96f5f84..d87ab7e 100644
+--- a/client/core/ui/public/src/commonMain/composeResources/values/strings.xml
++++ b/client/core/ui/public/src/commonMain/composeResources/values/strings.xml
+@@ -2,13 +2,7 @@
+     <string name="error_network_connection">Network error. Check your connection and try again.</string>
+     <string name="error_network_http_with_message">%1$s</string>
+-    <string name="error_network_http">Server error (%1$d)</string>
+-    <string name="error_network_serialization">Unexpected response from server</string>
++    <string name="error_network_http">Request failed (%1$d)</string>
++    <string name="error_network_serialization">Unexpected response</string>
+     <string name="error_unexpected">Something went wrong</string>
+-    <string name="error_unauthorized">Your session has expired. Please sign in again.</string>
+-    <string name="error_forbidden">You don\'t have permission to do that.</string>
+-    <string name="error_not_found">Not found.</string>
+-    <string name="error_conflict">That conflicts with something that already exists.</string>
+-    <string name="error_validation">Please check the highlighted fields.</string>
+-    <string name="error_rate_limited">Too many requests. Please slow down and try again.</string>
+     <string name="app_top_bar_back">Back</string>
+ </resources>
+diff --git a/client/desktopApp/src/main/kotlin/org/example/project/main.kt b/client/desktopApp/src/main/kotlin/org/example/project/main.kt
+index b8e4330..74a25b9 100755
+--- a/client/desktopApp/src/main/kotlin/org/example/project/main.kt
++++ b/client/desktopApp/src/main/kotlin/org/example/project/main.kt
+@@ -93,5 +93,5 @@ fun main(args: Array<String>) {
+ }
+ 
+-/** The `.dev` suffix that isolates the data directory also points the build at a local server. */
++/** The `.dev` suffix isolates the data directory and turns on wire logging. */
+ internal fun environmentOf(appId: String): Environment =
+     if (appId.endsWith(".dev")) Environment.DEV else Environment.PROD
+diff --git a/client/e2e/src/androidMain/kotlin/org/example/project/e2e/AndroidHost.kt b/client/e2e/src/androidMain/kotlin/org/example/project/e2e/AndroidHost.kt
+index 884eeec..f12acf5 100644
+--- a/client/e2e/src/androidMain/kotlin/org/example/project/e2e/AndroidHost.kt
++++ b/client/e2e/src/androidMain/kotlin/org/example/project/e2e/AndroidHost.kt
+@@ -17,5 +17,5 @@ class AndroidHost(private val scenario: ActivityScenario<out ComponentActivity>)
+     }
+ 
+-    /** Recreates the Activity while preserving the test account's local app data. */
++    /** Recreates the Activity while preserving local app data. */
+     fun recreateActivity() {
+         scenario.recreate()
+diff --git a/client/feature/splash/impl/build.gradle.kts b/client/feature/splash/impl/build.gradle.kts
+index 7db6215..d66ade7 100644
+--- a/client/feature/splash/impl/build.gradle.kts
++++ b/client/feature/splash/impl/build.gradle.kts
+@@ -3,12 +3,2 @@ plugins {
+     alias(libs.plugins.convention.screenshot.testing)
+ }
+-
+-kotlin {
+-    sourceSets {
+-        commonMain.dependencies {
+-            implementation(project(":client:feature:session:public"))
+-            implementation(libs.kermit)
+-        }
+-        commonTest.dependencies { implementation(project(":client:feature:session:testing")) }
+-    }
+-}
+diff --git a/client/feature/splash/impl/src/androidHostTest/kotlin/org/example/project/feature/splash/SplashScreenScreenshotTest.kt b/client/feature/splash/impl/src/androidHostTest/kotlin/org/example/project/feature/splash/SplashScreenScreenshotTest.kt
+index 7a53de4..9e71425 100644
+--- a/client/feature/splash/impl/src/androidHostTest/kotlin/org/example/project/feature/splash/SplashScreenScreenshotTest.kt
++++ b/client/feature/splash/impl/src/androidHostTest/kotlin/org/example/project/feature/splash/SplashScreenScreenshotTest.kt
+@@ -10,10 +10,3 @@ class SplashScreenScreenshotTest : ScreenshotTest() {
+         capture { SplashScreenContent(state = SplashComponent.State.Loading) }
+     }
+-
+-    @Test
+-    fun splashScreenSessionUnreadable() {
+-        capture {
+-            SplashScreenContent(state = SplashComponent.State.SessionUnreadable(eventSink = {}))
+-        }
+-    }
+ }
+diff --git a/client/feature/splash/public/src/commonMain/kotlin/org/example/project/feature/splash/presentation/SplashComponent.kt b/client/feature/splash/public/src/commonMain/kotlin/org/example/project/feature/splash/presentation/SplashComponent.kt
+index 3f59455..c7965e4 100644
+--- a/client/feature/splash/public/src/commonMain/kotlin/org/example/project/feature/splash/presentation/SplashComponent.kt
++++ b/client/feature/splash/public/src/commonMain/kotlin/org/example/project/feature/splash/presentation/SplashComponent.kt
+@@ -3,22 +3,11 @@ package org.example.project.feature.splash.presentation
+ import org.example.project.core.component.AppComponentContext
+ import org.example.project.core.component.StatefulComponent
+-import org.example.project.core.component.UiEvent
+ import org.example.project.core.component.UiState
+ 
+-/** The cold-start hold: nothing else shows until the stored session has answered. */
++/** The cold-start hold, and where startup work the first screen depends on goes. */
+ interface SplashComponent : StatefulComponent<SplashComponent.State> {
+ 
+     sealed interface State : UiState {
+         data object Loading : State
+-
+-        /** The stored session did not answer. It may still be there, so nothing was signed out. */
+-        data class SessionUnreadable(val eventSink: (Event) -> Unit) : State
+-    }
+-
+-    sealed interface Event : UiEvent {
+-        data object RetryClicked : Event
+-
+-        /** Gives up on the stored session, which is the only way past one that stays unreadable. */
+-        data object SignInAgainClicked : Event
+     }
+ 
+@@ -27,5 +16,4 @@ interface SplashComponent : StatefulComponent<SplashComponent.State> {
+             componentContext: AppComponentContext,
+             onNavigateToHome: () -> Unit,
+-            onNavigateToLogin: () -> Unit,
+         ): SplashComponent
+     }
+diff --git a/gradle.properties b/gradle.properties
+index 56e51db..c7a07a6 100755
+--- a/gradle.properties
++++ b/gradle.properties
+@@ -69,4 +69,4 @@ android.sync.suppressAgpWarnings=GENERIC
+ org.gradle.tooling.parallel=true
+ 
+-# Android application id and namespace; also read by scripts/e2e-android.sh.
++# Android application id and namespace.
+ app.applicationId=org.example.project
+diff --git a/gradle/libs.versions.toml b/gradle/libs.versions.toml
+index 650c8f2..933fa77 100755
+--- a/gradle/libs.versions.toml
++++ b/gradle/libs.versions.toml
+@@ -63,15 +63,4 @@ spotless = "8.11.0"
+ ktfmt = "0.65"
+ 
+-# Server
+-exposed = "1.6.1"
+-hikari = "7.1.0"
+-postgresql = "42.7.14"
+-flyway = "13.12.1"
+-micrometer = "1.17.2"
+-logback = "1.6.6"
+-caffeine = "3.3.1"
+-argon2 = "2.12"
+-testcontainers = "2.0.5"
+-awsSdkKotlin = "1.9.30"
+ 
+ [libraries]
+@@ -136,11 +125,8 @@ ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negoti
+ ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
+ ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+-ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
+ ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+ ktor-client-resources = { module = "io.ktor:ktor-client-resources", version.ref = "ktor" }
+ 
+-# Shared seam (rationed dependency surface)
+-ktor-resources = { module = "io.ktor:ktor-resources", version.ref = "ktor" }
+ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+ 
+@@ -165,46 +151,4 @@ nucleus-decorated-window-material3 = { module = "dev.nucleusframework:nucleus.de
+ material-kolor = { module = "com.materialkolor:material-kolor", version.ref = "materialKolor" }
+ 
+-# Ktor server
+-ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+-ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
+-ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+-ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+-ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor" }
+-ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt", version.ref = "ktor" }
+-ktor-server-call-id = { module = "io.ktor:ktor-server-call-id", version.ref = "ktor" }
+-ktor-server-call-logging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
+-ktor-server-metrics-micrometer = { module = "io.ktor:ktor-server-metrics-micrometer", version.ref = "ktor" }
+-ktor-server-resources = { module = "io.ktor:ktor-server-resources", version.ref = "ktor" }
+-ktor-server-rate-limit = { module = "io.ktor:ktor-server-rate-limit", version.ref = "ktor" }
+-ktor-server-body-limit = { module = "io.ktor:ktor-server-body-limit", version.ref = "ktor" }
+-ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
+-
+-# Exposed (SQL framework)
+-exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
+-exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+-exposed-kotlin-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
+-exposed-migration-jdbc = { module = "org.jetbrains.exposed:exposed-migration-jdbc", version.ref = "exposed" }
+-
+-# Persistence infra
+-hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
+-postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+-flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+-flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+-
+-# Caching & password hashing (server)
+-caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+-argon2 = { module = "de.mkammerer:argon2-jvm", version.ref = "argon2" }
+-
+-# Object storage (S3-compatible: RustFS locally, Railway Buckets / AWS S3 in prod)
+-aws-sdk-kotlin-s3 = { module = "aws.sdk.kotlin:s3", version.ref = "awsSdkKotlin" }
+-
+-# Observability (server)
+-micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
+-logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+-
+-# Server testing
+-testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql", version.ref = "testcontainers" }
+-testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+-
+ ktfmt = { module = "org.jetbrains.kotlinx:ktfmt", version.ref = "ktfmt" }
+ 
+@@ -254,5 +198,4 @@ convention-kmp-feature-testing = { id = "convention.kmp.feature.testing" }
+ convention-kmp-feature-robots = { id = "convention.kmp.feature.robots" }
+ convention-kmp-e2e = { id = "convention.kmp.e2e" }
+-convention-server-testing = { id = "convention.server.testing" }
+ convention-robots-aggregator = { id = "convention.robots-aggregator" }
+ convention-kmp-compose-feature-impl = { id = "convention.kmp.compose.feature.impl" }
+@@ -273,12 +216,2 @@ convention-spotless = { id = "convention.spotless" }
+ convention-detekt = { id = "convention.detekt" }
+ convention-module-graph-assert = { id = "convention.module-graph-assert" }
+-
+-# Shared seam convention plugin
+-convention-shared-contract = { id = "convention.shared.contract" }
+-
+-# Server convention plugins
+-convention-server-core-public = { id = "convention.server.core.public" }
+-convention-server-core-impl = { id = "convention.server.core.impl" }
+-convention-server-feature-public = { id = "convention.server.feature.public" }
+-convention-server-feature-impl = { id = "convention.server.feature.impl" }
+-convention-server-app = { id = "convention.server.app" }
+diff --git a/iosApp/iosApp/iOSApp.swift b/iosApp/iosApp/iOSApp.swift
+index 53262dc..0a80a90 100755
+--- a/iosApp/iosApp/iOSApp.swift
++++ b/iosApp/iosApp/iOSApp.swift
+@@ -38,6 +38,5 @@ class AppDelegate: NSObject, UIApplicationDelegate {
+     // `DEV` is set in SWIFT_ACTIVE_COMPILATION_CONDITIONS by the Debug-dev/Release-dev build
+     // configurations (scheme iosApp-dev), so the environment is decided by the scheme at compile
+-    // time. DevServerHost carries the build Mac's Bonjour name (dev plist only; expanded from
+-    // Generated.xcconfig at build time).
++    // time.
+     private lazy var appGraph: IosAppGraph = {
+         #if DEV
+@@ -46,7 +45,5 @@ class AppDelegate: NSObject, UIApplicationDelegate {
+         let isDev = false
+         #endif
+-        let devServerHost =
+-            Bundle.main.object(forInfoDictionaryKey: "DevServerHost") as? String
+-        return IosAppGraphKt.createAppGraph(isDev: isDev, devServerHost: devServerHost)
++        return IosAppGraphKt.createAppGraph(isDev: isDev)
+     }()
+ 
+diff --git a/renovate.json b/renovate.json
+index 7a30766..7700b3c 100644
+--- a/renovate.json
++++ b/renovate.json
+@@ -9,13 +9,4 @@
+       "enabled": false
+     }
+-  ],
+-  "customManagers": [
+-    {
+-      "customType": "regex",
+-      "description": "Testcontainers image pins in Kotlin; same depName as docker-compose.yml so both land in one PR.",
+-      "managerFilePatterns": ["/^server/.+Container\\.kt$/"],
+-      "matchStrings": ["\"(?<depName>rustfs/rustfs):(?<currentValue>[^\"]+)\""],
+-      "datasourceTemplate": "docker"
+-    }
+   ]
+ }
+diff --git a/scripts/generate-ios-version-xcconfig.sh b/scripts/generate-ios-version-xcconfig.sh
+index 3ceef6a..7c94bf3 100755
+--- a/scripts/generate-ios-version-xcconfig.sh
++++ b/scripts/generate-ios-version-xcconfig.sh
+@@ -18,31 +18,7 @@ if [ -z "$VERSION_NAME" ]; then
+ fi
+ 
+-# This machine's address, baked into dev builds as the default server host so a freshly built dev
+-# app on a physical device reaches the server running here with zero manual setup. Prefer the
+-# Bonjour name — it survives DHCP lease changes and iOS resolves `.local` natively — over the
+-# numeric LAN IP. Empty when neither resolves (offline build); the app then falls back to
+-# localhost. Prod builds never read this (see Info-dev.plist). Host only, not a URL: `//` would
+-# start an xcconfig comment.
+-DEV_SERVER_HOST=${DEV_SERVER_HOST:-}
+-if [ -n "$DEV_SERVER_HOST" ]; then
+-    case "$DEV_SERVER_HOST" in
+-        *[!A-Za-z0-9.-]*)
+-            echo "error: DEV_SERVER_HOST must be a hostname or IPv4 address without a scheme or port" >&2
+-            exit 1
+-            ;;
+-    esac
+-fi
+-if [ -z "$DEV_SERVER_HOST" ] && command -v scutil >/dev/null 2>&1; then
+-    BONJOUR_NAME=$(scutil --get LocalHostName 2>/dev/null || true)
+-    [ -n "$BONJOUR_NAME" ] && DEV_SERVER_HOST="$BONJOUR_NAME.local"
+-fi
+-if [ -z "$DEV_SERVER_HOST" ]; then
+-    DEV_SERVER_HOST=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || true)
+-fi
+-
+ mkdir -p "$(dirname "$OUTPUT")"
+ {
+     printf 'CURRENT_PROJECT_VERSION=%s\n' "$BUILD_NUMBER"
+     printf 'MARKETING_VERSION=%s\n' "$VERSION_NAME"
+-    printf 'DEV_SERVER_HOST=%s\n' "$DEV_SERVER_HOST"
+ } > "$OUTPUT"
+diff --git a/settings.gradle.kts b/settings.gradle.kts
+index c557094..89b2ae6 100755
+--- a/settings.gradle.kts
++++ b/settings.gradle.kts
+@@ -41,5 +41,4 @@ rootProject.name = "Template"
+ implAggregator {
+     aggregator(":client:composeApp")
+-    aggregator(":server:app")
+ }
+ 
+@@ -91,10 +90,4 @@ include(":client:core:database:testing")
+ 
+ // Feature modules
+-include(":client:feature:auth:public")
+-
+-include(":client:feature:auth:impl")
+-
+-include(":client:feature:auth:robots")
+-
+ include(":client:feature:home:public")
+ 
+@@ -107,61 +100,5 @@ include(":client:feature:splash:public")
+ include(":client:feature:splash:impl")
+ 
+-include(":client:feature:session:public")
+-
+-include(":client:feature:session:impl")
+-
+-include(":client:feature:session:testing")
+-
+ include(":client:core:testing:public")
+ 
+ include(":client:core:screenshot-testing:public")
+-
+-// ===================== :shared umbrella (the Seam — contracts) =====================
+-include(":shared:common")
+-
+-include(":shared:auth")
+-
+-// ===================== :integration umbrella (client↔server tests) =====================
+-// May depend on everything; nothing depends on it — both worlds meet only here.
+-include(":integration:client-server")
+-
+-// ===================== :server umbrella (Ktor server) =====================
+-include(":server:app")
+-
+-include(":server:testing")
+-
+-// Server core modules
+-include(":server:core:database:public")
+-
+-include(":server:core:database:impl")
+-
+-include(":server:core:lifecycle:public")
+-
+-include(":server:core:web:public")
+-
+-include(":server:core:web:impl")
+-
+-include(":server:core:observability:public")
+-
+-include(":server:core:observability:impl")
+-
+-include(":server:core:auth:public")
+-
+-include(":server:core:auth:impl")
+-
+-include(":server:core:storage:public")
+-
+-include(":server:core:storage:impl")
+-
+-include(":server:core:storage:testing")
+-
+-include(":server:core:testing")
+-
+-include(":server:core:scheduler:public")
+-
+-include(":server:core:scheduler:impl")
+-
+-// Server domain modules
+-include(":server:feature:auth:public")
+-
+-include(":server:feature:auth:impl")

@@ -8,5 +8,14 @@
       "matchPackageNames": ["convention**"],
       "enabled": false
     }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Testcontainers image pins in Kotlin; same depName as docker-compose.yml so both land in one PR.",
+      "managerFilePatterns": ["/^server/.+Container\\.kt$/"],
+      "matchStrings": ["\"(?<depName>rustfs/rustfs):(?<currentValue>[^\"]+)\""],
+      "datasourceTemplate": "docker"
+    }
   ]
 }
