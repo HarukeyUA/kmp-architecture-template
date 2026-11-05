@@ -155,7 +155,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
-      - run: ./gradlew :client:composeApp:jvmJar
+      - run: ./gradlew :client:composeApp:jvmJar :client:desktopApp:jar :client:desktopApp:test
 
   build-ios:
     name: Build iOS

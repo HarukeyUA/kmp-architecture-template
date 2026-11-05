@@ -23,6 +23,7 @@ import org.example.project.core.ui.navigation.ChildStack
 import org.example.project.core.ui.navigation.defaultPredictiveBackParams
 import org.example.project.core.ui.navigation.defaultStackAnimator
 import org.example.project.core.ui.theme.AppTheme
+import org.example.project.core.ui.theme.rememberIsSystemInDarkMode
 import org.example.project.feature.auth.LoginScreen
 import org.example.project.feature.main.presentation.MainScreen
 import org.example.project.feature.splash.presentation.SplashScreen
@@ -38,11 +39,14 @@ class DefaultRootScreen(
 
     @OptIn(ExperimentalDecomposeApi::class)
     @Composable
-    override fun Content(component: RootComponent) {
+    override fun Content(component: RootComponent, dynamicColorEnabled: Boolean) {
         val composeSnackbarHostState =
             rememberDispatchedSnackbarHostState(component.snackbarHostState)
 
-        AppTheme {
+        AppTheme(
+            darkTheme = rememberIsSystemInDarkMode(),
+            dynamicColorEnabled = dynamicColorEnabled,
+        ) {
             CompositionLocalProvider(LocalErrorRenderer provides errorRenderer) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),

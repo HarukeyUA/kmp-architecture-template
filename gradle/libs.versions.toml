@@ -144,6 +144,10 @@ filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "file
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 nucleus-darkmode-detector = { module = "dev.nucleusframework:nucleus.darkmode-detector", version.ref = "nucleus" }
 nucleus-system-color = { module = "dev.nucleusframework:nucleus.system-color", version.ref = "nucleus" }
+nucleus-core-runtime = { module = "dev.nucleusframework:nucleus.core-runtime", version.ref = "nucleus" }
+nucleus-application = { module = "dev.nucleusframework:nucleus.nucleus-application", version.ref = "nucleus" }
+nucleus-decorated-window-tao = { module = "dev.nucleusframework:nucleus.decorated-window-tao", version.ref = "nucleus" }
+nucleus-decorated-window-material3 = { module = "dev.nucleusframework:nucleus.decorated-window-material3", version.ref = "nucleus" }
 material-kolor = { module = "com.materialkolor:material-kolor", version.ref = "materialKolor" }
 
 # Ktor server
@@ -217,6 +221,7 @@ android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 metro = { id = "dev.zacsweers.metro", version.ref = "metro" }
+nucleus = { id = "dev.nucleusframework", version.ref = "nucleus" }
 
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 

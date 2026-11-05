@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.metro) apply false
     alias(libs.plugins.roborazzi) apply false
     alias(libs.plugins.kotlinJvm) apply false
+    alias(libs.plugins.nucleus) apply false
     alias(libs.plugins.convention.spotless)
     alias(libs.plugins.detekt)
 }
