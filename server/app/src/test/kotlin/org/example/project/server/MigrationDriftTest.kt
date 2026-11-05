@@ -2,15 +2,11 @@ package org.example.project.server
 
 import assertk.assertThat
 import assertk.assertions.isEmpty
-import dev.zacsweers.metro.createGraphFactory
 import kotlin.test.Test
 import kotlinx.coroutines.runBlocking
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.database.dbTransaction
-import org.example.project.server.observability.MetricsConfig
-import org.example.project.server.testing.testJwtConfig
-import org.example.project.server.testing.testStorageConfig
-import org.example.project.server.testing.testWebLimitsConfig
+import org.example.project.server.testing.buildTestGraph
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.testcontainers.postgresql.PostgreSQLContainer
 
@@ -35,29 +31,7 @@ class MigrationDriftTest {
                     username = postgres.username,
                     password = postgres.password,
                 )
-            val storageConfig = testStorageConfig()
-            val config =
-                ServerConfig(
-                    host = "localhost",
-                    port = 0,
-                    version = "test",
-                    database = databaseConfig,
-                    storage = storageConfig,
-                    metrics = MetricsConfig(port = 0),
-                    webLimits = testWebLimitsConfig(),
-                    jwt = testJwtConfig(),
-                )
-
-            val graph =
-                createGraphFactory<ServerGraph.Factory>()
-                    .create(
-                        config,
-                        databaseConfig,
-                        storageConfig,
-                        config.metrics,
-                        config.webLimits,
-                        config.jwt,
-                    )
+            val graph = buildTestGraph(databaseConfig)
             // Applies Flyway migrations and connects Exposed against the container.
             graph.databaseBootstrap.start()
 

@@ -1,26 +1,32 @@
-# Server image — package the runnable distribution (installDist) into a small JRE base.
-# Target-agnostic: runs on any container host (Railway, Fly, Cloud Run, k8s, …).
+# syntax=docker/dockerfile:1.28
+# Server image: builds the distribution inside the image and runs it behind a minimal JRE.
+# Target-agnostic: runs on any container host. From the repo root:
 #
-# Build the distribution first, then the image (the monorepo's Android/iOS modules need the Android
-# SDK to configure, so the JVM artifact is built on the host/CI rather than inside this image):
-#
-#   ./gradlew :server:app:installDist
 #   docker build -t kmp-server .
 #   docker run --rm -p 8080:8080 --env-file .env kmp-server
 #
-# `installDist` writes a self-contained dir (bin/ launcher + lib/ jars) — no Gradle in the image.
-FROM eclipse-temurin:25-jre
+# Isolated projects is what lets this configure without an Android SDK: only the projects
+# :server:app needs are configured.
 
+FROM gradle:9.8-jdk25 AS build
+WORKDIR /workspace
+COPY --chown=gradle: . .
+RUN ./gradlew --no-daemon :server:app:installDist
+
+FROM eclipse-temurin:25.0.5_8-jre
 WORKDIR /app
-COPY server/app/build/install/server/ /app/
+# The process owns nothing on disk: the distribution is read-only and root-owned, and the JVM
+# writes only to stdout, so an unprivileged user loses nothing.
+RUN useradd --system --uid 10001 --no-create-home --shell /usr/sbin/nologin server
+# JVM flags (heap envelope, exit on OOM, UTC) are baked into the launcher by the
+# `convention.server.app` Gradle plugin; JAVA_OPTS still appends to them if a deploy needs more.
+COPY --from=build /workspace/server/app/build/install/server ./
 
-# Config is env-driven (DATABASE_*, S3_*, APP_ENV=production); see .env.example. No secrets baked in.
-# TZ is belt-and-braces only (all timestamp columns are TIMESTAMPTZ; the bin/server launcher also
-# pins -Duser.timezone=UTC via applicationDefaultJvmArgs).
+# Config is env-driven and required values fail the boot (see .env.example); no secrets baked in.
 ENV SERVER_HOST=0.0.0.0 \
     SERVER_PORT=8080 \
     TZ=UTC
 EXPOSE 8080
-
-# /metrics (Prometheus) and /health are served by the app for scrape/liveness probes.
-ENTRYPOINT ["/app/bin/server"]
+USER server
+# The start script `exec`s java, so SIGTERM from a redeploy reaches the JVM directly.
+CMD ["./bin/server"]

@@ -5,21 +5,23 @@ import kotlin.time.Duration
 import org.example.project.server.storage.BlobStore
 
 /**
- * In-memory [BlobStore] for service unit tests in a domain that owns blobs (an avatar feature,
- * say). [presignPut]/[presignGet] return synthetic URLs embedding the key and (for PUT) the
- * reserved length, so a test can assert on them without a real store. [put] simulates the client's
- * out-of-band PUT; [headSize] reflects only what has been [put], so confirm-time HEAD verification
- * is exercised. [deleteFailure], when set, makes [delete] throw — the "bucket fails, DB row
- * preserved" path.
+ * In-memory [BlobStore]. The presign methods return synthetic URLs embedding the key and the
+ * reserved length. [put] stands in for the client's out-of-band PUT, and [headSize] reflects only
+ * what has been [put], so confirm-time HEAD verification is exercised.
  */
 class FakeBlobStore : BlobStore {
     private val objects = ConcurrentHashMap<String, ByteArray>()
 
-    /** Keys passed to [delete] that were actually removed (a failing delete is not recorded). */
+    /** Keys actually removed, in removal order (a refused key is not recorded). */
     val deleted = mutableListOf<String>()
 
-    /** When non-null, [delete] throws it instead of removing the object. */
+    /** When non-null, the whole delete request fails: [delete] and [deleteAll] both throw it. */
     var deleteFailure: Exception? = null
+
+    /**
+     * Keys the store refuses one at a time: [delete] throws, [deleteAll] returns them unremoved.
+     */
+    var refusedKeys: Set<String> = emptySet()
 
     override suspend fun presignPut(key: String, contentLengthBytes: Long, ttl: Duration): String =
         "https://fake-bucket/$key?contentLength=$contentLengthBytes"
@@ -31,14 +33,27 @@ class FakeBlobStore : BlobStore {
 
     override suspend fun delete(key: String) {
         deleteFailure?.let { throw it }
+        if (key in refusedKeys) throw BlobRefusedException(key)
         objects.remove(key)
         deleted += key
     }
 
-    /** Simulates the client PUT of [bytes] to [key]. */
+    override suspend fun deleteAll(keys: Collection<String>): List<String> {
+        deleteFailure?.let { throw it }
+        val (refused, removable) = keys.partition { it in refusedKeys }
+        removable.forEach {
+            objects.remove(it)
+            deleted += it
+        }
+        return refused
+    }
+
     fun put(key: String, bytes: ByteArray) {
         objects[key] = bytes
     }
 
     fun get(key: String): ByteArray? = objects[key]
 }
+
+/** What a [FakeBlobStore.refusedKeys] entry throws out of a single-key delete. */
+class BlobRefusedException(key: String) : RuntimeException("Blob store refused $key")

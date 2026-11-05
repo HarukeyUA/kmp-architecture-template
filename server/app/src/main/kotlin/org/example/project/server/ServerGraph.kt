@@ -9,10 +9,10 @@ import org.example.project.server.auth.SessionStore
 import org.example.project.server.database.DatabaseBootstrap
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.database.TableSet
+import org.example.project.server.lifecycle.ServerEnvironment
 import org.example.project.server.lifecycle.ServerResource
 import org.example.project.server.observability.MetricsConfig
-import org.example.project.server.storage.BlobStore
-import org.example.project.server.storage.StorageConfig
+import org.example.project.server.scheduler.ScheduledJob
 import org.example.project.server.web.PluginInstaller
 import org.example.project.server.web.RouteRegistrar
 import org.example.project.server.web.WebLimitsConfig
@@ -32,17 +32,16 @@ interface ServerGraph {
     val databaseBootstrap: DatabaseBootstrap
 
     /**
-     * The object-storage primitive, exposed so the storage chain is validated at graph build even
-     * before a domain injects it. Lazy like every Metro accessor — a blob-less server never builds
-     * the S3 client, so this is not a boot-time dependency.
-     */
-    val blobStore: BlobStore
-
-    /**
      * The invariant session primitive, exposed so revocation flows without a route yet (e.g.
      * [SessionStore.revokeAllFor]) are exercisable by the integration suite.
      */
     val sessionStore: SessionStore
+
+    /**
+     * The contributed background jobs. Exposed so a test can assert the set every domain merged
+     * into and drive a sweep without waiting out its interval.
+     */
+    val scheduledJobs: Set<ScheduledJob>
 
     @Multibinds(allowEmpty = true) val pluginInstallers: Set<PluginInstaller>
 
@@ -57,10 +56,10 @@ interface ServerGraph {
         fun create(
             @Provides config: ServerConfig,
             @Provides databaseConfig: DatabaseConfig,
-            @Provides storageConfig: StorageConfig,
             @Provides metricsConfig: MetricsConfig,
             @Provides webLimitsConfig: WebLimitsConfig,
             @Provides jwtConfig: JwtConfig,
+            @Provides environment: ServerEnvironment,
         ): ServerGraph
     }
 }

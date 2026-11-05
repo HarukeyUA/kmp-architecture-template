@@ -1,6 +1,7 @@
 import org.example.project.configureServerKotlinJvm
 import org.example.project.library
 import org.example.project.libs
+import org.example.project.registerServerJvmTestAlias
 import org.example.project.siblingPublicModule
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -26,6 +27,7 @@ class ServerFeatureImplConventionPlugin : Plugin<Project> {
             }
 
             configureServerKotlinJvm()
+            registerServerJvmTestAlias()
 
             dependencies {
                 add("api", project(siblingPublicModule()))
@@ -37,6 +39,9 @@ class ServerFeatureImplConventionPlugin : Plugin<Project> {
                 add("testImplementation", libs.library("kotlin-test"))
                 add("testImplementation", libs.library("assertk"))
                 add("testImplementation", libs.library("kotlinx-coroutines-test"))
+                add("testImplementation", project(":server:core:testing"))
+                add("testImplementation", libs.library("testcontainers-postgresql"))
+                add("testImplementation", libs.library("postgresql"))
             }
         }
     }

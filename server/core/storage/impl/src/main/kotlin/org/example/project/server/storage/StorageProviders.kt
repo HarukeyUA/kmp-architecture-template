@@ -6,16 +6,28 @@ import dev.zacsweers.metro.ContributesTo
 import dev.zacsweers.metro.IntoSet
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
+import org.example.project.server.lifecycle.ServerEnvironment
 import org.example.project.server.lifecycle.ServerResource
+import org.example.project.server.lifecycle.required
 
 @ContributesTo(AppScope::class)
 interface StorageProviders {
     /**
-     * The single [S3Client]. `@SingleIn` + Metro's lazy provision means it is built only when a
-     * domain first injects [BlobStore]; a blob-less server never constructs it, so object storage
-     * is never a boot-time dependency. [StorageConfig] itself is provided by the graph factory,
-     * threaded from the one typed `ServerConfig` (mirroring `DatabaseConfig`).
+     * Resolved when a domain first injects [BlobStore], so object storage is never a boot-time
+     * dependency and a blob-less server needs no `S3_*` environment. A consumer on a server missing
+     * any of them fails there, naming the key.
      */
+    @Provides
+    @SingleIn(AppScope::class)
+    fun provideStorageConfig(environment: ServerEnvironment): StorageConfig =
+        StorageConfig(
+            endpoint = environment.required("S3_ENDPOINT"),
+            region = environment.required("S3_REGION"),
+            bucket = environment.required("S3_BUCKET"),
+            accessKey = environment.required("S3_ACCESS_KEY"),
+            secretKey = environment.required("S3_SECRET_KEY"),
+        )
+
     @Provides
     @SingleIn(AppScope::class)
     fun provideS3Client(resource: S3ClientResource): S3Client = resource.get()

@@ -1,6 +1,7 @@
 import org.example.project.configureServerKotlinJvm
 import org.example.project.library
 import org.example.project.libs
+import org.example.project.registerServerJvmTestAlias
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaApplication
@@ -26,14 +27,21 @@ class ServerAppConventionPlugin : Plugin<Project> {
             }
 
             configureServerKotlinJvm()
+            registerServerJvmTestAlias()
 
             extensions.configure<JavaApplication> {
                 applicationName = "server"
                 mainClass.set("org.example.project.server.MainKt")
-                // Belt-and-braces UTC pin (not load-bearing: all timestamp columns are
-                // TIMESTAMPTZ via utcTimestamp). Keeps logs and SQL now() defaults consistent
-                // for `./gradlew run` and the installDist launcher the Dockerfile ships.
-                applicationDefaultJvmArgs = listOf("-Duser.timezone=UTC")
+                // Baked into `./gradlew run` and the installDist launcher the Dockerfile ships.
+                // The heap follows the container's cgroup limit, and an OOM ends the process so
+                // the platform restarts it instead of leaving a wedged JVM. UTC is belt-and-braces:
+                // timestamp columns are TIMESTAMPTZ.
+                applicationDefaultJvmArgs =
+                    listOf(
+                        "-Duser.timezone=UTC",
+                        "-XX:MaxRAMPercentage=75",
+                        "-XX:+ExitOnOutOfMemoryError",
+                    )
             }
 
             dependencies {

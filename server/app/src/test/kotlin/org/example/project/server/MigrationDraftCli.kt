@@ -1,6 +1,5 @@
 package org.example.project.server
 
-import dev.zacsweers.metro.createGraphFactory
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -10,10 +9,7 @@ import kotlin.io.path.writeText
 import kotlinx.coroutines.runBlocking
 import org.example.project.server.database.DatabaseConfig
 import org.example.project.server.database.dbTransaction
-import org.example.project.server.observability.MetricsConfig
-import org.example.project.server.testing.testJwtConfig
-import org.example.project.server.testing.testStorageConfig
-import org.example.project.server.testing.testWebLimitsConfig
+import org.example.project.server.testing.buildTestGraph
 import org.jetbrains.exposed.v1.migration.jdbc.MigrationUtils
 import org.testcontainers.postgresql.PostgreSQLContainer
 
@@ -51,29 +47,7 @@ private fun generateMigrationStatements(): List<String> {
                 username = postgres.username,
                 password = postgres.password,
             )
-        val storageConfig = testStorageConfig()
-        val config =
-            ServerConfig(
-                host = "localhost",
-                port = 0,
-                version = "migration-draft",
-                database = databaseConfig,
-                storage = storageConfig,
-                metrics = MetricsConfig(port = 0),
-                webLimits = testWebLimitsConfig(),
-                jwt = testJwtConfig(),
-            )
-
-        val graph =
-            createGraphFactory<ServerGraph.Factory>()
-                .create(
-                    config,
-                    databaseConfig,
-                    storageConfig,
-                    config.metrics,
-                    config.webLimits,
-                    config.jwt,
-                )
+        val graph = buildTestGraph(databaseConfig)
 
         graph.databaseBootstrap.start()
 

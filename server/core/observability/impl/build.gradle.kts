@@ -12,4 +12,7 @@ dependencies {
 
     // /health renders a small JSON body via the kotlinx-serialization runtime (buildJsonObject).
     implementation(libs.kotlinx.serialization.json)
+
+    testImplementation(libs.ktor.server.test.host)
+    testImplementation(libs.logback.classic)
 }

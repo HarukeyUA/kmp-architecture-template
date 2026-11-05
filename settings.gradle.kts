@@ -165,6 +165,8 @@ include(":server:core:storage:impl")
 
 include(":server:core:storage:testing")
 
+include(":server:core:testing")
+
 include(":server:core:scheduler:public")
 
 include(":server:core:scheduler:impl")

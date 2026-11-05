@@ -1,11 +1,11 @@
-package org.example.project.server.storage.testing
+package org.example.project.server.testing
 
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
 
 /**
- * Single-node RustFS, the S3-compatible store the server tests run against. Buckets are not
- * pre-provisioned; callers create theirs.
+ * Single-node RustFS, the S3-compatible store the server tests run against (same image as
+ * `docker-compose.yml`). Buckets are not pre-provisioned; callers create theirs.
  */
 class RustFsContainer : GenericContainer<RustFsContainer>(IMAGE) {
     val accessKey = "template"

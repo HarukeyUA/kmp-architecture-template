@@ -1,8 +1,7 @@
 package org.example.project.server.lifecycle
 
 /**
- * An app-scoped resource owned by the server graph and released when the Arrow resource scope
- * around the running server exits.
+ * An app-scoped resource owned by the server graph and released when the application stops.
  *
  * Implementations should be idempotent: shutdown may race with partial startup, and lazy resources
  * should simply no-op when they were never acquired.

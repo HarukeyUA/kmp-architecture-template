@@ -1,6 +1,7 @@
 import org.example.project.configureServerKotlinJvm
 import org.example.project.library
 import org.example.project.libs
+import org.example.project.registerServerJvmTestAlias
 import org.example.project.siblingPublicModule
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -25,6 +26,7 @@ class ServerCoreImplConventionPlugin : Plugin<Project> {
             }
 
             configureServerKotlinJvm()
+            registerServerJvmTestAlias()
 
             dependencies {
                 add("api", project(siblingPublicModule()))

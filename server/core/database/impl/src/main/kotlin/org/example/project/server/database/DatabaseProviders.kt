@@ -10,6 +10,12 @@ import dev.zacsweers.metro.SingleIn
 import javax.sql.DataSource
 import org.example.project.server.lifecycle.ServerResource
 
+// Upper bound on how long pool construction keeps retrying the first connection. A managed Postgres
+// that sleeps when idle takes seconds to wake, so a single attempt would fail the boot.
+private const val POOL_INITIALIZATION_TIMEOUT_MILLIS: Long = 60_000
+
+private const val CONNECTION_TIMEOUT_MILLIS: Long = 5_000
+
 @ContributesTo(AppScope::class)
 interface DatabaseProviders {
     /**
@@ -23,10 +29,12 @@ interface DatabaseProviders {
         HikariDataSource(
             HikariConfig().apply {
                 jdbcUrl = config.jdbcUrl
-                username = config.username
-                password = config.password
+                config.username?.let { username = it }
+                config.password?.let { password = it }
                 maximumPoolSize = config.maxPoolSize
                 driverClassName = "org.postgresql.Driver"
+                connectionTimeout = CONNECTION_TIMEOUT_MILLIS
+                initializationFailTimeout = POOL_INITIALIZATION_TIMEOUT_MILLIS
             },
         )
 

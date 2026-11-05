@@ -2,6 +2,7 @@ package org.example.project.server
 
 import assertk.assertThat
 import assertk.assertions.contains
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNull
 import kotlin.test.Test
@@ -9,19 +10,22 @@ import kotlin.test.assertFailsWith
 import kotlin.time.Duration.Companion.minutes
 
 /**
- * [ServerConfig.load] against a fake environment — the `getenv` parameter exists exactly for this.
- * The contract under test is "fail fast with a clear message": every rejection must name the
- * offending key, and present-but-blank values behave like absent ones.
+ * [ServerConfig.load] against a fake environment. The contract under test is "fail fast with a
+ * clear message" with no environment gate: every rejection names the offending key, and
+ * present-but-blank values behave like absent ones.
  */
 class ServerConfigTest {
+    private val requiredEnv =
+        mapOf(
+            "DATABASE_URL" to "postgres://alice:secret@db.internal:5432/app",
+            "JWT_SECRET" to "0123456789abcdef0123456789abcdef",
+        )
 
-    private fun load(vararg env: Pair<String, String>): ServerConfig = ServerConfig.load { key ->
-        env.toMap()[key]
-    }
+    private fun load(env: Map<String, String>): ServerConfig = ServerConfig.load { env[it] }
 
     @Test
-    fun `empty environment yields dev defaults`() {
-        val config = load()
+    fun `required values alone yield defaults for the rest`() {
+        val config = load(requiredEnv)
 
         assertThat(config.port).isEqualTo(8080)
         assertThat(config.database.maxPoolSize).isEqualTo(10)
@@ -33,8 +37,82 @@ class ServerConfigTest {
     }
 
     @Test
+    fun `postgres url is split into jdbc url and credentials`() {
+        val config = load(requiredEnv)
+
+        assertThat(config.database.jdbcUrl).isEqualTo("jdbc:postgresql://db.internal:5432/app")
+        assertThat(config.database.username).isEqualTo("alice")
+        assertThat(config.database.password).isEqualTo("secret")
+    }
+
+    @Test
+    fun `jdbc url takes separately supplied credentials`() {
+        val config =
+            load(
+                requiredEnv +
+                    mapOf(
+                        "DATABASE_URL" to "jdbc:postgresql://db.internal:5432/app",
+                        "DATABASE_USER" to "bob",
+                        "DATABASE_PASSWORD" to "hunter2",
+                    ),
+            )
+
+        assertThat(config.database.jdbcUrl).isEqualTo("jdbc:postgresql://db.internal:5432/app")
+        assertThat(config.database.username).isEqualTo("bob")
+        assertThat(config.database.password).isEqualTo("hunter2")
+    }
+
+    @Test
+    fun `jdbc url alone leaves the credentials to the url`() {
+        val config =
+            load(requiredEnv + ("DATABASE_URL" to "jdbc:postgresql://db/app?user=bob&password=x"))
+
+        assertThat(config.database.username).isNull()
+        assertThat(config.database.password).isNull()
+    }
+
+    @Test
+    fun `loading never reads object storage values`() {
+        val keysRead = mutableListOf<String>()
+
+        ServerConfig.load { key ->
+            keysRead += key
+            requiredEnv[key]
+        }
+
+        assertThat(keysRead.filter { it.startsWith("S3_") }).isEmpty()
+    }
+
+    @Test
+    fun `dropping any required value fails naming the key`() {
+        requiredEnv.keys.forEach { key ->
+            val failure = assertFailsWith<IllegalStateException> { load(requiredEnv - key) }
+            assertThat(failure.message.orEmpty()).contains(key)
+        }
+    }
+
+    @Test
+    fun `blank required value fails like a missing one`() {
+        val failure =
+            assertFailsWith<IllegalStateException> { load(requiredEnv + ("JWT_SECRET" to " ")) }
+
+        assertThat(failure.message.orEmpty()).contains("JWT_SECRET")
+    }
+
+    @Test
+    fun `short jwt secret fails naming the key`() {
+        val failure =
+            assertFailsWith<IllegalStateException> {
+                load(requiredEnv + ("JWT_SECRET" to "too-short"))
+            }
+
+        assertThat(failure.message.orEmpty()).contains("JWT_SECRET")
+    }
+
+    @Test
     fun `blank optional value falls back to the default instead of failing to parse`() {
-        val config = load("SERVER_PORT" to "", "DATABASE_MAX_POOL_SIZE" to "  ")
+        val config =
+            load(requiredEnv + mapOf("SERVER_PORT" to "", "DATABASE_MAX_POOL_SIZE" to "  "))
 
         assertThat(config.port).isEqualTo(8080)
         assertThat(config.database.maxPoolSize).isEqualTo(10)
@@ -42,7 +120,8 @@ class ServerConfigTest {
 
     @Test
     fun `non-numeric value fails naming the offending key`() {
-        val failure = assertFailsWith<IllegalStateException> { load("SERVER_PORT" to "abc") }
+        val failure =
+            assertFailsWith<IllegalStateException> { load(requiredEnv + ("SERVER_PORT" to "abc")) }
 
         assertThat(failure.message.orEmpty()).contains("SERVER_PORT")
         assertThat(failure.message.orEmpty()).contains("abc")
@@ -51,75 +130,27 @@ class ServerConfigTest {
     @Test
     fun `non-numeric long value fails naming the offending key`() {
         val failure =
-            assertFailsWith<IllegalStateException> { load("MAX_REQUEST_BODY_BYTES" to "1MiB") }
+            assertFailsWith<IllegalStateException> {
+                load(requiredEnv + ("MAX_REQUEST_BODY_BYTES" to "1MiB"))
+            }
 
         assertThat(failure.message.orEmpty()).contains("MAX_REQUEST_BODY_BYTES")
     }
 
     @Test
-    fun `missing required value in production fails naming the offending key`() {
-        val failure = assertFailsWith<IllegalStateException> { load("APP_ENV" to "production") }
-
-        assertThat(failure.message.orEmpty()).contains("DATABASE_URL")
-    }
-
-    @Test
-    fun `blank required value in production fails like a missing one`() {
-        val failure =
-            assertFailsWith<IllegalStateException> {
-                load(
-                    "APP_ENV" to "production",
-                    "DATABASE_URL" to "jdbc:postgresql://db:5432/app",
-                    "DATABASE_USER" to "app",
-                    "DATABASE_PASSWORD" to "",
-                )
-            }
-
-        assertThat(failure.message.orEmpty()).contains("DATABASE_PASSWORD")
-    }
-
-    @Test
     fun `blank client ip header means socket address, not a blank header name`() {
-        val config = load("CLIENT_IP_HEADER" to "")
+        val config = load(requiredEnv + ("CLIENT_IP_HEADER" to ""))
 
         assertThat(config.webLimits.clientIpHeader).isNull()
     }
 
     @Test
-    fun `missing jwt secret in production fails naming the offending key`() {
-        val failure = assertFailsWith<IllegalStateException> { load(*productionEnvWithoutJwt()) }
-
-        assertThat(failure.message.orEmpty()).contains("JWT_SECRET")
-    }
-
-    @Test
-    fun `short jwt secret in production fails naming the offending key`() {
-        val failure =
-            assertFailsWith<IllegalStateException> {
-                load(*productionEnvWithoutJwt(), "JWT_SECRET" to "too-short")
-            }
-
-        assertThat(failure.message.orEmpty()).contains("JWT_SECRET")
-    }
-
-    @Test
     fun `non-numeric access token ttl fails naming the offending key`() {
         val failure =
-            assertFailsWith<IllegalStateException> { load("JWT_ACCESS_TTL_MINUTES" to "soon") }
+            assertFailsWith<IllegalStateException> {
+                load(requiredEnv + ("JWT_ACCESS_TTL_MINUTES" to "soon"))
+            }
 
         assertThat(failure.message.orEmpty()).contains("JWT_ACCESS_TTL_MINUTES")
     }
-
-    /** Every production-required key except the JWT secret, so its check is the one that trips. */
-    private fun productionEnvWithoutJwt(): Array<Pair<String, String>> =
-        arrayOf(
-            "APP_ENV" to "production",
-            "DATABASE_URL" to "jdbc:postgresql://db:5432/app",
-            "DATABASE_USER" to "app",
-            "DATABASE_PASSWORD" to "secret",
-            "S3_ENDPOINT" to "https://storage.example.com",
-            "S3_BUCKET" to "blobs",
-            "S3_ACCESS_KEY" to "key",
-            "S3_SECRET_KEY" to "secret",
-        )
 }

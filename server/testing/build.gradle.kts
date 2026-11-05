@@ -33,7 +33,7 @@ dependencies {
     // plain `implementation`), and it is real harness ABI: serverTest's `finally` calls closeAll.
     api(project(":server:app"))
     api(project(":server:core:lifecycle:public"))
-    api(project(":server:core:storage:testing"))
+    api(project(":server:core:testing"))
 
     api(libs.ktor.server.test.host)
     api(libs.ktor.client.core)

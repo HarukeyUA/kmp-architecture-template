@@ -4,7 +4,7 @@ import kotlin.time.Duration
 
 /**
  * Object storage behind one interface — **never local disk**. Backed by any S3-compatible store
- * (MinIO locally, Railway Buckets / AWS S3 in prod); going multi-node is then a config change, not
+ * (RustFS locally, Railway Buckets / AWS S3 in prod); going multi-node is then a config change, not
  * a rewrite, because no blob ever lives on an instance's filesystem.
  *
  * The transfer model is **presigned URLs**: the server signs a short-lived URL and the client
@@ -34,4 +34,11 @@ interface BlobStore {
      * Removes the object at [key]. Idempotent: deleting a missing key is a no-op, never an error.
      */
     suspend fun delete(key: String)
+
+    /**
+     * Removes every object in [keys], batching the round-trips. Idempotent per key like [delete].
+     * Returns the keys the store refused, so a caller tracking outstanding work retries only those;
+     * a throw means the whole request failed and no key can be assumed gone.
+     */
+    suspend fun deleteAll(keys: Collection<String>): List<String>
 }

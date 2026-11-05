@@ -1,29 +1,21 @@
 package org.example.project.server.testing
 
-import dev.zacsweers.metro.createGraphFactory
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import org.example.project.server.ServerConfig
 import org.example.project.server.ServerGraph
 import org.example.project.server.auth.JwtConfig
+import org.example.project.server.createServerGraph
 import org.example.project.server.database.DatabaseConfig
+import org.example.project.server.lifecycle.ServerEnvironment
 import org.example.project.server.observability.MetricsConfig
-import org.example.project.server.storage.StorageConfig
 import org.example.project.server.web.WebLimitsConfig
 
 /**
- * A throwaway [StorageConfig] for graph-building in tests that don't touch object storage. The S3
- * client is provided lazily (`@SingleIn`), so nothing connects to these values — they only satisfy
- * the graph factory's `storageConfig` parameter.
+ * An environment with nothing set, so a test can't pick up values from the host's shell. A graph
+ * built on it fails loudly if anything asks for config the test didn't supply.
  */
-fun testStorageConfig(): StorageConfig =
-    StorageConfig(
-        endpoint = "http://localhost:9000",
-        region = "us-east-1",
-        bucket = "test",
-        accessKey = "test",
-        secretKey = "test",
-    )
+fun testEnvironment(): ServerEnvironment = ServerEnvironment { null }
 
 /**
  * A [JwtConfig] with the production-default TTL for integration flows. A test probing access-token
@@ -56,13 +48,9 @@ fun testWebLimitsConfig(
 /** A metrics port of 0 — the test engine never binds the second connector anyway. */
 fun testMetricsConfig(): MetricsConfig = MetricsConfig(port = 0)
 
-/**
- * Builds a full [ServerConfig] around [databaseConfig] and [storageConfig] (throwaway storage by
- * default for graph-building tests that don't touch object storage).
- */
+/** Builds a full [ServerConfig] around [databaseConfig]. */
 fun testServerConfig(
     databaseConfig: DatabaseConfig,
-    storageConfig: StorageConfig = testStorageConfig(),
     webLimitsConfig: WebLimitsConfig = testWebLimitsConfig(),
     jwtConfig: JwtConfig = testJwtConfig(),
 ): ServerConfig =
@@ -71,31 +59,19 @@ fun testServerConfig(
         port = 0,
         version = "test",
         database = databaseConfig,
-        storage = storageConfig,
         metrics = testMetricsConfig(),
         webLimits = webLimitsConfig,
         jwt = jwtConfig,
     )
 
 /**
- * Builds the real [ServerGraph] around [databaseConfig], threading the sub-configs like `main`. A
- * blob-exercising test passes a RustFS-backed [storageConfig] so presign/HEAD/delete legs hit a
- * real S3-compatible store.
+ * Builds the real [ServerGraph] around [databaseConfig]. A blob-exercising test passes
+ * [TestRustFs.environment] so presign/HEAD/delete legs hit a real S3-compatible store.
  */
 fun buildTestGraph(
     databaseConfig: DatabaseConfig,
-    storageConfig: StorageConfig = testStorageConfig(),
+    environment: ServerEnvironment = testEnvironment(),
     webLimitsConfig: WebLimitsConfig = testWebLimitsConfig(),
     jwtConfig: JwtConfig = testJwtConfig(),
-): ServerGraph {
-    val config = testServerConfig(databaseConfig, storageConfig, webLimitsConfig, jwtConfig)
-    return createGraphFactory<ServerGraph.Factory>()
-        .create(
-            config,
-            databaseConfig,
-            config.storage,
-            config.metrics,
-            config.webLimits,
-            config.jwt,
-        )
-}
+): ServerGraph =
+    createServerGraph(testServerConfig(databaseConfig, webLimitsConfig, jwtConfig), environment)

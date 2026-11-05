@@ -47,6 +47,14 @@ fun Project.configureServerKotlinJvm() {
     }
 }
 
+/** Lets the repo-wide `./gradlew jvmTest` reach a plain-JVM server module's `test` task. */
+fun Project.registerServerJvmTestAlias() {
+    tasks.register("jvmTest") {
+        description = "Alias for :test so the repo-wide jvmTest convention hits this module."
+        dependsOn("test")
+    }
+}
+
 fun VersionCatalog.version(alias: String): String = findVersion(alias).get().requiredVersion
 
 fun VersionCatalog.library(alias: String): String = findLibrary(alias).get().get().toString()

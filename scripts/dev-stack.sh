@@ -1,5 +1,5 @@
 #!/bin/sh
-# One-command local dev stack: Postgres + MinIO (docker compose) + :server:app.
+# One-command local dev stack: Postgres + RustFS (docker compose) + :server:app.
 #
 #   scripts/dev-stack.sh          # localhost mode: desktop / iOS simulator / Android emulator
 #   scripts/dev-stack.sh --lan    # LAN mode: physical devices (anything not on this machine)
@@ -99,14 +99,18 @@ if [ ! -f .env ]; then
     echo "No .env found — copied .env.example to .env (gitignored, local compose values only)."
 fi
 
-# `--wait` counts the one-shot minio-init's clean exit as a failure, so start everything first,
-# then wait for health only on the long-running services.
-docker compose up -d
-docker compose up -d --wait postgres minio
+# `--wait` counts the one-shot rustfs-init's clean exit as a failure, so start everything first,
+# then wait for health only on the long-running services. --remove-orphans stops services dropped
+# from docker-compose.yml that would otherwise keep holding their ports.
+docker compose up -d --remove-orphans
+docker compose up -d --wait postgres rustfs
 
-# ServerConfig reads process env only. Exporting .env here is the whole trick — these are the
-# compose-local values; real deployment secrets are never read by this script.
+# ServerConfig reads process env only and refuses to boot on a missing required var. .env.example
+# goes first so a .env copied before a var became required still boots. These are the compose-local
+# values; real deployment secrets are never read by this script.
 set -a
+# shellcheck disable=SC1091
+. ./.env.example
 # shellcheck disable=SC1091
 . ./.env
 set +a
@@ -124,8 +128,8 @@ if [ "$MODE" = "lan" ]; then
 ============================== dev stack: LAN mode ==============================
  server   http://$LAN_HOST:8080   (Android emulator: http://10.0.2.2:8080 also works)
  metrics  http://localhost:8081/metrics
- minio    http://$LAN_HOST:9000   (presigned host — baked into URLs the server mints)
- console  http://localhost:9001   (minio / minio12345)
+ rustfs   http://$LAN_HOST:9000   (presigned host — baked into URLs the server mints)
+ console  http://localhost:9001/rustfs/console/   (S3_ACCESS_KEY / S3_SECRET_KEY from .env)
  logs     $LOG_LEVEL (override with LOG_LEVEL=INFO)
 
  Deterministic client builds (especially on VPN/multi-NIC machines):
@@ -146,8 +150,8 @@ else
 =========================== dev stack: localhost mode ===========================
  server   http://localhost:8080   (Android emulator: http://10.0.2.2:8080)
  metrics  http://localhost:8081/metrics
- minio    http://localhost:9000   (presigned host — this machine only!)
- console  http://localhost:9001   (minio / minio12345)
+ rustfs   http://localhost:9000   (presigned host — this machine only!)
+ console  http://localhost:9001/rustfs/console/   (S3_ACCESS_KEY / S3_SECRET_KEY from .env)
  logs     $LOG_LEVEL (override with LOG_LEVEL=INFO)
 
  Clients — dev builds point here out of the box:

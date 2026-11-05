@@ -6,12 +6,14 @@ import io.ktor.client.plugins.resources.Resources
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.testing.ApplicationTestBuilder
 import io.ktor.server.testing.testApplication
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.example.project.server.ServerGraph
 import org.example.project.server.auth.JwtConfig
 import org.example.project.server.configureServer
+import org.example.project.server.lifecycle.ServerEnvironment
 import org.example.project.server.lifecycle.closeAll
-import org.example.project.server.storage.StorageConfig
 import org.example.project.server.web.WebLimitsConfig
 
 /**
@@ -25,21 +27,20 @@ import org.example.project.server.web.WebLimitsConfig
  * pool holds connections against the one shared container until Postgres' limit corrupts sibling
  * suites) is unrepresentable rather than a per-suite discipline.
  *
- * [storageConfig] defaults to a throwaway config: the S3 client is provided lazily, so tests that
- * don't touch the bucket leg never construct it; a blob-exercising test passes
- * [TestRustFs.storageConfig]. [webLimitsConfig] / [jwtConfig] default to roomy production-shaped
- * values — a test probing the limits themselves passes tight ones (see
- * `WebHardeningIntegrationTest`).
+ * [environment] defaults to an empty one: storage config resolves only when something injects
+ * `BlobStore`, so a test exercising that passes [TestRustFs.environment]. [webLimitsConfig] /
+ * [jwtConfig] default to roomy production-shaped values — a test probing the limits themselves
+ * passes tight ones (see `WebHardeningIntegrationTest`).
  *
  * [block]'s receiver is the raw [ApplicationTestBuilder] for harnesses that build bespoke clients
  * on top.
  */
 fun serverTest(
-    storageConfig: StorageConfig = testStorageConfig(),
+    environment: ServerEnvironment = testEnvironment(),
     webLimitsConfig: WebLimitsConfig = testWebLimitsConfig(),
     jwtConfig: JwtConfig = testJwtConfig(),
     block: suspend ApplicationTestBuilder.(HttpClient) -> Unit,
-) = serverGraphTest(storageConfig, webLimitsConfig, jwtConfig) { http, _ -> block(http) }
+) = serverGraphTest(environment, webLimitsConfig, jwtConfig) { http, _ -> block(http) }
 
 /**
  * [serverTest] for the rare suite that must reach a real service on the booted [ServerGraph]
@@ -47,16 +48,17 @@ fun serverTest(
  * through the seam client is what pins the wire.
  */
 fun serverGraphTest(
-    storageConfig: StorageConfig = testStorageConfig(),
+    environment: ServerEnvironment = testEnvironment(),
     webLimitsConfig: WebLimitsConfig = testWebLimitsConfig(),
     jwtConfig: JwtConfig = testJwtConfig(),
     block: suspend ApplicationTestBuilder.(HttpClient, ServerGraph) -> Unit,
 ) = testApplication {
-    val graph = installTestServer(storageConfig, webLimitsConfig, jwtConfig)
+    val graph = installTestServer(environment, webLimitsConfig, jwtConfig)
     try {
         block(seamClient(), graph)
     } finally {
-        graph.serverResources.closeAll()
+        // The pool has to be released even when the test body is cancelled.
+        withContext(NonCancellable) { graph.serverResources.closeAll() }
     }
 }
 
@@ -72,14 +74,14 @@ fun serverGraphTest(
  * [buildTestGraph].
  */
 internal fun ApplicationTestBuilder.installTestServer(
-    storageConfig: StorageConfig = testStorageConfig(),
+    environment: ServerEnvironment = testEnvironment(),
     webLimitsConfig: WebLimitsConfig = testWebLimitsConfig(),
     jwtConfig: JwtConfig = testJwtConfig(),
 ): ServerGraph {
     TestPostgres.connect()
     TestPostgres.resetSchema()
     val graph =
-        buildTestGraph(TestPostgres.databaseConfig(), storageConfig, webLimitsConfig, jwtConfig)
+        buildTestGraph(TestPostgres.databaseConfig(), environment, webLimitsConfig, jwtConfig)
     application { configureServer(graph) }
     return graph
 }

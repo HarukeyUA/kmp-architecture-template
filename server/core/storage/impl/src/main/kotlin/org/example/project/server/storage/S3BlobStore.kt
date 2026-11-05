@@ -2,11 +2,15 @@ package org.example.project.server.storage
 
 import aws.sdk.kotlin.services.s3.S3Client
 import aws.sdk.kotlin.services.s3.deleteObject
+import aws.sdk.kotlin.services.s3.deleteObjects
 import aws.sdk.kotlin.services.s3.headObject
+import aws.sdk.kotlin.services.s3.model.Delete
 import aws.sdk.kotlin.services.s3.model.DeleteObjectRequest
+import aws.sdk.kotlin.services.s3.model.DeleteObjectsRequest
 import aws.sdk.kotlin.services.s3.model.GetObjectRequest
 import aws.sdk.kotlin.services.s3.model.HeadObjectRequest
 import aws.sdk.kotlin.services.s3.model.NotFound
+import aws.sdk.kotlin.services.s3.model.ObjectIdentifier
 import aws.sdk.kotlin.services.s3.model.PutObjectRequest
 import aws.sdk.kotlin.services.s3.presigners.presignGetObject
 import aws.sdk.kotlin.services.s3.presigners.presignPutObject
@@ -15,9 +19,13 @@ import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import kotlin.time.Duration
 
+// S3 caps one DeleteObjects request at 1000 keys.
+private const val DELETE_OBJECTS_LIMIT = 1000
+
 /**
  * [BlobStore] backed by [aws-sdk-kotlin](https://github.com/awslabs/aws-sdk-kotlin) — the same
- * client speaks to MinIO (local) and Railway Buckets / AWS S3 (prod), since both are S3-compatible.
+ * client speaks to RustFS (local) and Railway Buckets / AWS S3 (prod), since both are
+ * S3-compatible.
  *
  * Presigning is a local signing operation: it never touches the network, so it stays cheap and
  * doesn't make object storage a boot-time dependency (the [S3Client] is created lazily by Metro the
@@ -78,4 +86,22 @@ class S3BlobStore(private val client: S3Client, private val config: StorageConfi
             },
         )
     }
+
+    override suspend fun deleteAll(keys: Collection<String>): List<String> =
+        keys.chunked(DELETE_OBJECTS_LIMIT).flatMap { chunk ->
+            // Quiet mode drops the per-key success entries, so the response carries only refusals.
+            client
+                .deleteObjects(
+                    DeleteObjectsRequest {
+                        bucket = config.bucket
+                        delete = Delete {
+                            objects = chunk.map { ObjectIdentifier { key = it } }
+                            quiet = true
+                        }
+                    },
+                )
+                .errors
+                .orEmpty()
+                .mapNotNull { it.key }
+        }
 }

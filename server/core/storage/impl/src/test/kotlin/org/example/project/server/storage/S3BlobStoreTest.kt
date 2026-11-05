@@ -20,7 +20,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.runBlocking
-import org.example.project.server.storage.testing.RustFsContainer
+import org.example.project.server.testing.RustFsContainer
 
 /**
  * A blob round-trips through real object storage end-to-end. A RustFS Testcontainer stands in for
@@ -98,6 +98,23 @@ class S3BlobStoreTest {
     }
 
     @Test
+    fun `deleteAll removes every key it is given and refuses none`(): Unit = runBlocking {
+        val keys = List(3) { index -> "objects/batch-$index" }
+        keys.forEach { key -> putObject(key, ByteArray(64) { 0x07 }) }
+
+        // A key that was never stored rides along: DeleteObjects treats it as already gone.
+        val refused = store.deleteAll(keys + "objects/never-existed")
+
+        assertThat(refused).isEqualTo(emptyList())
+        keys.forEach { key -> assertThat(store.headSize(key)).isNull() }
+    }
+
+    @Test
+    fun `deleteAll on no keys makes no request`(): Unit = runBlocking {
+        assertThat(store.deleteAll(emptyList())).isEqualTo(emptyList())
+    }
+
+    @Test
     fun `the store rejects a PUT whose Content-Length differs from the signed length`(): Unit =
         runBlocking {
             val key = "objects/size-pinned"
@@ -111,4 +128,13 @@ class S3BlobStoreTest {
                 }
             assertThat(response.status.value).isBetween(400, 499)
         }
+
+    private suspend fun putObject(key: String, payload: ByteArray) {
+        val response =
+            http.put(store.presignPut(key, payload.size.toLong(), 5.minutes)) {
+                headers { append(HttpHeaders.ContentLength, payload.size.toString()) }
+                setBody(payload)
+            }
+        check(response.status == HttpStatusCode.OK) { "PUT of $key failed: ${response.status}" }
+    }
 }

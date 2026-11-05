@@ -8,23 +8,17 @@ import aws.sdk.kotlin.services.s3.listObjectsV2
 import aws.sdk.kotlin.services.s3.model.S3Exception
 import aws.smithy.kotlin.runtime.net.url.Url
 import kotlinx.coroutines.runBlocking
+import org.example.project.server.lifecycle.ServerEnvironment
 import org.example.project.server.storage.StorageConfig
-import org.example.project.server.storage.testing.RustFsContainer
 
 /**
  * Process-wide RustFS Testcontainer for integration tests that exercise the bucket protocol
- * end-to-end (a domain that owns blobs — an avatar feature, say — presigning/HEADing/deleting
- * against a real S3-compatible store). Mirrors [TestPostgres]: one container reused across the JVM,
- * lazy-started, shut down by a JVM hook. Each test should call [resetBucket] (or use a fresh bucket
- * name) to start clean.
- *
- * [storageConfig] is the graph factory's [StorageConfig] pointed at this container — a
- * `serverTest(storageConfig = TestRustFs.storageConfig())` boots the `:server:app` graph with its
- * `BlobStore`/S3 client built from it. Suites that never touch the bucket leg keep the default
- * throwaway [testStorageConfig]; the S3 client is lazy, so nothing connects.
+ * end-to-end; each should call [resetBucket] to start clean. `serverTest(environment =
+ * TestRustFs.environment())` boots the graph with its `BlobStore`/S3 client pointed here.
  */
 object TestRustFs {
     private const val BUCKET_NAME = "template-integration"
+    private const val REGION = "us-east-1"
 
     private val container: RustFsContainer by lazy {
         val c = RustFsContainer().withReuse(false)
@@ -34,16 +28,30 @@ object TestRustFs {
         c
     }
 
-    fun storageConfig(): StorageConfig {
+    /** The `S3_*` values the graph's storage provider resolves against. */
+    fun environment(): ServerEnvironment {
         val c = container
-        return StorageConfig(
+        val values =
+            mapOf(
+                "S3_ENDPOINT" to c.s3Url,
+                "S3_REGION" to REGION,
+                "S3_BUCKET" to BUCKET_NAME,
+                "S3_ACCESS_KEY" to c.accessKey,
+                "S3_SECRET_KEY" to c.secretKey,
+            )
+        return ServerEnvironment { values[it] }
+    }
+
+    private fun storageConfig(): StorageConfig = storageConfig(container)
+
+    private fun storageConfig(c: RustFsContainer): StorageConfig =
+        StorageConfig(
             bucket = BUCKET_NAME,
             endpoint = c.s3Url,
-            region = "us-east-1",
+            region = REGION,
             accessKey = c.accessKey,
             secretKey = c.secretKey,
         )
-    }
 
     /** Empties the bucket between tests. */
     fun resetBucket() {
@@ -62,14 +70,7 @@ object TestRustFs {
     }
 
     private suspend fun ensureBucketExists(c: RustFsContainer) {
-        val cfg =
-            StorageConfig(
-                bucket = BUCKET_NAME,
-                endpoint = c.s3Url,
-                region = "us-east-1",
-                accessKey = c.accessKey,
-                secretKey = c.secretKey,
-            )
+        val cfg = storageConfig(c)
         adminClient(cfg).use { client ->
             try {
                 client.createBucket { bucket = cfg.bucket }

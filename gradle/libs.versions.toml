@@ -170,7 +170,7 @@ flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 argon2 = { module = "de.mkammerer:argon2-jvm", version.ref = "argon2" }
 
-# Object storage (S3-compatible: MinIO locally, Railway Buckets / AWS S3 in prod)
+# Object storage (S3-compatible: RustFS locally, Railway Buckets / AWS S3 in prod)
 aws-sdk-kotlin-s3 = { module = "aws.sdk.kotlin:s3", version.ref = "awsSdkKotlin" }
 
 # Observability (server)
