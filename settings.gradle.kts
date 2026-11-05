@@ -81,6 +81,12 @@ include(":client:core:local-storage:public")
 
 include(":client:core:local-storage:impl")
 
+include(":client:core:database:public")
+
+include(":client:core:database:impl")
+
+include(":client:core:database:testing")
+
 // Feature modules
 include(":client:feature:auth:public")
 
@@ -88,11 +94,17 @@ include(":client:feature:auth:impl")
 
 include(":client:feature:auth:robots")
 
-include(":client:feature:home:public")
+include(":client:feature:main:public")
 
-include(":client:feature:home:impl")
+include(":client:feature:main:impl")
 
-include(":client:feature:home:robots")
+include(":client:feature:main:robots")
+
+include(":client:feature:settings:public")
+
+include(":client:feature:settings:impl")
+
+include(":client:feature:settings:robots")
 
 include(":client:feature:splash:public")
 
@@ -104,6 +116,14 @@ include(":client:feature:session:impl")
 
 include(":client:feature:session:testing")
 
+include(":client:feature:tasks:public")
+
+include(":client:feature:tasks:impl")
+
+include(":client:feature:tasks:testing")
+
+include(":client:feature:tasks:robots")
+
 include(":client:core:testing:public")
 
 include(":client:core:screenshot-testing:public")
@@ -112,6 +132,8 @@ include(":client:core:screenshot-testing:public")
 include(":shared:common")
 
 include(":shared:auth")
+
+include(":shared:tasks")
 
 // ===================== :integration umbrella (client↔server tests) =====================
 // May depend on everything; nothing depends on it — both worlds meet only here.
@@ -157,3 +179,7 @@ include(":server:core:scheduler:impl")
 include(":server:feature:auth:public")
 
 include(":server:feature:auth:impl")
+
+include(":server:feature:tasks:public")
+
+include(":server:feature:tasks:impl")

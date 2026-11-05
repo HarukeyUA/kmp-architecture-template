@@ -31,6 +31,8 @@ kotlin {
             // entry-point modules (androidApp / desktopApp / the iOS framework).
             api(project(":client:core:buildinfo:public"))
             api(project(":client:core:network:public"))
+            // RootComponent.State carries the persisted theme, and desktop's title bar reads it.
+            api(project(":client:core:local-storage:public"))
 
             implementation(libs.kermit)
 

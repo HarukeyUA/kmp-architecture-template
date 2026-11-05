@@ -8,8 +8,10 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arkivanov.decompose.ExperimentalDecomposeApi
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.stackAnimation
@@ -23,9 +25,9 @@ import org.example.project.core.ui.navigation.ChildStack
 import org.example.project.core.ui.navigation.defaultPredictiveBackParams
 import org.example.project.core.ui.navigation.defaultStackAnimator
 import org.example.project.core.ui.theme.AppTheme
-import org.example.project.core.ui.theme.rememberIsSystemInDarkMode
+import org.example.project.core.ui.theme.resolveDarkTheme
 import org.example.project.feature.auth.LoginScreen
-import org.example.project.feature.home.HomeScreen
+import org.example.project.feature.main.MainScreen
 import org.example.project.feature.splash.presentation.SplashScreen
 
 @ContributesBinding(AppScope::class)
@@ -33,7 +35,7 @@ import org.example.project.feature.splash.presentation.SplashScreen
 class DefaultRootScreen(
     private val splashScreen: SplashScreen,
     private val loginScreen: LoginScreen,
-    private val homeScreen: HomeScreen,
+    private val mainScreen: MainScreen,
     private val errorRenderer: CompositeErrorRenderer,
 ) : RootScreen {
 
@@ -43,8 +45,10 @@ class DefaultRootScreen(
         val composeSnackbarHostState =
             rememberDispatchedSnackbarHostState(component.snackbarHostState)
 
+        val state by component.state.collectAsStateWithLifecycle()
+
         AppTheme(
-            darkTheme = rememberIsSystemInDarkMode(),
+            darkTheme = state.themeMode.resolveDarkTheme(),
             dynamicColorEnabled = dynamicColorEnabled,
         ) {
             CompositionLocalProvider(LocalErrorRenderer provides errorRenderer) {
@@ -75,7 +79,7 @@ class DefaultRootScreen(
                                 is RootComponent.Child.Splash ->
                                     splashScreen.Content(child.component)
                                 is RootComponent.Child.Login -> loginScreen.Content(child.component)
-                                is RootComponent.Child.Home -> homeScreen.Content(child.component)
+                                is RootComponent.Child.Main -> mainScreen.Content(child.component)
                             }
                         }
 

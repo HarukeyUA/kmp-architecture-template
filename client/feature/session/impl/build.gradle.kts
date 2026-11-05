@@ -6,6 +6,7 @@ plugins {
 kotlin {
     sourceSets {
         commonMain.dependencies {
+            implementation(project(":client:core:database:public"))
             implementation(project(":client:core:local-storage:public"))
             implementation(project(":client:core:network:public"))
             implementation(project(":shared:auth"))
@@ -14,6 +15,7 @@ kotlin {
             implementation(libs.ktor.client.resources)
         }
         commonTest.dependencies {
+            implementation(project(":client:core:database:testing"))
             implementation(project(":client:feature:session:testing"))
             implementation(libs.ktor.client.mock)
         }

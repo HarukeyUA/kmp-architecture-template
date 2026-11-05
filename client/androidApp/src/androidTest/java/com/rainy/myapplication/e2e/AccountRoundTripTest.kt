@@ -10,16 +10,18 @@ class AccountRoundTripTest : E2eTest() {
     fun signupLogoutAndLoginRoundTripTheServer() {
         // The Orchestrator clears app data between tests, but the dev server's database persists.
         val email = "e2e-${Random.nextLong(Long.MAX_VALUE)}@example.com"
-        signUpAndAwaitHome(email, PASSWORD)
+        signUpAndAwaitMain(email, PASSWORD)
 
-        home.logOut()
+        main.openSettingsTab()
+        settings.awaitShown()
+        settings.logOut()
 
         login.awaitShown()
         login.typeEmail(email)
         login.typePassword(PASSWORD)
         login.logIn()
 
-        home.awaitShown()
+        main.awaitShown()
     }
 
     private companion object {

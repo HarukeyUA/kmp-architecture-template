@@ -27,7 +27,8 @@ class FakeAuthRepository(
         password: String,
     ): Either<CallFailure<AuthSignupError>, Unit> = signupResult
 
-    override suspend fun logout() {
+    override suspend fun logout(): Either<CallFailure<Nothing>, Unit> {
         loggedOut = true
+        return Unit.right()
     }
 }

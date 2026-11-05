@@ -75,6 +75,29 @@ class SessionBearerAuthTest {
     }
 
     @Test
+    fun refreshThatOutlivesItsSession_doesNotBringItBack() = runTest {
+        val store = FakeSessionRepository(ClientSession(EXPIRED_ACCESS, REFRESH))
+        val client =
+            client(store, refreshResponse = RefreshResponse.Mints(MINTED_ACCESS)) { store.clear() }
+
+        client.get("http://test/v1/resource")
+
+        assertThat(store.current).isEqualTo(SessionState.Unbound)
+    }
+
+    @Test
+    fun rejectedRefreshOfAnOldSession_leavesTheNewSessionSignedIn() = runTest {
+        val store = FakeSessionRepository(ClientSession(EXPIRED_ACCESS, REFRESH))
+        val next = ClientSession("next-access", "next-refresh")
+        val client =
+            client(store, refreshResponse = RefreshResponse.SessionExpired) { store.persist(next) }
+
+        client.get("http://test/v1/resource")
+
+        assertThat(store.current).isEqualTo(SessionState.Bound(next))
+    }
+
+    @Test
     fun configurer_installsTheBearerProvider() = runTest {
         val store = FakeSessionRepository(ClientSession(MINTED_ACCESS, REFRESH))
         val client =
@@ -93,10 +116,15 @@ class SessionBearerAuthTest {
 
     // The mock's protected route accepts only MINTED_ACCESS. Its 401 challenge carries
     // `WWW-Authenticate: Bearer`, as the real JWT guard does, since that arms Ktor's refresh hook.
-    private fun client(store: SessionRepository, refreshResponse: RefreshResponse): HttpClient {
+    private fun client(
+        store: SessionRepository,
+        refreshResponse: RefreshResponse,
+        duringRefresh: suspend () -> Unit = {},
+    ): HttpClient {
         val engine = MockEngine { request ->
             when {
-                request.url.encodedPath == "/v1/auth/refresh" ->
+                request.url.encodedPath == "/v1/auth/refresh" -> {
+                    duringRefresh()
                     when (refreshResponse) {
                         is RefreshResponse.Mints ->
                             respond(
@@ -129,6 +157,7 @@ class SessionBearerAuthTest {
                         RefreshResponse.ServerError ->
                             respond(content = "", status = HttpStatusCode.InternalServerError)
                     }
+                }
 
                 request.headers[HttpHeaders.Authorization] == "Bearer $MINTED_ACCESS" ->
                     respond(content = "", status = HttpStatusCode.OK)

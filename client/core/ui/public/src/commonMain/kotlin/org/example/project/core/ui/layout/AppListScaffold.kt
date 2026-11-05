@@ -3,6 +3,7 @@ package org.example.project.core.ui.layout
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -37,10 +38,12 @@ import org.example.project.core.ui.topbar.topAppBarNestedScroll
 @Composable
 fun AppListScaffold(
     title: String,
-    onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null,
     subtitle: String? = null,
     backButtonModifier: Modifier = Modifier,
+    actions: @Composable RowScope.() -> Unit = {},
+    floatingActionButton: @Composable () -> Unit = {},
     lazyListState: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(top = 8.dp, bottom = 16.dp),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(16.dp),
@@ -56,9 +59,11 @@ fun AppListScaffold(
                 subtitle = subtitle,
                 onBackClick = onBack,
                 backButtonModifier = backButtonModifier,
+                actions = actions,
                 scrollBehavior = scrollBehavior,
             )
         },
+        floatingActionButton = floatingActionButton,
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
     ) { padding ->
         Box(

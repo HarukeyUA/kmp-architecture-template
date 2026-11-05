@@ -46,6 +46,11 @@ kermit = "2.2.0"
 nucleus = "2.5.18"
 materialKolor = "5.0.1"
 
+# Client local database
+room = "3.0.3"
+sqlite = "2.7.1"
+ksp = "2.3.13"
+
 # Instrumented E2E suite (client/androidApp androidTest)
 androidx-test-runner = "1.7.0"
 androidx-test-rules = "1.7.0"
@@ -140,6 +145,13 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 # System-dependent persistent folder on desktop
 filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
 
+# Client local database
+room-runtime = { module = "androidx.room3:room3-runtime", version.ref = "room" }
+room-compiler = { module = "androidx.room3:room3-compiler", version.ref = "room" }
+room-gradlePlugin = { module = "androidx.room3:room3-gradle-plugin", version.ref = "room" }
+sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
+ksp-gradlePlugin = { module = "com.google.devtools.ksp:symbol-processing-gradle-plugin", version.ref = "ksp" }
+
 # Multiplatform logging (client)
 kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 nucleus-darkmode-detector = { module = "dev.nucleusframework:nucleus.darkmode-detector", version.ref = "nucleus" }
@@ -222,6 +234,8 @@ serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref 
 
 metro = { id = "dev.zacsweers.metro", version.ref = "metro" }
 nucleus = { id = "dev.nucleusframework", version.ref = "nucleus" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+room = { id = "androidx.room3", version.ref = "room" }
 
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 
@@ -239,6 +253,7 @@ convention-server-testing = { id = "convention.server.testing" }
 convention-robots-aggregator = { id = "convention.robots-aggregator" }
 convention-kmp-compose-feature-impl = { id = "convention.kmp.compose.feature.impl" }
 convention-metro = { id = "convention.metro" }
+convention-room = { id = "convention.room" }
 convention-molecule = { id = "convention.molecule" }
 convention-compose = { id = "convention.compose" }
 convention-compose-resources = { id = "convention.compose.resources" }

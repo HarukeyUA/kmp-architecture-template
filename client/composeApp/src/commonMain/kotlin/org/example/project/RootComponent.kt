@@ -1,5 +1,9 @@
 package org.example.project
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.arkivanov.decompose.router.stack.ChildStack
 import com.arkivanov.decompose.router.stack.StackNavigation
 import com.arkivanov.decompose.router.stack.childStack
@@ -17,26 +21,35 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.example.project.core.component.AppComponentContext
-import org.example.project.core.component.lifecycleAwareScope
+import org.example.project.core.component.MoleculeComponent
+import org.example.project.core.component.StatefulComponent
+import org.example.project.core.component.UiState
 import org.example.project.core.component.snackbar.SnackbarHostState
 import org.example.project.core.component.snackbar.snackbarHost
+import org.example.project.core.local.storage.SettingsLocalDataSource
+import org.example.project.core.local.storage.model.SettingsLocalModel
+import org.example.project.core.local.storage.model.ThemeMode
 import org.example.project.core.navigation.StackComponent
 import org.example.project.feature.auth.LoginComponent
-import org.example.project.feature.home.HomeComponent
+import org.example.project.feature.main.MainComponent
+import org.example.project.feature.session.SessionEndWiper
 import org.example.project.feature.session.SessionState
 import org.example.project.feature.session.SessionStatus
 import org.example.project.feature.splash.presentation.SplashComponent
 
-interface RootComponent : StackComponent<Any, RootComponent.Child> {
+interface RootComponent :
+    StackComponent<Any, RootComponent.Child>, StatefulComponent<RootComponent.State> {
 
     val snackbarHostState: SnackbarHostState
+
+    data class State(val themeMode: ThemeMode = ThemeMode.System) : UiState
 
     sealed interface Child {
         data class Splash(val component: SplashComponent) : Child
 
         data class Login(val component: LoginComponent) : Child
 
-        data class Home(val component: HomeComponent) : Child
+        data class Main(val component: MainComponent) : Child
     }
 
     fun interface Factory {
@@ -49,10 +62,11 @@ class DefaultRootComponent(
     @Assisted componentContext: AppComponentContext,
     private val splashComponentFactory: SplashComponent.Factory,
     private val loginComponentFactory: LoginComponent.Factory,
-    private val homeComponentFactory: HomeComponent.Factory,
+    private val mainComponentFactory: MainComponent.Factory,
     private val sessionStatus: SessionStatus,
-) : RootComponent, AppComponentContext by componentContext {
-    private val scope = lifecycleAwareScope()
+    private val sessionEndWiper: SessionEndWiper,
+    private val settings: SettingsLocalDataSource,
+) : RootComponent, MoleculeComponent<RootComponent.State>(componentContext) {
 
     override val snackbarHostState = snackbarHost()
 
@@ -70,6 +84,16 @@ class DefaultRootComponent(
 
     init {
         observeSignedInState()
+        scope.launch { sessionEndWiper.watch() }
+    }
+
+    @Composable
+    override fun produceState(): RootComponent.State {
+        val current by remember {
+            settings.settingsFlow
+        }
+            .collectAsStateWithLifecycle(initialValue = SettingsLocalModel())
+        return RootComponent.State(themeMode = current.themeMode)
     }
 
     private fun observeSignedInState() {
@@ -97,7 +121,7 @@ class DefaultRootComponent(
                 RootComponent.Child.Splash(
                     splashComponentFactory.create(
                         componentContext = componentContext,
-                        onNavigateToHome = ::navigateToHome,
+                        onNavigateToMain = ::navigateToMain,
                         onNavigateToLogin = ::navigateToLogin,
                     ),
                 )
@@ -106,21 +130,15 @@ class DefaultRootComponent(
                 RootComponent.Child.Login(
                     loginComponentFactory.create(
                         componentContext = componentContext,
-                        onAuthenticated = ::navigateToHome,
+                        onAuthenticated = ::navigateToMain,
                     ),
                 )
 
-            Config.Home ->
-                RootComponent.Child.Home(
-                    homeComponentFactory.create(
-                        componentContext = componentContext,
-                        onLogout = ::navigateToLogin,
-                    ),
-                )
+            Config.Main -> RootComponent.Child.Main(mainComponentFactory.create(componentContext))
         }
 
-    private fun navigateToHome() {
-        navigation.replaceAll(Config.Home)
+    private fun navigateToMain() {
+        navigation.replaceAll(Config.Main)
     }
 
     private fun navigateToLogin() {
@@ -133,7 +151,7 @@ class DefaultRootComponent(
 
         @Serializable data object Login : Config
 
-        @Serializable data object Home : Config
+        @Serializable data object Main : Config
     }
 
     @AssistedFactory

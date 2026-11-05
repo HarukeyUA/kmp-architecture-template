@@ -7,6 +7,7 @@ import org.example.project.shared.common.ApiError
 import org.example.project.shared.common.ErrorEnvelope
 import org.example.project.shared.common.decodeAmbientApiError
 import org.example.project.shared.common.decodeDeclaredApiError
+import org.example.project.shared.tasks.TasksApi
 
 /**
  * Decodes this error response's envelope through every Declared lens the integration suites
@@ -20,6 +21,8 @@ suspend fun HttpResponse.decodedError(): ApiError {
             AuthApi.signup.error,
             AuthApi.login.error,
             AuthApi.refresh.error,
+            TasksApi.create.error,
+            TasksApi.get.error,
         )
         .filterNotNull()
         .firstNotNullOfOrNull { lens -> decodeDeclaredApiError(lens, envelope.error) }

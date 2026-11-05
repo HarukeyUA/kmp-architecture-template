@@ -17,6 +17,9 @@ interface AuthRepository {
 
     suspend fun signup(email: String, password: String): Either<CallFailure<AuthSignupError>, Unit>
 
-    /** Best-effort server-side refresh-token revoke, then clears the local session regardless. */
-    suspend fun logout()
+    /**
+     * Best-effort server-side refresh-token revoke, then clears the local session regardless. A
+     * Left means the session could not be cleared, so this device is still signed in.
+     */
+    suspend fun logout(): Either<CallFailure<Nothing>, Unit>
 }

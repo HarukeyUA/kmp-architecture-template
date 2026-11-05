@@ -31,10 +31,13 @@ dependencies {
     // The real client data layer under test: repositories + the bearer/session machinery they
     // ride. Depending on :impl is legal only here — :integration sees everything.
     testImplementation(project(":client:feature:auth:impl"))
+    testImplementation(project(":client:feature:tasks:impl"))
+    testImplementation(project(":client:core:database:impl"))
     testImplementation(project(":client:core:network:public"))
     testImplementation(project(":client:feature:session:impl"))
     testImplementation(project(":client:feature:session:testing"))
 
+    testImplementation(libs.room.runtime)
     testImplementation(libs.ktor.client.auth)
     testImplementation(libs.kotlin.test)
     testImplementation(libs.assertk)

@@ -60,7 +60,12 @@ fun AuthConfig.sessionBearer(sessions: SessionRepository) {
                     contentType(ContentType.Application.Json)
                     setBody(RefreshRequest(refreshToken))
                 }
-            if (response.status.isSuccess()) {
+            // The user may have left this sign-in while the call ran: its outcome must neither
+            // bring
+            // the old session back nor sign out whoever is here now.
+            if (sessions.boundSessionOrNull(log)?.refreshToken != refreshToken) {
+                null
+            } else if (response.status.isSuccess()) {
                 val minted = response.body<AccessTokenResponse>()
                 val session = ClientSession(minted.accessToken, refreshToken)
                 // The retry can still use the minted token when it could not be stored.

@@ -10,6 +10,8 @@ plugins {
     alias(libs.plugins.roborazzi) apply false
     alias(libs.plugins.kotlinJvm) apply false
     alias(libs.plugins.nucleus) apply false
+    alias(libs.plugins.room) apply false
+    alias(libs.plugins.ksp) apply false
     alias(libs.plugins.convention.spotless)
     alias(libs.plugins.detekt) apply false
 }

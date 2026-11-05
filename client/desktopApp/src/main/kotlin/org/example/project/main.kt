@@ -2,6 +2,8 @@ package org.example.project
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,7 +27,7 @@ import org.example.project.core.buildinfo.BuildType
 import org.example.project.core.buildinfo.Environment
 import org.example.project.core.component.DefaultAppComponentContext
 import org.example.project.core.ui.theme.AppTheme
-import org.example.project.core.ui.theme.rememberIsSystemInDarkMode
+import org.example.project.core.ui.theme.resolveDarkTheme
 
 fun main(args: Array<String>) {
     // Baked into the launcher by the build and read directly, because Nucleus's `AppIdProvider`
@@ -60,13 +62,15 @@ fun main(args: Array<String>) {
             appGraph.rootComponentFactory.create(DefaultAppComponentContext(lifecycle = lifecycle))
         }
 
+        val rootState by root.state.collectAsState()
+
         val windowState = rememberWindowState(size = DEFAULT_WINDOW_SIZE)
 
         LifecycleController(lifecycle, windowState)
 
         // Styles the title bar only: on Tao, CompositionLocals don't cross into the window's own
         // ComposeScene, so `App` applies the same theme again inside it.
-        AppTheme(darkTheme = rememberIsSystemInDarkMode(), dynamicColorEnabled = true) {
+        AppTheme(darkTheme = rootState.themeMode.resolveDarkTheme(), dynamicColorEnabled = true) {
             MaterialDecoratedWindow(
                 onCloseRequest = ::exitApplication,
                 state = windowState,

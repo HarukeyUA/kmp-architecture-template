@@ -6,10 +6,14 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.resources.Resources
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.testing.ApplicationTestBuilder
+import org.example.project.core.database.AppDatabase
+import org.example.project.core.database.DefaultTransactionRunner
 import org.example.project.feature.auth.AuthRepository
 import org.example.project.feature.auth.data.AuthRepositoryImpl
 import org.example.project.feature.session.FakeSessionRepository
 import org.example.project.feature.session.sessionBearer
+import org.example.project.feature.tasks.TasksRepository
+import org.example.project.feature.tasks.data.DefaultTasksRepository
 import org.example.project.server.testing.seamJson
 
 /**
@@ -21,6 +25,17 @@ import org.example.project.server.testing.seamJson
  */
 class ClientStack(val http: HttpClient, val sessions: FakeSessionRepository) {
     val auth: AuthRepository = AuthRepositoryImpl(http, sessions)
+
+    /**
+     * [database] is this device's cache: the real Room schema, which the caller owns and closes.
+     */
+    fun tasks(database: AppDatabase): TasksRepository =
+        DefaultTasksRepository(
+            client = http,
+            dao = database.taskDao(),
+            transactions = DefaultTransactionRunner(database),
+            sessions = sessions,
+        )
 }
 
 /** Builds a fresh [ClientStack] — one signed-out "device" — inside a `serverTest` block. */

@@ -1,0 +1,4 @@
+<resources>
+    <string name="main_tab_tasks">Tasks</string>
+    <string name="main_tab_settings">Settings</string>
+</resources>

@@ -29,6 +29,12 @@
     volatile <fields>;
 }
 
+# --- Room and bundled SQLite ---
+# The native library binds these methods by name and throws SQLiteException through JNI.
+-keep class * extends androidx.room3.RoomDatabase { <init>(); }
+-keepclasseswithmembers class androidx.sqlite.driver.bundled.** { native <methods>; }
+-keep class androidx.sqlite.SQLiteException { <init>(...); }
+
 # --- androidx.annotation.Keep ---
 -keep @androidx.annotation.Keep class * { *; }
 -keepclasseswithmembers class * {

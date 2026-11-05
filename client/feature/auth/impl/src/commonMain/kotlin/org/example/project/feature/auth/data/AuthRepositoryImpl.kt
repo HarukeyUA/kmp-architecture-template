@@ -54,14 +54,17 @@ class AuthRepositoryImpl(
         sessions.persist(tokens.toSession()).mapLeft { it.toCallFailure() }.bind()
     }
 
-    override suspend fun logout() {
+    override suspend fun logout(): Either<CallFailure<Nothing>, Unit> {
         // Best-effort server revoke of the refresh token (the access token rides along as the
         // bearer); `call` folds any network failure into the Either, so the local session is
         // cleared regardless.
         sessions.boundSessionOrNull(log)?.let { session ->
             client.call(AuthApi.logout, AuthResource.Logout(), LogoutRequest(session.refreshToken))
         }
-        sessions.clear().onLeft { log.e { "session not cleared on logout: $it" } }
+        return sessions
+            .clear()
+            .onLeft { log.e { "session not cleared on logout: $it" } }
+            .mapLeft { it.toCallFailure() }
     }
 }
 

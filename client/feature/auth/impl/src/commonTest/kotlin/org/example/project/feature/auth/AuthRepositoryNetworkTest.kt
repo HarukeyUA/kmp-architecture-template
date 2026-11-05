@@ -143,6 +143,19 @@ class AuthRepositoryNetworkTest {
     }
 
     @Test
+    fun `a session that could not be cleared comes back as a failed logout`() = runTest {
+        val store = FakeSessionRepository(ClientSession("access", "refresh"))
+        val repo =
+            AuthRepositoryImpl(client(store) { respond("", HttpStatusCode.NoContent) }, store)
+        store.nextClearError = SessionRepositoryError.Storage(IllegalStateException("disk gone"))
+
+        val result = repo.logout()
+
+        assertThat(result.leftOrNull()).isNotNull().isInstanceOf(CallFailure.Transport::class)
+        assertThat(store.current).isInstanceOf(SessionState.Bound::class)
+    }
+
+    @Test
     fun `a 401 with a live refresh token mints a new access token and retries`() = runTest {
         val store =
             FakeSessionRepository(

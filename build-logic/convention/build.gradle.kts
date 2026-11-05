@@ -7,6 +7,8 @@ dependencies {
     compileOnly(libs.composeCompiler.gradlePlugin)
     compileOnly(libs.serialization.gradlePlugin)
     compileOnly(libs.detekt.gradlePlugin)
+    compileOnly(libs.ksp.gradlePlugin)
+    compileOnly(libs.room.gradlePlugin)
 }
 
 gradlePlugin {
@@ -38,6 +40,10 @@ gradlePlugin {
         register("metro") {
             id = "convention.metro"
             implementationClass = "MetroConventionPlugin"
+        }
+        register("room") {
+            id = "convention.room"
+            implementationClass = "RoomConventionPlugin"
         }
         register("molecule") {
             id = "convention.molecule"

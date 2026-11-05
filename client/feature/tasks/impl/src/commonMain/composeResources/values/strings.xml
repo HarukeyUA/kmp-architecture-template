@@ -1,0 +1,26 @@
+<resources>
+    <string name="tasks_title">Tasks</string>
+    <string name="tasks_add">Add task</string>
+    <string name="tasks_refresh">Refresh</string>
+    <string name="tasks_retry">Try again</string>
+    <string name="tasks_dismiss">Dismiss</string>
+    <string name="tasks_empty_title">No tasks yet</string>
+    <string name="tasks_empty_body">Tasks you add show up here.</string>
+    <string name="tasks_failed_title">Could not load your tasks</string>
+    <string name="tasks_toggle_done">Done: %1$s</string>
+    <string name="tasks_detail_title">Task</string>
+    <string name="tasks_detail_placeholder">Select a task to see its details.</string>
+    <string name="tasks_detail_missing">This task no longer exists.</string>
+    <string name="tasks_detail_back_to_list">Back to tasks</string>
+    <string name="tasks_detail_created">Created %1$s, %2$s</string>
+    <string name="tasks_detail_done">Done</string>
+    <string name="tasks_detail_delete">Delete</string>
+    <string name="tasks_create_title">New task</string>
+    <string name="tasks_create_field">Title</string>
+    <string name="tasks_create_submit">Add</string>
+    <string name="tasks_create_cancel">Cancel</string>
+    <string name="tasks_error_title_blank">Enter a title.</string>
+    <string name="tasks_error_title_too_long">Keep the title under 200 characters.</string>
+    <string name="tasks_error_title_invalid">That title can't be used.</string>
+    <string name="tasks_error_not_found">This task no longer exists.</string>
+</resources>
