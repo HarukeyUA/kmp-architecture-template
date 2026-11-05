@@ -4,8 +4,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -43,7 +48,12 @@ class DefaultLoginScreen : LoginScreen {
 @Composable
 internal fun LoginScreenContent(state: LoginComponent.State) {
     Column(
-        modifier = Modifier.fillMaxSize().systemBarsPadding().padding(24.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .systemBarsPadding()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -54,6 +64,7 @@ internal fun LoginScreenContent(state: LoginComponent.State) {
             onValueChange = { state.eventSink(LoginComponent.Event.EmailChanged(it)) },
             label = { Text(text = "Email") },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             enabled = !state.isSubmitting,
             modifier = Modifier.fillMaxWidth().testTag(LoginScreenTestTags.EMAIL),
         )
@@ -64,6 +75,7 @@ internal fun LoginScreenContent(state: LoginComponent.State) {
             label = { Text(text = "Password") },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             enabled = !state.isSubmitting,
             modifier = Modifier.fillMaxWidth().testTag(LoginScreenTestTags.PASSWORD),
         )

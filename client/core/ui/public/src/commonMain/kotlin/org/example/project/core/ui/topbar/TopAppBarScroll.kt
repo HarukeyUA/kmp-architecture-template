@@ -3,8 +3,10 @@ package org.example.project.core.ui.topbar
 import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.material3.TopAppBarState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -18,7 +20,6 @@ import kotlin.math.abs
  * [scrollableState] is at the top, so the connection never sees them. Inert on touch.
  */
 @OptIn(ExperimentalMaterial3Api::class)
-@Suppress("CognitiveComplexMethod", "LoopWithTooManyJumpStatements")
 fun Modifier.topAppBarNestedScroll(
     scrollBehavior: TopAppBarScrollBehavior,
     scrollableState: ScrollableState,
@@ -37,30 +38,31 @@ fun Modifier.topAppBarNestedScroll(
         awaitPointerEventScope {
             while (true) {
                 val event = awaitPointerEvent(PointerEventPass.Final)
-                if (event.type != PointerEventType.Scroll) continue
-
-                val state = scrollBehavior.state
-                if (state.heightOffset >= 0f || scrollableState.canScrollBackward) continue
-
-                val unconsumedDeltaY =
-                    event.changes
-                        .sumOf { change ->
-                            if (change.isConsumed) 0.0 else change.scrollDelta.y.toDouble()
-                        }
-                        .toFloat()
-
-                // Expanding only on negative (upward) delta avoids accidental expansion when
-                // scrolling down on empty lists.
-                if (unconsumedDeltaY < 0f) {
-                    val expandPx = sensitivityPx * abs(unconsumedDeltaY)
-                    state.heightOffset =
-                        (state.heightOffset + expandPx).coerceIn(
-                            minimumValue = state.heightOffsetLimit,
-                            maximumValue = 0f,
-                        )
-                    event.changes.forEach { it.consume() }
+                if (event.type == PointerEventType.Scroll && !scrollableState.canScrollBackward) {
+                    scrollBehavior.state.expandFromWheel(event, sensitivityPx)
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+private fun TopAppBarState.expandFromWheel(event: PointerEvent, sensitivityPx: Float) {
+    if (heightOffset >= 0f) return
+
+    val unconsumedDeltaY =
+        event.changes
+            .sumOf { change -> if (change.isConsumed) 0.0 else change.scrollDelta.y.toDouble() }
+            .toFloat()
+
+    // Expanding only on negative (upward) delta avoids accidental expansion when scrolling down on
+    // empty lists.
+    if (unconsumedDeltaY < 0f) {
+        heightOffset =
+            (heightOffset + sensitivityPx * abs(unconsumedDeltaY)).coerceIn(
+                minimumValue = heightOffsetLimit,
+                maximumValue = 0f,
+            )
+        event.changes.forEach { it.consume() }
     }
 }

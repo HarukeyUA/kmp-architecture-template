@@ -11,7 +11,6 @@ import androidx.compose.runtime.currentComposer
  */
 @Composable
 @OptIn(InternalComposeApi::class)
-@Suppress("FunctionNaming")
 internal fun <ModelT> returningCompositionLocalProvider(
     vararg values: ProvidedValue<*>,
     content: @Composable () -> ModelT,

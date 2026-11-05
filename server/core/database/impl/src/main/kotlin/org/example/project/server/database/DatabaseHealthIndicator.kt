@@ -11,6 +11,7 @@ import org.example.project.server.observability.HealthStatus
 @Inject
 @ContributesIntoSet(AppScope::class)
 class DatabaseHealthIndicator : HealthIndicator {
+    // Any failure to reach the database is the answer here, and /health reports only that verdict.
     @Suppress("SwallowedException", "TooGenericExceptionCaught")
     override suspend fun check(): HealthStatus =
         try {

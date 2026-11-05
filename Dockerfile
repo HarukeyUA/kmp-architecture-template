@@ -2,11 +2,11 @@
 # Server image: builds the distribution inside the image and runs it behind a minimal JRE.
 # Target-agnostic: runs on any container host. From the repo root:
 #
-#   docker build -t kmp-server .
-#   docker run --rm -p 8080:8080 --env-file .env kmp-server
+#   docker build -t server .
+#   docker run --rm -p 8080:8080 --env-file .env server
 #
-# Isolated projects is what lets this configure without an Android SDK: only the projects
-# :server:app needs are configured.
+# Gradle configures every project, client modules included, but builds only what :server:app needs.
+# No Android SDK or Kotlin/Native host support is required for that.
 
 FROM gradle:9.8-jdk25 AS build
 WORKDIR /workspace

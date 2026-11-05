@@ -96,7 +96,10 @@ fun main(args: Array<String>) {
 internal fun environmentOf(appId: String): Environment =
     if (appId.endsWith(".dev")) Environment.DEV else Environment.PROD
 
-/** Only a packaged prod launcher is release: `gradlew run` and the IDE have a console. */
+/**
+ * A baked prod id is release, which includes plain `gradlew run`: pass `-PappEnv=dev` to keep logs.
+ * A launch with no baked id, such as the IDE, is debug.
+ */
 internal fun buildTypeOf(bakedAppId: String?): BuildType =
     if (bakedAppId != null && environmentOf(bakedAppId) == Environment.PROD) BuildType.RELEASE
     else BuildType.DEBUG

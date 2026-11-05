@@ -13,7 +13,7 @@ import org.example.project.core.component.internal.returningCompositionLocalProv
  * component (an Android configuration change) and a branch that leaves and re-enters both get back
  * what was held.
  */
-@Suppress("ComposableNaming")
+@Suppress("ComposableNaming") // Reads as a provider wrapping content, though it returns a value.
 @Composable
 fun <T> AppComponentContext.ProvideStateKeeperSaveableStateRegistry(
     key: String = "state-keeper-state-registry",

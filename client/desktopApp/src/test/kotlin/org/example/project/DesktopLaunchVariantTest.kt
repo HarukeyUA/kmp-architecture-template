@@ -26,7 +26,7 @@ class DesktopLaunchVariantTest {
     }
 
     @Test
-    fun `only a packaged prod launcher is a release build`() {
+    fun `only a baked prod id is a release build`() {
         assertThat(buildTypeOf(DEFAULT_APP_ID)).isEqualTo(BuildType.RELEASE)
     }
 }

@@ -10,7 +10,7 @@ index 09c72ac..ff2b984 100644
 -    runs-on: ubuntu-latest
 -    if: github.event_name == 'pull_request'
 -    steps:
--      - uses: actions/checkout@v6
+-      - uses: actions/checkout@v7
 -        with:
 -          fetch-depth: 0
 -      - uses: actions/setup-java@v5

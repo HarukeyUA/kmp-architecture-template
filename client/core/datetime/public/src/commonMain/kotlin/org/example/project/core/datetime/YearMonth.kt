@@ -12,7 +12,7 @@ import kotlinx.datetime.plus
  * A calendar month identified by its year and month-of-year. Comparable in chronological order so
  * months can be ordered, range-checked, and used as map keys without converting to dates.
  */
-@Suppress("DataClassContainsFunctions")
+@Suppress("DataClassContainsFunctions") // Calendar arithmetic is what this value type is for.
 data class YearMonth(val year: Int, val month: Month) : Comparable<YearMonth> {
 
     /** First day of the month, a `LocalDate` anchor for grid layout. */
@@ -62,8 +62,8 @@ data class YearMonth(val year: Int, val month: Month) : Comparable<YearMonth> {
 operator fun YearMonth.minus(other: YearMonth): Int =
     (year - other.year) * 12 + (month.number - other.month.number)
 
-/** Inclusive month range, used for windowed pager queries. */
-@Suppress("DataClassContainsFunctions")
+/** Inclusive month range. */
+@Suppress("DataClassContainsFunctions") // Iteration and membership are what this value type is for.
 data class YearMonthRange(val start: YearMonth, val endInclusive: YearMonth) : Iterable<YearMonth> {
 
     init {
