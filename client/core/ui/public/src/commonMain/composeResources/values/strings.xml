@@ -10,4 +10,5 @@
     <string name="error_conflict">That conflicts with something that already exists.</string>
     <string name="error_validation">Please check the highlighted fields.</string>
     <string name="error_rate_limited">Too many requests. Please slow down and try again.</string>
+    <string name="app_top_bar_back">Back</string>
 </resources>

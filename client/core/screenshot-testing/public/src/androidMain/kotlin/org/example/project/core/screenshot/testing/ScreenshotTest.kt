@@ -2,10 +2,6 @@ package org.example.project.core.screenshot.testing
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onRoot
@@ -14,6 +10,10 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import java.time.ZoneOffset
 import java.util.Locale
 import java.util.TimeZone
+import org.example.project.core.error.AppError
+import org.example.project.core.ui.error.CompositeErrorRenderer
+import org.example.project.core.ui.error.ErrorRenderer
+import org.example.project.core.ui.error.LocalErrorRenderer
 import org.example.project.core.ui.theme.AppTheme
 import org.junit.Before
 import org.junit.Rule
@@ -37,7 +37,22 @@ abstract class ScreenshotTest {
         TimeZone.setDefault(TimeZone.getTimeZone(ZoneOffset.UTC))
     }
 
-    fun capture(name: String = testName.methodName, content: @Composable () -> Unit) {
+    /**
+     * [errorRenderers] stand in for the renderers Metro contributes at runtime. A capture of an
+     * error state that omits the renderer its error needs shows the generic fallback message.
+     */
+    fun capture(
+        name: String = testName.methodName,
+        errorRenderers: List<ErrorRenderer<*>> = emptyList(),
+        beforeCapture: () -> Unit = {},
+        content: @Composable () -> Unit,
+    ) {
+        @Suppress("UNCHECKED_CAST")
+        val errorRenderer =
+            CompositeErrorRenderer(
+                errorRenderers.mapTo(mutableSetOf()) { it as ErrorRenderer<AppError> },
+            )
+
         val devices =
             listOf(
                 "phone" to RobolectricDeviceQualifiers.Pixel9,
@@ -45,21 +60,25 @@ abstract class ScreenshotTest {
             )
 
         devices.forEach { (description, device) ->
-            RuntimeEnvironment.setQualifiers(device)
-
-            val darkModeValues = listOf(false, true)
-
-            var darkMode by mutableStateOf(false)
-
-            composeTestRule.setContent {
-                CompositionLocalProvider(LocalInspectionMode provides true) {
-                    AppTheme(darkTheme = darkMode) { key(darkMode) { content() } }
-                }
-            }
-
-            darkModeValues.forEach { isDarkMode ->
-                darkMode = isDarkMode
+            listOf(false, true).forEach { isDarkMode ->
                 val darkModeDesc = if (isDarkMode) "dark" else "light"
+
+                // A composition per theme, not a flag flipped in place: a Dialog draws into its own
+                // window, which keeps the colours it was built with. The rule only sets content
+                // once per Activity, and a configuration change is what hands it a fresh one.
+                RuntimeEnvironment.setQualifiers("+night")
+                RuntimeEnvironment.setQualifiers(device)
+
+                composeTestRule.setContent {
+                    CompositionLocalProvider(
+                        LocalInspectionMode provides true,
+                        LocalErrorRenderer provides errorRenderer,
+                    ) {
+                        AppTheme(darkTheme = isDarkMode) { content() }
+                    }
+                }
+
+                beforeCapture()
 
                 composeTestRule
                     .onRoot()

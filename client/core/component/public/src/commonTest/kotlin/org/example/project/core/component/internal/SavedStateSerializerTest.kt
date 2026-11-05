@@ -59,6 +59,12 @@ class SavedStateSerializerTest {
     }
 
     @Test
+    fun `a value nothing writes comes back as null`() {
+        val result = roundtrip(mapOf("key" to listOf(1, object {}, "kept")))
+        assertThat(result["key"]).isEqualTo(listOf(1, null, "kept"))
+    }
+
+    @Test
     fun `Int roundtrips`() {
         val input = mapOf("key" to listOf(42))
         assertThat(roundtrip(input)).isEqualTo(input)
@@ -276,14 +282,85 @@ class SavedStateSerializerTest {
     }
 
     @Test
-    fun `map keys are converted to strings`() {
-        val inner = mapOf(1 to "one", 2 to "two")
+    fun `map keys keep their type`() {
+        val inner = mapOf<Any?, Any?>(1 to "one", 2L to "two", "three" to 3, null to "none")
         val input = mapOf("key" to listOf(inner))
         val result = roundtrip(input)
 
-        @Suppress("UNCHECKED_CAST") val restored = result["key"]!!.single() as Map<String, Any?>
-        assertThat(restored).key("1").isEqualTo("one")
-        assertThat(restored).key("2").isEqualTo("two")
+        @Suppress("UNCHECKED_CAST") val restored = result["key"]!!.single() as Map<Any?, Any?>
+        assertThat(restored).isEqualTo(inner)
+        assertThat(restored).key(1).isEqualTo("one")
+    }
+
+    @Test
+    fun `a map entry nothing writes is skipped and the rest of the map kept`() {
+        val inner = mapOf<Any?, Any?>(object {} to "lost", "kept" to 1, "gone" to object {})
+        val result = roundtrip(mapOf("key" to listOf(inner)))
+
+        assertThat(result["key"]!!.single()).isEqualTo(mapOf<Any?, Any?>("kept" to 1))
+    }
+
+    @Test
+    fun `a state holding a value nothing writes comes back as null, not as a state of null`() {
+        val result = roundtrip(mapOf("key" to listOf(mutableStateOf(object {}))))
+        assertThat(result["key"]).isEqualTo(listOf(null))
+    }
+
+    @Test
+    fun `a list with an element nothing writes comes back as null, not with a hole`() {
+        val result = roundtrip(mapOf("key" to listOf(listOf(1, object {}, 3))))
+        assertThat(result["key"]).isEqualTo(listOf(null))
+    }
+
+    @Test
+    fun `a state holding a list with an element nothing writes comes back as null`() {
+        val result =
+            roundtrip(mapOf("key" to listOf(mutableStateOf(listOf(mutableStateOf(object {}))))))
+        assertThat(result["key"]).isEqualTo(listOf(null))
+    }
+
+    @Test
+    fun `a non-finite Float or Double comes back as null instead of failing the save`() {
+        val input =
+            mapOf(
+                "key" to
+                    listOf(
+                        Float.NaN,
+                        Float.POSITIVE_INFINITY,
+                        Double.NEGATIVE_INFINITY,
+                        Double.NaN,
+                        mutableStateOf(Float.NaN),
+                    ),
+            )
+        assertThat(roundtrip(input)["key"]).isEqualTo(listOf(null, null, null, null, null))
+    }
+
+    @Test
+    fun `a restored map can be mutated, one entry or many`() {
+        val result =
+            roundtrip(
+                mapOf("one" to listOf(mapOf("a" to 1)), "two" to listOf(mapOf("a" to 1, "b" to 2))),
+            )
+
+        for (key in listOf("one", "two")) {
+            @Suppress("UNCHECKED_CAST")
+            val restored = result[key]!!.single() as MutableMap<Any?, Any?>
+            restored["c"] = 3
+            assertThat(restored).key("c").isEqualTo(3)
+        }
+    }
+
+    @Test
+    fun `a SavedState holding a value nothing writes comes back as null`() {
+        val state = savedState(mapOf("kept" to 1, "gone" to object {}))
+        val result = roundtrip(mapOf("key" to listOf(state)))
+        assertThat(result["key"]).isEqualTo(listOf(null))
+    }
+
+    @Test
+    fun `negative zero roundtrips`() {
+        val input = mapOf("key" to listOf(-0.0f, -0.0))
+        assertThat(roundtrip(input)).isEqualTo(input)
     }
 
     @Test

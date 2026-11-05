@@ -44,19 +44,10 @@ actual fun <C : Any, T : Any> backAnimation(
 ): StackAnimation<C, T> =
     stackAnimation(
         animator = materialSharedAxisX(),
-        predictiveBackParams = {
-            PredictiveBackParams(
-                backHandler = backHandler,
-                onBack = onBackClick,
-                animatable = ::materialSharedAxisXAnimatable,
-            )
-        },
+        predictiveBackParams = { defaultPredictiveBackParams(backHandler, onBackClick) },
     )
 
 @OptIn(ExperimentalDecomposeApi::class)
-actual fun defaultStackAnimator(): StackAnimator = materialSharedAxisX()
-
-@ExperimentalDecomposeApi
 actual fun defaultPredictiveBackParams(
     backHandler: BackHandler,
     onBackClick: () -> Unit,
@@ -66,6 +57,9 @@ actual fun defaultPredictiveBackParams(
         onBack = onBackClick,
         animatable = ::materialSharedAxisXAnimatable,
     )
+
+@OptIn(ExperimentalDecomposeApi::class)
+actual fun defaultStackAnimator(): StackAnimator = materialSharedAxisX()
 
 @OptIn(ExperimentalDecomposeApi::class)
 private fun materialSharedAxisX(): StackAnimator =
@@ -131,7 +125,7 @@ private class MaterialSharedAxisXAnimatable(initialEvent: BackEvent) : Predictiv
             val currentProgress = progressAnimatable.value
             launch {
                 progressAnimatable.animateTo(
-                    targetValue = currentProgress + (1f - currentProgress) * velocity,
+                    targetValue = settleTarget(currentProgress, velocity),
                     initialVelocity = velocity,
                 )
             }

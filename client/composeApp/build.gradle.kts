@@ -32,6 +32,8 @@ kotlin {
             api(project(":client:core:buildinfo:public"))
             api(project(":client:core:network:public"))
 
+            implementation(libs.kermit)
+
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
@@ -42,9 +44,6 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.serialization.json.okio)
-
-            implementation(libs.androidx.datastore)
-            implementation(libs.datastore.preferences)
 
             api(libs.decompose)
             implementation(libs.decompose.compose)

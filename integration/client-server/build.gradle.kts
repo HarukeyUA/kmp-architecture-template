@@ -33,7 +33,8 @@ dependencies {
     testImplementation(project(":client:feature:auth:impl"))
     testImplementation(project(":client:feature:notes:impl"))
     testImplementation(project(":client:core:network:public"))
-    testImplementation(project(":client:core:secure-storage:public"))
+    testImplementation(project(":client:feature:session:impl"))
+    testImplementation(project(":client:feature:session:testing"))
 
     // The server-side quota constant, asserted against through the client repository.
     testImplementation(project(":server:feature:notes:public"))

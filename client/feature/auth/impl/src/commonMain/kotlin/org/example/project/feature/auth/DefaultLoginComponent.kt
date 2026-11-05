@@ -58,8 +58,8 @@ class DefaultLoginComponent(
                             }
                             isSubmitting = false
                         },
-                        // On success the issued Session is already in secure storage (which flips
-                        // the observed logged-in state); this callback drives the immediate nav.
+                        // On success the issued session is already stored (which flips the observed
+                        // state); this callback drives the immediate nav.
                         ifRight = { onAuthenticated() },
                     )
             }

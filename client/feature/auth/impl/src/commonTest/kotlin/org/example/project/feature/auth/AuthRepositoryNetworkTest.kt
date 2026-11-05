@@ -2,6 +2,8 @@ package org.example.project.feature.auth
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import assertk.assertions.isNotNull
 import assertk.assertions.isNull
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
@@ -23,9 +25,12 @@ import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.serializer
 import org.example.project.core.error.CallFailure
-import org.example.project.core.network.sessionBearer
-import org.example.project.core.secure.storage.ClientSession
 import org.example.project.feature.auth.data.AuthRepositoryImpl
+import org.example.project.feature.session.ClientSession
+import org.example.project.feature.session.FakeSessionRepository
+import org.example.project.feature.session.SessionRepositoryError
+import org.example.project.feature.session.SessionState
+import org.example.project.feature.session.sessionBearer
 import org.example.project.shared.auth.AccessTokenResponse
 import org.example.project.shared.auth.AccountResponse
 import org.example.project.shared.auth.AuthLoginError
@@ -71,8 +76,12 @@ class AuthRepositoryNetworkTest {
         val result = repo.login("alice@example.com", "hunter2hunter2")
 
         assertThat(result.leftOrNull()).isNull()
-        assertThat(store.current())
-            .isEqualTo(ClientSession(accessToken = "login-access", refreshToken = "login-refresh"))
+        assertThat(store.current)
+            .isEqualTo(
+                SessionState.Bound(
+                    ClientSession(accessToken = "login-access", refreshToken = "login-refresh"),
+                ),
+            )
     }
 
     @Test
@@ -93,13 +102,52 @@ class AuthRepositoryNetworkTest {
         val result = repo.login("alice@example.com", "wrong-password")
 
         assertThat(result.leftOrNull()).isEqualTo(CallFailure.Declared(InvalidCredentials))
-        assertThat(store.current()).isNull()
+        assertThat(store.current).isEqualTo(SessionState.Unbound)
+    }
+
+    @Test
+    fun `a login whose tokens cannot be stored fails instead of reading as signed in`() = runTest {
+        val (repo, store) =
+            fixture {
+                respond(
+                    json.encodeToString(
+                        TokensResponse(
+                            accessToken = "login-access",
+                            accessTokenExpiresAt = Clock.System.now() + 1.hours,
+                            refreshToken = "login-refresh",
+                            refreshTokenExpiresAt = Clock.System.now() + 720.hours,
+                        ),
+                    ),
+                    HttpStatusCode.OK,
+                    jsonHeaders,
+                )
+            }
+        store.nextPersistError = SessionRepositoryError.Storage(IllegalStateException("disk gone"))
+
+        val result = repo.login("alice@example.com", "hunter2hunter2")
+
+        assertThat(result.leftOrNull()).isNotNull().isInstanceOf(CallFailure.Transport::class)
+        assertThat(store.current).isEqualTo(SessionState.Unbound)
+    }
+
+    @Test
+    fun `logout clears the session even when the session could not be read`() = runTest {
+        val store = FakeSessionRepository(ClientSession("access", "refresh"))
+        val repo =
+            AuthRepositoryImpl(client(store) { respond("", HttpStatusCode.NoContent) }, store)
+        store.nextSnapshotError = SessionRepositoryError.Storage(IllegalStateException("disk gone"))
+
+        repo.logout()
+
+        assertThat(store.clearCalls).isEqualTo(1)
     }
 
     @Test
     fun `a 401 with a live refresh token mints a new access token and retries`() = runTest {
-        val store = InMemorySecureSessionStore()
-        store.save(ClientSession(accessToken = "expired-access", refreshToken = "refresh-1"))
+        val store =
+            FakeSessionRepository(
+                ClientSession(accessToken = "expired-access", refreshToken = "refresh-1"),
+            )
         val client =
             client(store) { request ->
                 when {
@@ -133,14 +181,20 @@ class AuthRepositoryNetworkTest {
         val response = client.get(AuthResource.Me())
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
-        assertThat(store.current())
-            .isEqualTo(ClientSession(accessToken = "minted-access", refreshToken = "refresh-1"))
+        assertThat(store.current)
+            .isEqualTo(
+                SessionState.Bound(
+                    ClientSession(accessToken = "minted-access", refreshToken = "refresh-1"),
+                ),
+            )
     }
 
     @Test
     fun `a rejected refresh clears the stored session`() = runTest {
-        val store = InMemorySecureSessionStore()
-        store.save(ClientSession(accessToken = "stale-access", refreshToken = "revoked-refresh"))
+        val store =
+            FakeSessionRepository(
+                ClientSession(accessToken = "stale-access", refreshToken = "revoked-refresh"),
+            )
         val client =
             client(store) {
                 respond(
@@ -158,18 +212,18 @@ class AuthRepositoryNetworkTest {
         // the refresh returns auth.session_expired, and the interceptor clears the local session.
         client.get(AuthResource.Me())
 
-        assertThat(store.current()).isNull()
+        assertThat(store.current).isEqualTo(SessionState.Unbound)
     }
 
     private fun fixture(
         handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
-    ): Pair<AuthRepositoryImpl, InMemorySecureSessionStore> {
-        val store = InMemorySecureSessionStore()
+    ): Pair<AuthRepositoryImpl, FakeSessionRepository> {
+        val store = FakeSessionRepository()
         return AuthRepositoryImpl(client(store, handler), store) to store
     }
 
     private fun client(
-        store: InMemorySecureSessionStore,
+        store: FakeSessionRepository,
         handler: suspend MockRequestHandleScope.(HttpRequestData) -> HttpResponseData,
     ): HttpClient =
         HttpClient(MockEngine(handler)) {

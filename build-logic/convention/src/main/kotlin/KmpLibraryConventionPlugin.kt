@@ -5,7 +5,9 @@ import org.example.project.namespace
 import org.example.project.version
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 class KmpLibraryConventionPlugin : Plugin<Project> {
@@ -21,7 +23,10 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
 
             extensions.configure<KotlinMultiplatformExtension> {
                 compilerOptions {
-                    freeCompilerArgs.addAll("-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi")
+                    freeCompilerArgs.addAll(
+                        "-Xexpect-actual-classes",
+                        "-opt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
+                    )
                 }
 
                 iosArm64()
@@ -35,6 +40,17 @@ class KmpLibraryConventionPlugin : Plugin<Project> {
 
                     compilerOptions { jvmTarget.set(jdkJvmTarget()) }
                 }
+            }
+
+            // Prevent test JVM forks from registering as foreground apps on macOS
+            // (Skiko/Compose UI tests initialize AWT/Cocoa and would otherwise show
+            // in the dock and steal focus).
+            tasks.withType<Test>().configureEach {
+                systemProperty("java.awt.headless", "true")
+                systemProperty("apple.awt.UIElement", "true")
+                // FFM restricted methods warn on JDK 25 without this grant and will refuse to run
+                // in a future JDK.
+                jvmArgs("--enable-native-access=ALL-UNNAMED")
             }
         }
     }

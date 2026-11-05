@@ -11,7 +11,9 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.example.project.core.component.AppComponentContext
@@ -21,8 +23,9 @@ import org.example.project.core.component.snackbar.snackbarHost
 import org.example.project.core.navigation.StackComponent
 import org.example.project.feature.auth.LoginComponent
 import org.example.project.feature.main.presentation.MainComponent
+import org.example.project.feature.session.SessionState
+import org.example.project.feature.session.SessionStatus
 import org.example.project.feature.splash.presentation.SplashComponent
-import org.example.project.feature.user.data.UserRepository
 
 interface RootComponent : StackComponent<Any, RootComponent.Child> {
 
@@ -47,7 +50,7 @@ class DefaultRootComponent(
     private val splashComponentFactory: SplashComponent.Factory,
     private val loginComponentFactory: LoginComponent.Factory,
     private val mainComponentFactory: MainComponent.Factory,
-    private val userRepository: UserRepository,
+    private val sessionStatus: SessionStatus,
 ) : RootComponent, AppComponentContext by componentContext {
     private val scope = lifecycleAwareScope()
 
@@ -71,11 +74,16 @@ class DefaultRootComponent(
 
     private fun observeSignedInState() {
         scope.launch {
-            userRepository.isLoggedIn.drop(1).collect { loggedIn ->
-                if (!loggedIn) {
-                    navigateToLogin()
+            sessionStatus
+                .observe()
+                .map { it is SessionState.Bound }
+                .distinctUntilChanged()
+                .drop(1)
+                .collect { signedIn ->
+                    if (!signedIn) {
+                        navigateToLogin()
+                    }
                 }
-            }
         }
     }
 

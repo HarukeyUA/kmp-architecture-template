@@ -23,8 +23,8 @@ class LoginRobot(nodes: SemanticsNodeInteractionsProvider, wait: Wait) : Robot(n
     }
 
     /**
-     * Taps "Log in". On success the session lands in secure storage and navigation leaves this
-     * feature, so the cross-screen wait for the main screen belongs to the calling flow.
+     * Taps "Log in". On success the session is stored and navigation leaves this feature, so the
+     * cross-screen wait for the main screen belongs to the calling flow.
      */
     fun logIn() {
         clickTag(LoginScreenTestTags.LOG_IN)

@@ -8,6 +8,7 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import kotlin.test.Test
 import org.example.project.core.error.CallFailure
+import org.example.project.feature.session.SessionState
 import org.example.project.server.feature.notes.NotesService
 import org.example.project.server.testing.serverTest
 import org.example.project.shared.notes.NoteText
@@ -31,7 +32,7 @@ class NotesRepositoryIntegrationTest {
         // bearer plugin authenticates every notes call.
         val signup = client.auth.signup("carol@example.com", "hunter2hunter2")
         assertThat(signup.isRight()).isEqualTo(true)
-        assertThat(client.sessionStore.current()).isNotNull()
+        assertThat(client.sessions.current).isInstanceOf(SessionState.Bound::class)
 
         val created = client.notes.create("Brew the moonwater")
         assertThat(created.isRight()).isEqualTo(true)

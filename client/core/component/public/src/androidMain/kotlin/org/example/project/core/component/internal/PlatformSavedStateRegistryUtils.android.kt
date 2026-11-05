@@ -6,9 +6,7 @@ import android.util.Size
 import android.util.SizeF
 import android.util.SparseArray
 import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 import java.io.Serializable
 import kotlinx.serialization.builtins.ByteArraySerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -19,17 +17,19 @@ internal actual object PlatformSavedStateRegistryUtils {
     private const val TYPE_PARCELABLE: Byte = 100
     private const val TYPE_SERIALIZABLE: Byte = 101
 
-    actual fun canBeSaved(value: Any): Boolean {
-        return value is Parcelable ||
-            value is Serializable ||
-            value is Size ||
-            value is SizeF ||
-            value is SparseArray<*>
-    }
+    // As strict as the Bundle this used to be: what it refuses is refused at composition.
+    actual fun canBeSaved(value: Any): Boolean = isWritable(value)
+
+    // Serializable on the outer class says nothing about what it holds, so the answer is a dry run.
+    actual fun isWritable(value: Any): Boolean =
+        isParcelValue(value) || (value is Serializable && javaSerialize(value) != null)
+
+    private fun isParcelValue(value: Any): Boolean =
+        value is Parcelable || value is Size || value is SizeF || value is SparseArray<*>
 
     actual fun write(encoder: CompositeEncoder, descriptor: SerialDescriptor, value: Any): Boolean =
-        when (value) {
-            is Parcelable -> {
+        when {
+            isParcelValue(value) -> {
                 val parcel = Parcel.obtain()
                 try {
                     parcel.writeValue(value)
@@ -43,13 +43,8 @@ internal actual object PlatformSavedStateRegistryUtils {
                 }
             }
 
-            is Serializable -> {
-                val bytes =
-                    ByteArrayOutputStream().use { bos ->
-                        ObjectOutputStream(bos).use { oos -> oos.writeObject(value) }
-                        bos.toByteArray()
-                    }
-
+            value is Serializable -> {
+                val bytes = javaSerialize(value) ?: return false
                 encoder.encodeByteElement(descriptor, 0, TYPE_SERIALIZABLE)
                 encoder.encodeSerializableElement(descriptor, 1, ByteArraySerializer(), bytes)
                 true

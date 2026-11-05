@@ -5,6 +5,8 @@ import SwiftUI
 struct iOSApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self)
     var appDelegate: AppDelegate
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
             ContentView(
@@ -13,12 +15,22 @@ struct iOSApp: App {
                 backDispatcher: appDelegate.backDispatcher
             )
         }
+        // `initial: true` because onChange alone never fires for the phase a cold launch lands on.
+        .onChange(of: scenePhase, initial: true) { _, newPhase in
+            if newPhase == .active {
+                appDelegate.markForegroundSessionOpen()
+            }
+        }
     }
 }
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     private static let savedVersionKey = "org.example.project.savedAppVersion"
     private static let savedBuildKey = "org.example.project.savedAppBuild"
+    // Whether the app has been in the foreground since UIKit last wrote its state archive. UIKit
+    // writes the archive on backgrounding only and replays it after a crash, so a launch that
+    // finds this set knows the archive predates whatever the user did last.
+    private static let foregroundSessionOpenKey = "org.example.project.foregroundSessionOpen"
     
     private var stateKeeper = StateKeeperDispatcherKt.StateKeeperDispatcher(savedState: nil)
     var backDispatcher: BackDispatcher = BackDispatcherKt.BackDispatcher()
@@ -58,10 +70,15 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""
     }
 
+    func markForegroundSessionOpen() {
+        UserDefaults.standard.set(true, forKey: Self.foregroundSessionOpenKey)
+    }
+
     func application(_ application: UIApplication, shouldSaveSecureApplicationState coder: NSCoder) -> Bool {
         StateKeeperUtilsKt.save(coder: coder, state: stateKeeper.save())
         coder.encode(currentAppVersion, forKey: Self.savedVersionKey)
         coder.encode(currentAppBuild, forKey: Self.savedBuildKey)
+        UserDefaults.standard.set(false, forKey: Self.foregroundSessionOpenKey)
         return true
     }
 
@@ -72,7 +89,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         guard savedVersion == currentAppVersion && savedBuild == currentAppBuild else {
             return false
         }
-        
+        guard !UserDefaults.standard.bool(forKey: Self.foregroundSessionOpenKey) else {
+            return false
+        }
+
         stateKeeper = StateKeeperDispatcherKt.StateKeeperDispatcher(savedState: StateKeeperUtilsKt.restore(coder: coder))
         return true
     }

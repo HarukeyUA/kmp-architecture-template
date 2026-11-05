@@ -1,30 +1,17 @@
 package org.example.project.core.local.storage
 
-import androidx.datastore.core.okio.OkioStorage
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesTo
-import dev.zacsweers.metro.ForScope
 import dev.zacsweers.metro.Provides
-import java.io.File
-import kotlinx.serialization.ExperimentalSerializationApi
+import io.github.vinceglb.filekit.FileKit
+import io.github.vinceglb.filekit.filesDir
+import io.github.vinceglb.filekit.path
 import okio.FileSystem
-import okio.Path.Companion.toOkioPath
-import org.example.project.core.local.storage.SettingsLocalDataSourceImpl.Companion.SETTINGS_FILE_NAME
-import org.example.project.core.local.storage.di.DataStoreScope
-import org.example.project.core.local.storage.model.SettingsLocalModel
+import okio.Path.Companion.toPath
 
 @ContributesTo(AppScope::class)
 interface JvmDataStoreStorageGraph {
-    @OptIn(ExperimentalSerializationApi::class)
     @Provides
-    @ForScope(DataStoreScope::class)
-    fun provideStorage(): OkioStorage<SettingsLocalModel> =
-        OkioStorage(
-            fileSystem = FileSystem.SYSTEM,
-            serializer = dataStoreJsonSerializer(SettingsLocalModel()),
-            producePath = {
-                // Temporary storage until a platform-specific app data directory is introduced.
-                File(System.getProperty("java.io.tmpdir"), SETTINGS_FILE_NAME).toOkioPath()
-            },
-        )
+    fun provideDataStoreDirectory(): DataStoreDirectory =
+        DataStoreDirectory(FileSystem.SYSTEM) { FileKit.filesDir.path.toPath() }
 }

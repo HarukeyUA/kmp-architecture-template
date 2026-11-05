@@ -31,6 +31,10 @@ gradlePlugin {
             id = "convention.kmp.feature.impl"
             implementationClass = "KmpFeatureImplConventionPlugin"
         }
+        register("kmpFeatureTesting") {
+            id = "convention.kmp.feature.testing"
+            implementationClass = "KmpFeatureTestingConventionPlugin"
+        }
         register("metro") {
             id = "convention.metro"
             implementationClass = "MetroConventionPlugin"

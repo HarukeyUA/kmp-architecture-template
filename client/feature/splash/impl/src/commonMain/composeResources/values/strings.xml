@@ -1,0 +1,5 @@
+<resources>
+    <string name="splash_session_unreadable">Couldn't load your sign-in on this device.</string>
+    <string name="splash_try_again">Try again</string>
+    <string name="splash_sign_in_again">Sign in again</string>
+</resources>

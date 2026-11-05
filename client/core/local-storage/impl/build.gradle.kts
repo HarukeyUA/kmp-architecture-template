@@ -11,9 +11,16 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(siblingPublicModule()))
+            implementation(project(":client:core:dispatchers:public"))
             implementation(libs.kotlinx.serialization.json.okio)
             implementation(libs.androidx.datastore)
             implementation(libs.datastore.preferences)
+        }
+        jvmMain.dependencies { implementation(libs.filekit.core) }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.assertk)
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }

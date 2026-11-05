@@ -6,9 +6,13 @@ import androidx.compose.ui.window.rememberWindowState
 import com.arkivanov.decompose.extensions.compose.lifecycle.LifecycleController
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import dev.zacsweers.metro.createGraphFactory
+import io.github.vinceglb.filekit.FileKit
 import javax.swing.SwingUtilities
+import org.example.project.core.buildinfo.BuildType
 import org.example.project.core.buildinfo.Environment
 import org.example.project.core.component.DefaultAppComponentContext
+
+private const val APP_ID = "org.example.project"
 
 @Suppress("TooGenericExceptionCaught")
 internal fun <T> runOnUiThread(block: () -> T): T {
@@ -39,6 +43,11 @@ fun main() {
     // injected, never sniffed at runtime; absent means prod, so a shipped artifact needs no flag.
     val environment =
         if (System.getProperty("app.env") == "dev") Environment.DEV else Environment.PROD
+
+    configureLogging(if (environment == Environment.DEV) BuildType.DEBUG else BuildType.RELEASE)
+
+    // Picks the per-platform data directory behind `FileKit.filesDir`; a dev run keeps its own.
+    FileKit.init(appId = if (environment == Environment.DEV) "$APP_ID.dev" else APP_ID)
 
     val lifecycle = LifecycleRegistry()
 

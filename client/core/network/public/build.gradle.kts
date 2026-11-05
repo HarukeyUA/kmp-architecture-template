@@ -8,18 +8,12 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":client:core:error:public"))
-            // `sessionBearer` reads/refreshes the stored token pair through the secure store and
-            // speaks the shared auth wire (refresh endpoint + DTOs).
-            api(project(":client:core:secure-storage:public"))
-            implementation(project(":shared:auth"))
             // Typed `HttpClient.call(Endpoint, …)` builds the request from a shared `@Resource`.
             api(libs.ktor.client.resources)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.assertk)
-            implementation(libs.ktor.client.mock)
-            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }

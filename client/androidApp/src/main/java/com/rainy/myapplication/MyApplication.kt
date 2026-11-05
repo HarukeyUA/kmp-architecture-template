@@ -2,6 +2,8 @@ package com.rainy.myapplication
 
 import android.app.Application
 import org.example.project.AndroidAppGraph
+import org.example.project.configureLogging
+import org.example.project.core.buildinfo.BuildType
 import org.example.project.core.buildinfo.Environment
 import org.example.project.createAndroidAppGraph
 
@@ -15,5 +17,10 @@ class MyApplication : Application() {
             environment = if (BuildConfig.FLAVOR == "dev") Environment.DEV else Environment.PROD,
             devServerHost = BuildConfig.DEV_SERVER_HOST.takeIf { it.isNotEmpty() },
         )
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        configureLogging(if (BuildConfig.DEBUG) BuildType.DEBUG else BuildType.RELEASE)
     }
 }

@@ -5,40 +5,46 @@ import androidx.compose.runtime.snapshots.SnapshotMutableState
 import androidx.savedstate.SavedState
 import androidx.savedstate.read
 import androidx.savedstate.savedState
+import co.touchlab.kermit.Logger
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.PairSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.decodeStructure
 
+private val log = Logger.withTag("SavedState")
+
 internal object SavedStateSerializer : KSerializer<Map<String, List<Any?>>> {
-    override val descriptor: SerialDescriptor =
-        MapSerializer(String.serializer(), AnyListSerializer).descriptor
+    private val delegate = MapSerializer(String.serializer(), AnyListSerializer)
+
+    override val descriptor: SerialDescriptor = delegate.descriptor
 
     override fun serialize(encoder: Encoder, value: Map<String, List<Any?>>) {
-        MapSerializer(String.serializer(), AnyListSerializer).serialize(encoder, value)
+        delegate.serialize(encoder, value)
     }
 
-    override fun deserialize(decoder: Decoder): Map<String, List<Any?>> {
-        return MapSerializer(String.serializer(), AnyListSerializer).deserialize(decoder)
-    }
+    override fun deserialize(decoder: Decoder): Map<String, List<Any?>> =
+        delegate.deserialize(decoder)
 }
 
 private object AnyListSerializer : KSerializer<List<Any?>> {
-    override val descriptor: SerialDescriptor = ListSerializer(AnyValueSerializer).descriptor
+    private val delegate = ListSerializer(AnyValueSerializer)
+
+    override val descriptor: SerialDescriptor = delegate.descriptor
 
     override fun serialize(encoder: Encoder, value: List<Any?>) {
-        ListSerializer(AnyValueSerializer).serialize(encoder, value)
+        delegate.serialize(encoder, value)
     }
 
-    override fun deserialize(decoder: Decoder): List<Any?> {
-        return ListSerializer(AnyValueSerializer).deserialize(decoder)
-    }
+    override fun deserialize(decoder: Decoder): List<Any?> = delegate.deserialize(decoder)
 }
 
 private enum class SerializableTypes(val code: Byte) {
@@ -67,11 +73,30 @@ private object AnyValueSerializer : KSerializer<Any?> {
 
     override fun serialize(encoder: Encoder, value: Any?) {
         val composite = encoder.beginStructure(descriptor)
-        when (value) {
-            null -> {
-                composite.encodeByteElement(descriptor, 0, SerializableTypes.NULL.code)
+        val unwritable = firstUnwritable(value)
+        // Whole, or not at all: a saveable that comes back with a hole inside it (a state holding
+        // null, a list missing an element) is worse than one that comes back empty. Maps are the
+        // exception, entry by entry, so one odd item cannot take a holder down.
+        when {
+            value == null -> composite.encodeNullTag()
+            unwritable == null -> writeValue(composite, value)
+            else -> {
+                log.w {
+                    "Dropped a saveable of ${value::class}: nothing here writes the " +
+                        "${unwritable::class} inside it"
+                }
+                composite.encodeNullTag()
             }
+        }
+        composite.endStructure(descriptor)
+    }
 
+    private fun CompositeEncoder.encodeNullTag() {
+        encodeByteElement(descriptor, 0, SerializableTypes.NULL.code)
+    }
+
+    private fun writeValue(composite: CompositeEncoder, value: Any) {
+        when (value) {
             is Int -> {
                 composite.encodeByteElement(descriptor, 0, SerializableTypes.INT.code)
                 composite.encodeIntElement(descriptor, 1, value)
@@ -133,8 +158,7 @@ private object AnyValueSerializer : KSerializer<Any?> {
 
             is Map<*, *> -> {
                 composite.encodeByteElement(descriptor, 0, SerializableTypes.MAP.code)
-                val stringKeyMap = value.entries.associate { (k, v) -> k.toString() to v }
-                composite.encodeSerializableElement(descriptor, 1, AnyMapSerializer, stringKeyMap)
+                composite.encodeSerializableElement(descriptor, 1, MapEntriesSerializer, value)
             }
 
             is SavedState -> {
@@ -142,16 +166,40 @@ private object AnyValueSerializer : KSerializer<Any?> {
                 composite.encodeSerializableElement(descriptor, 1, AnyMapSerializer, value.toMap())
             }
 
+            // Unreachable after firstUnwritable; kept so a platform that disagrees still degrades.
             else -> {
                 if (!PlatformSavedStateRegistryUtils.write(composite, descriptor, value)) {
-                    composite.encodeByteElement(descriptor, 0, SerializableTypes.NULL.code)
+                    composite.encodeNullTag()
                 }
             }
         }
-        composite.endStructure(descriptor)
     }
 
     private fun SavedState.toMap(): Map<String, Any?> = read { toMap() }
+
+    /**
+     * The innermost thing under [value] that nothing writes, or null when it all does. A map
+     * answers null regardless: [MapEntriesSerializer] asks for each entry on its own.
+     */
+    fun firstUnwritable(value: Any?): Any? =
+        when (value) {
+            null,
+            is Int,
+            is String,
+            is Boolean,
+            is Long,
+            is Char,
+            is Byte,
+            is Short -> null
+            // JSON has no spelling for these.
+            is Float -> value.takeUnless { it.isFinite() }
+            is Double -> value.takeUnless { it.isFinite() }
+            is SnapshotMutableState<*> -> firstUnwritable(value.value)
+            is List<*> -> value.firstNotNullOfOrNull(::firstUnwritable)
+            is Map<*, *> -> null
+            is SavedState -> value.toMap().values.firstNotNullOfOrNull(::firstUnwritable)
+            else -> value.takeUnless(PlatformSavedStateRegistryUtils::isWritable)
+        }
 
     override fun deserialize(decoder: Decoder): Any? {
         return decoder.decodeStructure(descriptor) {
@@ -184,20 +232,14 @@ private object AnyValueSerializer : KSerializer<Any?> {
                                     decodeSerializableElement(descriptor, 1, AnyListSerializer)
 
                                 SerializableTypes.MAP ->
-                                    decodeSerializableElement(descriptor, 1, AnyMapSerializer)
+                                    decodeSerializableElement(descriptor, 1, MapEntriesSerializer)
 
                                 SerializableTypes.SAVED_STATE ->
                                     savedState(
                                         decodeSerializableElement(descriptor, 1, AnyMapSerializer),
                                     )
 
-                                null ->
-                                    PlatformSavedStateRegistryUtils.read(
-                                        this,
-                                        descriptor,
-                                        1,
-                                        type!!,
-                                    ) ?: throw SerializationException("Unknown type tag: $type")
+                                null -> readPlatformValue(type)
                             }
                     }
 
@@ -207,17 +249,56 @@ private object AnyValueSerializer : KSerializer<Any?> {
             value
         }
     }
+
+    private fun CompositeDecoder.readPlatformValue(type: Byte?): Any {
+        val tag = type ?: throw SerializationException("Missing type tag")
+        return PlatformSavedStateRegistryUtils.read(this, descriptor, 1, tag)
+            ?: throw SerializationException("Unknown type tag: $tag")
+    }
 }
 
 private object AnyMapSerializer : KSerializer<Map<String, Any?>> {
-    override val descriptor: SerialDescriptor =
-        MapSerializer(String.serializer(), AnyValueSerializer).descriptor
+    private val delegate = MapSerializer(String.serializer(), AnyValueSerializer)
+
+    override val descriptor: SerialDescriptor = delegate.descriptor
 
     override fun serialize(encoder: Encoder, value: Map<String, Any?>) {
-        MapSerializer(String.serializer(), AnyValueSerializer).serialize(encoder, value)
+        delegate.serialize(encoder, value)
     }
 
-    override fun deserialize(decoder: Decoder): Map<String, Any?> {
-        return MapSerializer(String.serializer(), AnyValueSerializer).deserialize(decoder)
+    override fun deserialize(decoder: Decoder): Map<String, Any?> = delegate.deserialize(decoder)
+}
+
+/**
+ * A map as a list of typed pairs, so a lazy item's or a screen's key comes back as the object the
+ * holder will look it up by. An entry is skipped whole when either its key or its value is
+ * unwritable.
+ */
+private object MapEntriesSerializer : KSerializer<Map<*, *>> {
+    private val delegate = ListSerializer(PairSerializer(AnyValueSerializer, AnyValueSerializer))
+
+    override val descriptor: SerialDescriptor = delegate.descriptor
+
+    override fun serialize(encoder: Encoder, value: Map<*, *>) {
+        val entries =
+            value.entries.mapNotNull { (k, v) ->
+                val unwritable =
+                    AnyValueSerializer.firstUnwritable(k) ?: AnyValueSerializer.firstUnwritable(v)
+                if (unwritable == null) {
+                    k to v
+                } else {
+                    val keyType = if (k == null) "null" else k::class.toString()
+                    log.w {
+                        "Dropped a map entry keyed by $keyType: nothing here writes the " +
+                            "${unwritable::class} in it"
+                    }
+                    null
+                }
+            }
+        delegate.serialize(encoder, entries)
     }
+
+    // Mutable on purpose: Compose's state holders take the map they saved back as a MutableMap.
+    override fun deserialize(decoder: Decoder): Map<*, *> =
+        delegate.deserialize(decoder).toMap(LinkedHashMap())
 }

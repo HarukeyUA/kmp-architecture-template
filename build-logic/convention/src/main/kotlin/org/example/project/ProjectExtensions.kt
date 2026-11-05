@@ -68,15 +68,18 @@ fun KotlinMultiplatformExtension.androidLibrary(
 }
 
 /**
- * Determines the sibling :public module path from an :impl module. e.g., :feature:auth:impl ->
- * :feature:auth:public
+ * Determines the sibling `:public` module path from an `:impl` or `:testing` module. For example,
+ * `:client:feature:auth:impl` and `:client:feature:auth:testing` both resolve to
+ * `:client:feature:auth:public`.
  */
 fun Project.siblingPublicModule(): String {
     val path = project.path
-    require(path.endsWith(":impl")) {
-        "siblingPublicModule() should only be called from :impl modules, but was called from $path"
+    val sourceType = moduleTypeOf(path)
+    require(sourceType == ModuleType.IMPL || sourceType == ModuleType.TESTING) {
+        "siblingPublicModule() should only be called from :impl or :testing modules, but was " +
+            "called from $path"
     }
-    return path.removeSuffix(":impl") + ":public"
+    return path.substringBeforeLast(':') + ":public"
 }
 
 /**

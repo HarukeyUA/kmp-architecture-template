@@ -15,12 +15,15 @@ kotlin {
             api(libs.essenty.statekeeper)
             api(libs.essenty.backhandler)
             api(libs.molecule)
+            api(libs.compose.resources)
+            api(libs.kermit)
             implementation(libs.essenty.lifecycle.coroutines)
             implementation(libs.androidx.lifecycle.runtimeCompose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
             implementation(libs.assertk)
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }

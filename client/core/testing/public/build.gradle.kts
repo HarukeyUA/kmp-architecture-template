@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.convention.kmp.library)
+    alias(libs.plugins.convention.compose)
     alias(libs.plugins.convention.coroutines)
 }
 

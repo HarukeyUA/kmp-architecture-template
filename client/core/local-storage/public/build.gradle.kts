@@ -3,3 +3,5 @@ plugins {
     alias(libs.plugins.convention.coroutines)
     alias(libs.plugins.convention.serialization)
 }
+
+kotlin { sourceSets { commonMain.dependencies { api(libs.androidx.datastore) } } }

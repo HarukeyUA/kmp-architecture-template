@@ -63,6 +63,27 @@ fun versionNameFromFile(): String {
         .get()
 }
 
+// Release signing credentials: a gitignored `keystore.properties` at the repo root locally, the
+// same values as environment variables on CI. Read through `providers` to stay configuration-cache
+// safe. When nothing is configured the release build still assembles, unsigned.
+val keystoreProperties: Provider<Properties> =
+    providers
+        .fileContents(isolated.rootProject.projectDirectory.file("keystore.properties"))
+        .asText
+        .map { content -> Properties().apply { load(content.reader()) } }
+
+fun signingValue(propertyKey: String, envKey: String): String? =
+    keystoreProperties
+        .map { it.getProperty(propertyKey) }
+        .orElse(providers.environmentVariable(envKey))
+        .orNull
+        ?.takeIf { it.isNotBlank() }
+
+val releaseStoreFile = signingValue("storeFile", "ANDROID_KEYSTORE_FILE")
+val releaseStorePassword = signingValue("storePassword", "ANDROID_KEYSTORE_PASSWORD")
+val releaseKeyAlias = signingValue("keyAlias", "ANDROID_KEY_ALIAS")
+val releaseKeyPassword = signingValue("keyPassword", "ANDROID_KEY_PASSWORD")
+
 android {
     namespace = "com.rainy.myapplication"
     compileSdk { version = release(libs.versions.android.compileSdk.get().toInt()) }
@@ -82,6 +103,17 @@ android {
         // `connected*AndroidTest`.
         testInstrumentationRunnerArguments["clearPackageData"] = "true"
         testInstrumentationRunnerArguments["useTestStorageService"] = "true"
+    }
+
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
     }
 
     // `environment` separates a personal "prod" install from a "dev" install that can sit on the
@@ -118,7 +150,17 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Lets a debug build coexist with the installed release of the same flavor.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
+            // Attach the release key only when credentials are present; otherwise the build stays
+            // unsigned rather than failing (see `keystore.properties` resolution above).
+            if (releaseStoreFile != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -133,7 +175,8 @@ android {
     }
     buildFeatures {
         compose = true
-        // `BuildConfig.FLAVOR` / `DEV_SERVER_HOST` drive the injected Environment + dev host.
+        // `BuildConfig.FLAVOR` / `DEV_SERVER_HOST` drive the injected Environment + dev host, and
+        // `BuildConfig.DEBUG` whether Kermit logging stays on.
         buildConfig = true
     }
     testOptions {

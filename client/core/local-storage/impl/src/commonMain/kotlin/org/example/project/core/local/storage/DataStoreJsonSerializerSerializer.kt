@@ -2,6 +2,7 @@ package org.example.project.core.local.storage
 
 import androidx.datastore.core.okio.OkioSerializer
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.okio.decodeFromBufferedSource
@@ -10,7 +11,11 @@ import okio.BufferedSink
 import okio.BufferedSource
 
 @ExperimentalSerializationApi
-internal inline fun <reified T> dataStoreJsonSerializer(defaultValue: T): OkioSerializer<T> {
+internal fun <T> dataStoreJsonSerializer(
+    serializer: KSerializer<T>,
+    defaultValue: T,
+    unreadableValue: T,
+): OkioSerializer<T> {
     val json = Json { ignoreUnknownKeys = true }
 
     return object : OkioSerializer<T> {
@@ -18,13 +23,13 @@ internal inline fun <reified T> dataStoreJsonSerializer(defaultValue: T): OkioSe
 
         override suspend fun readFrom(source: BufferedSource): T =
             try {
-                json.decodeFromBufferedSource<T>(source)
+                json.decodeFromBufferedSource(serializer, source)
             } catch (_: SerializationException) {
-                defaultValue
+                unreadableValue
             }
 
         override suspend fun writeTo(t: T, sink: BufferedSink) {
-            json.encodeToBufferedSink(t, sink)
+            json.encodeToBufferedSink(serializer, t, sink)
         }
     }
 }

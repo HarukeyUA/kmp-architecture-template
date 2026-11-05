@@ -5,6 +5,15 @@ plugins {
 }
 
 kotlin {
+    // Only the harness's own self-test runs here; every other module gets this from
+    // `convention.screenshot-testing`, which this module cannot apply to itself.
+    android {
+        withHostTest {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
+
     sourceSets {
         androidMain.dependencies {
             implementation(libs.roborazzi)
@@ -13,7 +22,9 @@ kotlin {
             implementation(libs.junit)
             implementation(libs.compose.ui.test.junit4)
             implementation(kotlin("test-junit"))
-            implementation(project(":client:core:ui:public"))
+            // api, not implementation: `capture` takes ErrorRenderer in its signature.
+            api(project(":client:core:ui:public"))
         }
+        getByName("androidHostTest").dependencies { implementation(libs.assertk) }
     }
 }

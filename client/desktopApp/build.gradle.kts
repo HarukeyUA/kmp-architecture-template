@@ -15,6 +15,7 @@ dependencies {
     api(project(":client:composeApp"))
     implementation(project(":client:core:buildinfo:public"))
 
+    implementation(libs.filekit.core)
     implementation(compose.desktop.currentOs)
     implementation(libs.kotlinx.coroutines.swing)
 }

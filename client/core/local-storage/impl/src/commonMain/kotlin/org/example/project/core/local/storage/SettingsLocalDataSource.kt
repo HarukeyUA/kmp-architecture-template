@@ -1,18 +1,22 @@
 package org.example.project.core.local.storage
 
-import androidx.datastore.core.DataStore
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.ForScope
 import dev.zacsweers.metro.Inject
-import org.example.project.core.local.storage.di.DataStoreScope
+import dev.zacsweers.metro.SingleIn
 import org.example.project.core.local.storage.model.SettingsLocalModel
 
-@ContributesBinding(AppScope::class)
 @Inject
-class SettingsLocalDataSourceImpl(
-    @ForScope(DataStoreScope::class) private val dataStore: DataStore<SettingsLocalModel>,
-) : SettingsLocalDataSource {
+@SingleIn(AppScope::class)
+@ContributesBinding(AppScope::class)
+class SettingsLocalDataSourceImpl(factory: DataStoreFactory) : SettingsLocalDataSource {
+    private val dataStore =
+        factory.create(
+            fileName = SETTINGS_FILE_NAME,
+            serializer = SettingsLocalModel.serializer(),
+            defaultValue = SettingsLocalModel(),
+        )
+
     override val settingsFlow = dataStore.data
 
     override suspend fun updateSettings(
@@ -25,7 +29,7 @@ class SettingsLocalDataSourceImpl(
         dataStore.updateData { SettingsLocalModel() }
     }
 
-    companion object {
+    private companion object {
         const val SETTINGS_FILE_NAME = "settings.json"
     }
 }

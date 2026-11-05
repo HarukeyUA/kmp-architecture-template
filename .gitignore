@@ -1,6 +1,13 @@
 *.iml
 .gradle
 /local.properties
+
+# Android release signing: never commit the keystore or its passwords.
+# See keystore.properties.example for the expected keys.
+/keystore.properties
+*.jks
+*.keystore
+
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml

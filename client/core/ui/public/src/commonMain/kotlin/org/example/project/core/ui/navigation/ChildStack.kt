@@ -9,20 +9,12 @@ import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.P
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.StackAnimation
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.StackAnimationScope
 import com.arkivanov.decompose.extensions.compose.experimental.stack.animation.StackAnimator
-import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.essenty.backhandler.BackHandler
 import org.example.project.core.navigation.StackComponent
 
 /**
- * Renders the active child from a [StackComponent] with optional animation.
- *
- * This is a convenience wrapper around Decompose's [Children] composable that simplifies the common
- * pattern of rendering a stack.
- *
- * @param component The [StackComponent] whose stack should be rendered
- * @param modifier Modifier to apply to the container
- * @param animation Stack animation to use for transitions, defaults to platform back animation
- * @param content Composable to render for the active child
+ * Renders the active child from a [StackComponent]. [animation] defaults to the platform back
+ * animation.
  */
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
@@ -42,14 +34,8 @@ fun <C : Any, T : Any> ChildStack(
 }
 
 /**
- * Renders the active [ScreenChild] from a [StackComponent] with optional animation.
- *
- * Convenience overload for components that use [ScreenChild] — each child renders itself, so no
+ * [ChildStack] for components whose children are [ScreenChild]s: each child renders itself, so no
  * `content` lambda is needed.
- *
- * @param component The [StackComponent] whose stack should be rendered
- * @param modifier Modifier to apply to the container
- * @param animation Stack animation to use for transitions, defaults to platform back animation
  */
 @OptIn(ExperimentalDecomposeApi::class)
 @Composable
@@ -77,3 +63,11 @@ expect fun defaultPredictiveBackParams(
 ): PredictiveBackParams?
 
 @ExperimentalDecomposeApi expect fun defaultStackAnimator(): StackAnimator
+
+/**
+ * Where a committed back gesture lands, in the same 0f..1f progress the gesture reports. The
+ * gesture is already committed by the time this runs, so the result never falls short of
+ * [currentProgress] however hard the finger flicked backwards, and never overshoots 1f.
+ */
+internal fun settleTarget(currentProgress: Float, velocity: Float): Float =
+    currentProgress + (1f - currentProgress) * velocity.coerceIn(0f, 1f)

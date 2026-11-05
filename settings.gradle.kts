@@ -61,6 +61,8 @@ include(":client:core:navigation:public")
 
 include(":client:core:buildinfo:public")
 
+include(":client:core:datetime:public")
+
 include(":client:core:robots")
 
 include(":client:core:error:public")
@@ -110,19 +112,15 @@ include(":client:feature:profile:public")
 
 include(":client:feature:profile:impl")
 
-include(":client:feature:user-data:public")
+include(":client:feature:session:public")
 
-include(":client:feature:user-data:impl")
+include(":client:feature:session:impl")
 
-include(":client:feature:user-data:testing")
+include(":client:feature:session:testing")
 
 include(":client:core:testing:public")
 
 include(":client:core:screenshot-testing:public")
-
-include(":client:core:secure-storage:public")
-
-include(":client:core:secure-storage:impl")
 
 // ===================== :shared umbrella (the Seam — contracts) =====================
 include(":shared:common")

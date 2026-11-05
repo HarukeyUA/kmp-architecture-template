@@ -4,6 +4,9 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.DependencyGraph
 import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.createGraphFactory
+import kotlin.experimental.ExperimentalNativeApi
+import kotlin.native.Platform
+import org.example.project.core.buildinfo.BuildType
 import org.example.project.core.buildinfo.Environment
 import org.example.project.core.network.ApiConfigDefaults
 
@@ -28,9 +31,14 @@ interface IosAppGraph : AppGraph {
  * `DevServerHost` key — see Info-dev.plist. Null/blank falls back to `localhost`, which is the Mac
  * itself on the simulator; a physical iPhone relies on the Bonjour/LAN host being reachable.
  */
-fun createAppGraph(isDev: Boolean, devServerHost: String?): IosAppGraph =
-    createGraphFactory<IosAppGraph.Factory>()
+@OptIn(ExperimentalNativeApi::class)
+fun createAppGraph(isDev: Boolean, devServerHost: String?): IosAppGraph {
+    // The first Kotlin entry Swift calls, so logging is settled before the graph is built. The
+    // Xcode Debug config builds the debug framework, the Release config the release one.
+    configureLogging(if (Platform.isDebugBinary) BuildType.DEBUG else BuildType.RELEASE)
+    return createGraphFactory<IosAppGraph.Factory>()
         .create(
             if (isDev) Environment.DEV else Environment.PROD,
             devApiConfigDefaults(devServerHost, fallbackDevBaseUrl = "http://localhost:8080"),
         )
+}

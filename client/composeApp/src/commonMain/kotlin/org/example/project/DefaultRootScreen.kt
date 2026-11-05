@@ -68,7 +68,8 @@ class DefaultRootScreen(
                                 },
                         ) {
                             when (val child = it.instance) {
-                                is RootComponent.Child.Splash -> splashScreen.Content()
+                                is RootComponent.Child.Splash ->
+                                    splashScreen.Content(child.component)
                                 is RootComponent.Child.Login -> loginScreen.Content(child.component)
                                 is RootComponent.Child.Main -> mainScreen.Content(child.component)
                             }

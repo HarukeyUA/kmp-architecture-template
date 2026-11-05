@@ -13,14 +13,12 @@ class KtorConventionPlugin : Plugin<Project> {
                 sourceSets {
                     commonMain.dependencies {
                         implementation(libs.library("ktor-client-core"))
+                        implementation(libs.library("ktor-client-engine-defaults"))
                         implementation(libs.library("ktor-client-content-negotiation"))
                         implementation(libs.library("ktor-serialization-kotlinx-json"))
                         implementation(libs.library("ktor-client-logging"))
                         implementation(libs.library("ktor-client-auth"))
                     }
-                    jvmMain.dependencies { implementation(libs.library("ktor-client-okhttp")) }
-                    androidMain.dependencies { implementation(libs.library("ktor-client-okhttp")) }
-                    iosMain.dependencies { implementation(libs.library("ktor-client-darwin")) }
                 }
             }
         }

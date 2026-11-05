@@ -7,6 +7,8 @@ import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
+import org.example.project.client.feature.home.impl.Res
+import org.example.project.client.feature.home.impl.home_detail_message
 import org.example.project.core.component.AppComponentContext
 import org.example.project.core.component.MoleculeComponent
 import org.example.project.core.component.snackbar.SnackbarMessage
@@ -22,7 +24,7 @@ class DefaultHomeDetailComponent(
     override fun produceState(): HomeDetailComponent.State {
         LaunchedEffect(Unit) {
             this@DefaultHomeDetailComponent.snackbarHandler.showSnackbar(
-                SnackbarMessage(text = "Message"),
+                SnackbarMessage(text = Res.string.home_detail_message),
             )
         }
 
