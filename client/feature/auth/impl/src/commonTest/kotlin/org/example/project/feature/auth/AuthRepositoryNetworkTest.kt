@@ -44,7 +44,7 @@ import org.example.project.shared.common.seamJson
  * The client side of the auth gate, against a `MockEngine` server: it exercises the real
  * request-building (shared `@Resource`), the seam `Json` (a 4xx `ErrorEnvelope` parses back to the
  * typed `ApiError`), token-pair storage, and the production [sessionBearer] provider — the native
- * Ktor refresh flow plus the "refresh rejected → clear session" interceptor (ADR-0009 as amended).
+ * Ktor refresh flow plus the "refresh rejected → clear session" interceptor.
  */
 class AuthRepositoryNetworkTest {
     private val json = seamJson

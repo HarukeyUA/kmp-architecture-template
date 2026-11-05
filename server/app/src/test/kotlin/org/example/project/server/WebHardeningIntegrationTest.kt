@@ -26,11 +26,10 @@ import org.example.project.shared.common.PayloadTooLarge
 import org.example.project.shared.common.RateLimited
 
 /**
- * The app-layer DoS hardening (ADR-0010 §11) driven through the real stack: the strict per-IP tier
- * on credential endpoints answers with the typed `RateLimited` envelope (never Ktor's bare 429),
- * non-credential endpoints are deliberately unlimited, and an over-limit body is a typed
- * `PayloadTooLarge` 413 — not the 400 "malformed_body" it would fall into without the explicit
- * StatusPages handler.
+ * The app-layer DoS hardening driven through the real stack: the strict per-IP tier on credential
+ * endpoints answers with the typed `RateLimited` envelope (never Ktor's bare 429), non-credential
+ * endpoints are deliberately unlimited, and an over-limit body is a typed `PayloadTooLarge` 413 —
+ * not the 400 "malformed_body" it would fall into without the explicit StatusPages handler.
  */
 class WebHardeningIntegrationTest {
     @Test

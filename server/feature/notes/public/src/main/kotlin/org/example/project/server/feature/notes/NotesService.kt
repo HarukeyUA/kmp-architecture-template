@@ -8,11 +8,10 @@ import org.example.project.shared.notes.NotesCreateError
 /**
  * The notes domain service: per-account CRUD over the caller's own notes. Every method takes the
  * authenticated [Principal] (the route supplies it from the session middleware) and returns a
- * `Either<Failure<Err>, T>` over **domain types** (ADR-0003 as amended; ADR-0011) — the route owns
- * the Wire mapping. Only [create] declares an error ([NotesCreateError]); [list] and [delete]
- * declare none, so their failure channel is purely Ambient (`Failure<Nothing>`). The notes domain
- * holds only an opaque `account_id` and reaches the auth domain through its **public** service for
- * any account detail (ADR-0006).
+ * `Either<Failure<Err>, T>` over **domain types** — the route owns the Wire mapping. Only [create]
+ * declares an error ([NotesCreateError]); [list] and [delete] declare none, so their failure
+ * channel is purely Ambient (`Failure<Nothing>`). The notes domain holds only an opaque
+ * `account_id` and reaches the auth domain through its **public** service for any account detail.
  */
 interface NotesService {
     suspend fun list(principal: Principal): Either<Failure<Nothing>, List<AuthoredNote>>

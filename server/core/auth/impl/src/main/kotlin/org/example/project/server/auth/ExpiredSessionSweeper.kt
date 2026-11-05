@@ -14,10 +14,10 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.slf4j.LoggerFactory
 
 /**
- * The worked example of a [ScheduledJob] (ADR-0010): periodically deletes sessions past their
- * expiry. Expired sessions already fail to resolve (the store checks `expiresAt`), so this is pure
- * housekeeping — which is exactly what makes it **idempotent**: deleting the already-expired rows
- * again removes nothing, so it is safe to run on whichever node wins the advisory lock each tick.
+ * The worked example of a [ScheduledJob]: periodically deletes sessions past their expiry. Expired
+ * sessions already fail to resolve (the store checks `expiresAt`), so this is pure housekeeping —
+ * which is exactly what makes it **idempotent**: deleting the already-expired rows again removes
+ * nothing, so it is safe to run on whichever node wins the advisory lock each tick.
  *
  * It self-registers via `@ContributesIntoSet`, so it joins the scheduler's `Set<ScheduledJob>`
  * without `:server:app` or the scheduler core knowing auth exists.

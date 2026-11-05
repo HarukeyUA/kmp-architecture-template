@@ -17,11 +17,11 @@ import org.example.project.shared.notes.NoteResponse
 import org.example.project.shared.notes.NotesApi
 
 /**
- * Self-registering notes routes (ADR-0006) — added with zero lines in `:server:app`. Every route
- * lives under [authenticatedRoutes], so the session middleware 401s before the handler runs and
- * [principal] is always present. The route is dumb and owns the Wire boundary (ADR-0003): each
- * [serve] binds a typed [NotesApi] endpoint, unpacks the request, calls the service, maps the
- * returned domain model to the response DTO, and folds `Either<ApiError, T>` to HTTP.
+ * Self-registering notes routes — added with zero lines in `:server:app`. Every route lives under
+ * [authenticatedRoutes], so the session middleware 401s before the handler runs and [principal] is
+ * always present. The route is dumb and owns the Wire boundary: each [serve] binds a typed
+ * [NotesApi] endpoint, unpacks the request, calls the service, maps the returned domain model to
+ * the response DTO, and folds `Either<ApiError, T>` to HTTP.
  */
 @Inject
 @ContributesIntoSet(AppScope::class)

@@ -13,9 +13,9 @@ import org.example.project.shared.common.Unauthorized
 import org.example.project.shared.common.UnknownApiError
 
 /**
- * The client side of the error round-trip (ADR-0005): a known cross-cutting `ApiError` maps to its
- * localized resource, while an unknown one (a newer server's code degraded to `UnknownApiError`)
- * maps to `null` so the generic fallback in `CompositeErrorRenderer` handles it.
+ * The client side of the error round-trip: a known cross-cutting `ApiError` maps to its localized
+ * resource, while an unknown one (a newer server's code degraded to `UnknownApiError`) maps to
+ * `null` so the generic fallback in `CompositeErrorRenderer` handles it.
  */
 class ApiErrorRenderTest {
     @Test

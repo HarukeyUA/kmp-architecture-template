@@ -19,10 +19,10 @@ data class LoginRequest(
 )
 
 /**
- * The issued token pair (ADR-0009 as amended): a short-lived JWT [accessToken] sent as the bearer
- * on every authenticated request, and the opaque [refreshToken] (the server-side Session) presented
- * only to `refresh`/`logout`. Both live in platform-secure storage; revocation is a server-side row
- * delete that cuts off refresh, surfacing as a 401 within the access token's TTL.
+ * The issued token pair: a short-lived JWT [accessToken] sent as the bearer on every authenticated
+ * request, and the opaque [refreshToken] (the server-side Session) presented only to
+ * `refresh`/`logout`. Revocation is a server-side row delete that cuts off refresh, surfacing as a
+ * 401 within the access token's TTL.
  */
 @Serializable
 data class TokensResponse(

@@ -1,5 +1,5 @@
-# Server image — package the runnable distribution into a small JRE base (ADR-0010: installDist → JRE
-# image). Target-agnostic: runs on any container host (Railway, Fly, Cloud Run, k8s, …).
+# Server image — package the runnable distribution (installDist) into a small JRE base.
+# Target-agnostic: runs on any container host (Railway, Fly, Cloud Run, k8s, …).
 #
 # Build the distribution first, then the image (the monorepo's Android/iOS modules need the Android
 # SDK to configure, so the JVM artifact is built on the host/CI rather than inside this image):

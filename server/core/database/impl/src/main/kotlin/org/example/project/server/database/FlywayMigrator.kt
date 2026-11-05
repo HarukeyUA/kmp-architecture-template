@@ -8,7 +8,7 @@ import org.flywaydb.core.Flyway
  * Applies every SQL migration found under `db/migration` on the classpath. Each domain co-locates
  * its timestamp-versioned migrations in its own `:impl` resources (`V20260530__add_x.sql`); because
  * they all land at the same classpath location, Flyway sees the merged, chronologically-ordered set
- * with no central migrations folder (ADR-0007).
+ * with no central migrations folder.
  */
 @Inject
 class FlywayMigrator(private val dataSource: DataSource) {

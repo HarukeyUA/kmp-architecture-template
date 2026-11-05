@@ -16,10 +16,10 @@ import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
  * `AdvisoryLockScheduler`. That dispatcher boundary is the one thing this wrapper owns; it is the
  * single seam to widen later (isolation level, retry, metrics) without touching call sites.
  *
- * Orthogonally, repositories/stores own transaction mechanics (ADR-0006): they may call this helper
- * for each persistence operation. Nested Exposed transactions join the caller's transaction by
- * default, so a higher-level unit of work can still make multiple repository/store calls atomic
- * when a use case needs that.
+ * Orthogonally, repositories/stores own transaction mechanics: they may call this helper for each
+ * persistence operation. Nested Exposed transactions join the caller's transaction by default, so a
+ * higher-level unit of work can still make multiple repository/store calls atomic when a use case
+ * needs that.
  */
 suspend inline fun <T> dbTransaction(noinline block: suspend JdbcTransaction.() -> T): T =
     withContext(Dispatchers.IO) { suspendTransaction(statement = block) }

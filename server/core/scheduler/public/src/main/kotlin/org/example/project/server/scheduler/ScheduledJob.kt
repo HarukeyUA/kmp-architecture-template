@@ -3,11 +3,11 @@ package org.example.project.server.scheduler
 import kotlin.time.Duration
 
 /**
- * A periodic background job, run **multi-node-safe from day one** (ADR-0010). A core or domain
- * `:impl` contributes one via `@ContributesIntoSet(AppScope::class)`; the advisory-lock scheduler
- * collects the whole `Set<ScheduledJob>` and, on every tick, runs each job only on the instance
- * that wins a Postgres advisory lock — so exactly one node runs each job at a time, with zero extra
- * infra (no queue, no leader election).
+ * A periodic background job, run **multi-node-safe from day one**. A core or domain `:impl`
+ * contributes one via `@ContributesIntoSet(AppScope::class)`; the advisory-lock scheduler collects
+ * the whole `Set<ScheduledJob>` and, on every tick, runs each job only on the instance that wins a
+ * Postgres advisory lock — so exactly one node runs each job at a time, with zero extra infra (no
+ * queue, no leader election).
  *
  * Two rules make this safe:
  * 1. **Write jobs idempotently.** The lock prevents *concurrent* double-execution; it bounds

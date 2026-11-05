@@ -13,9 +13,9 @@ import org.jetbrains.exposed.v1.datetime.timestampWithTimeZone
  *
  * Exposed's plain `timestamp()` converts through `TimeZone.currentSystemDefault()` and stores
  * wall-clock digits in `TIMESTAMP WITHOUT TIME ZONE`, so two nodes in different timezones disagree
- * on every stored instant (ADR-0010's silent-foreclosure failure mode). `TIMESTAMPTZ` stores a true
- * point in time regardless of JVM or connection timezone; the offset written is always UTC and the
- * offset read back is discarded, so no timezone ever reaches the domain.
+ * on every stored instant, a bug that stays silent until a second node runs. `TIMESTAMPTZ` stores a
+ * true point in time regardless of JVM or connection timezone; the offset written is always UTC and
+ * the offset read back is discarded, so no timezone ever reaches the domain.
  */
 fun Table.utcTimestamp(name: String): Column<Instant> =
     timestampWithTimeZone(name)

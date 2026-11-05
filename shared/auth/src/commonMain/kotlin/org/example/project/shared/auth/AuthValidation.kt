@@ -8,9 +8,9 @@ import org.example.project.shared.common.FieldError
 import org.example.project.shared.common.ValidationError
 
 /**
- * Pure **shape** validation reused on both sides (ADR-0004): the client runs it for instant
- * feedback, the server runs the same code as its security boundary. Anything needing state or
- * identity (email uniqueness, credential check) is server-only.
+ * Pure **shape** validation reused on both sides: the client runs it for instant feedback, the
+ * server runs the same code as its security boundary. Anything needing state or identity (email
+ * uniqueness, credential check) is server-only.
  */
 @JvmInline
 value class Email private constructor(val value: String) {

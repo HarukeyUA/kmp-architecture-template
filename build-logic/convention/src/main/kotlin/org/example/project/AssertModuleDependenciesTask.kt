@@ -11,15 +11,15 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 /**
- * Validates that every declared project dependency on this module obeys the rules in
- * ARCHITECTURE.md / ARCHITECTURE_SERVER.md. The task reads only its own project's state, so it is
- * compatible with Gradle's project isolation.
+ * Validates that every declared project dependency on this module obeys the rules below. The task
+ * reads only its own project's state, so it is compatible with Gradle's project isolation.
  *
  * Rules enforced (derived from module path):
  * - The umbrella law: `:client` -> `:client`/`:shared`, `:server` -> `:server`/`:shared`, `:shared`
- *   -> `:shared` only; `:client` <-> `:server` is forbidden (ADR-0001). The test-only
- *   `:integration` umbrella may depend on everything, and nothing may depend on it — it exists so
- *   client↔server integration tests never put a `:server` dependency inside `:client`.
+ *   -> `:shared` only; `:client` <-> `:server` is forbidden, because the two sides join only
+ *   through the `:shared` contract. The test-only `:integration` umbrella may depend on everything,
+ *   and nothing may depend on it — it exists so client↔server integration tests never put a
+ *   `:server` dependency inside `:client`.
  * - `:public` may depend only on `:public` or a `:shared` contract.
  * - `:impl` may depend only on `:public` or a `:shared` contract.
  * - `:testing` may depend only on its sibling `:public`.
@@ -56,7 +56,10 @@ abstract class AssertModuleDependenciesTask : DefaultTask() {
                     appendLine("Module dependency rule violations in $source:")
                     violations.sorted().forEach { appendLine("  - $it") }
                     append(
-                        "See ARCHITECTURE.md / ARCHITECTURE_SERVER.md § Module Dependency Rules."
+                        "Rules: :client and :server meet only through :shared; :public and :impl " +
+                            "depend only on :public or :shared; :testing only on its sibling " +
+                            ":public; :robots only on its sibling :impl or $CORE_ROBOTS_PATH; " +
+                            ":client:core never on :client:feature."
                     )
                 }
             )

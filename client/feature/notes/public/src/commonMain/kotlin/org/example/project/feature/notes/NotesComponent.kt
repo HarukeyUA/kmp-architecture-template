@@ -14,7 +14,7 @@ interface NotesComponent : StatefulComponent<NotesComponent.State> {
         val isLoading: Boolean = false,
         val isSubmitting: Boolean = false,
         val error: AppError? = null,
-        // The one Declared error `create` can return (ADR-0011), rendered inline with its budget;
+        // The one Declared error `create` can return, rendered inline with its budget;
         // anything else rides the generic [error] pipeline.
         val quotaExceeded: NotesQuotaExceeded? = null,
         val eventSink: (Event) -> Unit,

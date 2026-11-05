@@ -4,7 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import kotlin.test.Test
 
-/** Shape-validation rules for notes (the same code the client and server both run, ADR-0004). */
+/** Shape-validation rules for notes (the same code the client and server both run). */
 class NotesValidationTest {
     @Test
     fun `blank text is rejected`() {

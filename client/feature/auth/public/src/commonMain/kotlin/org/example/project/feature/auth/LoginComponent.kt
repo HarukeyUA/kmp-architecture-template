@@ -18,7 +18,7 @@ interface LoginComponent : StatefulComponent<LoginComponent.State> {
 
     /**
      * A Declared auth failure the screen renders inline with a field-specific message, distinct
-     * from the generic [error] renderer pipeline (ADR-0011): login's `InvalidCredentials`, signup's
+     * from the generic [error] renderer pipeline: login's `InvalidCredentials`, signup's
      * `EmailTaken`. The screen owns the message; the component owns the exhaustive mapping.
      */
     enum class FormError {

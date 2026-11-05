@@ -49,7 +49,7 @@ suspend inline fun <reified T> safeRequest(
  * response to [Res] (or [Unit] when it declares none). The body and return types are checked
  * against the same [Endpoint] the server binds, so the two ends can't drift.
  *
- * Failures land in [CallFailure] (ADR-0011): a connection drop, a 5xx, or a decode/parse failure is
+ * Failures land in [CallFailure]: a connection drop, a 5xx, or a decode/parse failure is
  * [CallFailure.Transport]; a parsed 4xx envelope is [CallFailure.Declared] when its [ApiError] is
  * an instance of the endpoint's declared [Endpoint.error] lens, and [CallFailure.Ambient] otherwise
  * — which folds in both cross-cutting errors and known-but-undeclared ones (the drift safety

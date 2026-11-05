@@ -23,11 +23,10 @@ import kotlinx.coroutines.runBlocking
 import org.testcontainers.containers.MinIOContainer
 
 /**
- * The Phase 6 storage gate (ADR-0010): a blob round-trips through real object storage end-to-end. A
- * MinIO Testcontainer stands in for S3 (both speak the same path-style protocol), and the test
- * drives the **presigned-URL** transfer model the [BlobStore] exposes — the bytes go straight to
- * the store over HTTP, never through the app — proving the interface works against a real backend,
- * not a mock.
+ * A blob round-trips through real object storage end-to-end. A MinIO Testcontainer stands in for S3
+ * (both speak the same path-style protocol), and the test drives the **presigned-URL** transfer
+ * model the [BlobStore] exposes — the bytes go straight to the store over HTTP, never through the
+ * app — proving the interface works against a real backend, not a mock.
  */
 class S3BlobStoreTest {
     private lateinit var minio: MinIOContainer

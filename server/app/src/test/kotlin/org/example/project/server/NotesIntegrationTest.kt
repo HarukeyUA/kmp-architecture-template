@@ -27,13 +27,13 @@ import org.example.project.shared.notes.NotesQuotaExceeded
 import org.example.project.shared.notes.NotesResource
 
 /**
- * The Phase 5 validation gate (ADR-0006): the notes domain driven through its real routes against
- * the shared [org.example.project.server.testing.TestPostgres], proving cheap replication of the
- * auth slice's shape plus the two things Phase 5 is actually about — (1) the **cross-domain** call:
- * each note carries the `authorEmail` that the notes service resolved through `AuthService` (a
- * feature→feature `:public` call, never the accounts table); (2) the per-domain
- * `NotesQuotaExceeded` error round-trips through the shared seam. `:server:app` itself gained zero
- * production lines — the routes/table/error module all self-register.
+ * The notes domain driven through its real routes against the shared
+ * [org.example.project.server.testing.TestPostgres], proving cheap replication of the auth slice's
+ * shape plus two things: (1) the **cross-domain** call: each note carries the `authorEmail` that
+ * the notes service resolved through `AuthService` (a feature→feature `:public` call, never the
+ * accounts table); (2) the per-domain `NotesQuotaExceeded` error round-trips through the shared
+ * seam. `:server:app` itself gained zero production lines — the routes/table/error module all
+ * self-register.
  */
 class NotesIntegrationTest {
     @Test

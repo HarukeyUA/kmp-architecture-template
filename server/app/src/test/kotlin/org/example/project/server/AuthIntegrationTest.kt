@@ -34,9 +34,9 @@ import org.example.project.shared.common.BadRequest
 import org.example.project.shared.common.Unauthorized
 
 /**
- * The Phase 4 validation gate, server-side (ADR-0002/0009): the whole stack — seam, contract, shape
- * validation, error model, auth, persistence, DI — driven through the real routes against the
- * shared [org.example.project.server.testing.TestPostgres]. The test client consumes the **same**
+ * The auth gate, server-side: the whole stack — seam, contract, shape validation, error model,
+ * auth, persistence, DI — driven through the real routes against the shared
+ * [org.example.project.server.testing.TestPostgres]. The test client consumes the **same**
  * `@Resource` and seam `Json` as the client app, so this also proves Ktor Resources shared across
  * both ends. Each test boots a fresh graph against a truncated schema, so scenarios are isolated.
  */
@@ -111,7 +111,7 @@ class AuthIntegrationTest {
             assertThat(wrongPassword.decodedError()).isEqualTo(InvalidCredentials)
 
             // Unknown email → byte-identical envelope to wrong-password: the collapse to the
-            // single InvalidCredentials is the information-disclosure boundary (ADR-0011), and
+            // single InvalidCredentials is the information-disclosure boundary, and
             // the service burns a dummy Argon2 verify on this path so timing doesn't pierce it
             // either (the dummy-verify contract itself is pinned in DefaultAuthServiceTest).
             val unknownEmail =
@@ -162,8 +162,8 @@ class AuthIntegrationTest {
             assertThat(revokedRefresh.status).isEqualTo(HttpStatusCode.Unauthorized)
             assertThat(revokedRefresh.decodedError()).isEqualTo(SessionExpired)
 
-            // … while the already-minted access token keeps working until its TTL runs out —
-            // the bounded revocation staleness the JWT amendment to ADR-0009 accepts by design.
+            // … while the already-minted access token keeps working until its TTL runs out.
+            // Revoking a Session only cuts off minting, so staleness is bounded by that TTL.
             assertThat(client.get(AuthResource.Me()) { bearerAuth(tokens.accessToken) }.status)
                 .isEqualTo(HttpStatusCode.OK)
 

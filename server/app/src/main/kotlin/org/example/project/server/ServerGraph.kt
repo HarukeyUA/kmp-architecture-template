@@ -20,8 +20,8 @@ import org.example.project.server.web.WebLimitsConfig
 /**
  * The server composition root (analogous to the client's `JvmAppGraph`). Metro merges every
  * `@ContributesIntoSet` / `@ContributesTo` contribution from the aggregated `:server:*:impl`
- * modules, so the multibound sets below assemble themselves — adding a domain never edits this file
- * (ADR-0006, ADR-0008).
+ * modules, so the multibound sets below assemble themselves — adding a domain never edits this
+ * file.
  *
  * The sets are declared `allowEmpty = true` so a domain-less server still boots; [tableSets] is
  * empty until the first domain ships a table.
@@ -32,15 +32,15 @@ interface ServerGraph {
     val databaseBootstrap: DatabaseBootstrap
 
     /**
-     * The object-storage primitive (ADR-0010), exposed so the storage chain is validated at graph
-     * build even before a domain injects it. Lazy like every Metro accessor — a blob-less server
-     * never builds the S3 client, so this is not a boot-time dependency.
+     * The object-storage primitive, exposed so the storage chain is validated at graph build even
+     * before a domain injects it. Lazy like every Metro accessor — a blob-less server never builds
+     * the S3 client, so this is not a boot-time dependency.
      */
     val blobStore: BlobStore
 
     /**
-     * The invariant session primitive (ADR-0009), exposed so revocation flows without a route yet
-     * (e.g. [SessionStore.revokeAllFor]) are exercisable by the integration suite.
+     * The invariant session primitive, exposed so revocation flows without a route yet (e.g.
+     * [SessionStore.revokeAllFor]) are exercisable by the integration suite.
      */
     val sessionStore: SessionStore
 

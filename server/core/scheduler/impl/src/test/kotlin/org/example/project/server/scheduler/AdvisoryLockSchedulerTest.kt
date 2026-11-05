@@ -22,10 +22,10 @@ import kotlinx.coroutines.runBlocking
 import org.testcontainers.containers.PostgreSQLContainer
 
 /**
- * The Phase 6 scheduler gate (ADR-0010): a scheduled job runs **exactly once across two
- * instances**. Two [AdvisoryLockScheduler]s point at one Postgres (two app instances, one DB) and
- * contend for the same job; the Postgres advisory lock guarantees only one runs it concurrently,
- * and that the lock is released afterward so the next tick is free to reacquire.
+ * A scheduled job runs **exactly once across two instances**. Two [AdvisoryLockScheduler]s point at
+ * one Postgres (two app instances, one DB) and contend for the same job; the Postgres advisory lock
+ * guarantees only one runs it concurrently, and that the lock is released afterward so the next
+ * tick is free to reacquire.
  */
 class AdvisoryLockSchedulerTest {
     @Test

@@ -7,9 +7,9 @@ import org.example.project.shared.auth.AuthSignupError
 
 /**
  * Client-side auth against the server's `:shared:auth` contract. On success, the issued token pair
- * (JWT access + opaque refresh) is persisted in platform-secure storage — which flips the observed
+ * (JWT access + opaque refresh) is persisted in the session store — which flips the observed
  * logged-in state (and so drives navigation). Failures arrive as a typed [CallFailure] carrying
- * each operation's Declared errors (ADR-0011): `login` may return [AuthLoginError], `signup`
+ * each operation's Declared errors: `login` may return [AuthLoginError], `signup`
  * [AuthSignupError]; the repository preserves that set unmapped for the feature to branch on.
  */
 interface AuthRepository {

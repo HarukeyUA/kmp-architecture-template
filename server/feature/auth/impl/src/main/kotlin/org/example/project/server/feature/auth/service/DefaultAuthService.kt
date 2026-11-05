@@ -76,7 +76,7 @@ class DefaultAuthService(
         // The only place a request touches the session store (cache → DB): a revoked or expired
         // session stops minting here, which bounds access-token staleness by its TTL. refresh
         // presents a Session, not an Access token, so its credential failure is the Declared
-        // SessionExpired, never the cross-cutting Unauthorized (ADR-0011).
+        // SessionExpired, never the cross-cutting Unauthorized.
         val principal = sessionStore.resolve(refreshToken) ?: declared(SessionExpired)
         accessTokenIssuer.issue(principal.accountId)
     }
@@ -95,9 +95,7 @@ class DefaultAuthService(
             session = sessionStore.issue(accountId),
         )
 
-    /**
-     * Shape-validates both fields and accumulates the failures into one [Validation] (ADR-0004).
-     */
+    /** Shape-validates both fields and accumulates the failures into one [Validation]. */
     private fun validateCredentials(email: String, password: String): Either<ApiError, Email> =
         Either.zipOrAccumulate(Email.of(email), Password.of(password)) { validEmail, _ ->
                 validEmail

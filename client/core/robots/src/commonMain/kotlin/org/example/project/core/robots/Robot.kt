@@ -20,8 +20,8 @@ fun interface Wait {
 /**
  * Base for per-feature screen robots: drives one screen through its semantics tags. Written against
  * [SemanticsNodeInteractionsProvider] plus the injected [Wait] primitive (rather than a concrete
- * rule type) so robots stay host-agnostic. Robots never wait for another feature's screen —
- * cross-screen waits compose in the flow test (see ARCHITECTURE.md § Module Dependency Rules).
+ * rule type) so robots stay host-agnostic. Robots never wait for another feature's screen, since a
+ * robot sees only its sibling `:impl` and this module; cross-screen waits compose in the flow test.
  */
 abstract class Robot(
     protected val nodes: SemanticsNodeInteractionsProvider,

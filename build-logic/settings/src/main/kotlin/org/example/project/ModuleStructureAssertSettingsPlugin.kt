@@ -50,7 +50,10 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
                     buildString {
                         appendLine("Module structure violations:")
                         violations.forEach { appendLine("  - $it") }
-                        append("See ARCHITECTURE.md § Module Structure.")
+                        append(
+                            "Rules: leaf modules outside :shared and :integration use an allowed " +
+                                "name, and every :impl has a sibling :public."
+                        )
                     }
                 )
             }

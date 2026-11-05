@@ -9,10 +9,10 @@ import org.example.project.shared.common.ApiError
 import org.example.project.shared.common.encodeApiError
 
 /**
- * Declared-contract freeze (ADR-0011): golden-dumps each notes operation → its Declared errors'
- * `@SerialName`s *and* HTTP statuses, both read off the endpoint's sealed lens. Adding a variant or
- * changing a status fails this test until the golden (and the sample list) is edited deliberately —
- * the codes and statuses are the wire contract for un-updatable clients.
+ * Declared-contract freeze: golden-dumps each notes operation → its Declared errors' `@SerialName`s
+ * *and* HTTP statuses, both read off the endpoint's sealed lens. Adding a variant or changing a
+ * status fails this test until the golden (and the sample list) is edited deliberately — the codes
+ * and statuses are the wire contract for un-updatable clients.
  */
 class NotesDeclaredErrorFreezeTest {
     // Hand-instantiated samples, one per variant; coverage against the lens's descriptor below.

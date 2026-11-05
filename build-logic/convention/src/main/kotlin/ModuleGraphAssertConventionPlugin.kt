@@ -24,7 +24,8 @@ class ModuleGraphAssertConventionPlugin : Plugin<Project> {
                 tasks.register<AssertModuleDependenciesTask>("assertModuleDependencies") {
                     group = LifecycleBasePlugin.VERIFICATION_GROUP
                     description =
-                        "Assert declared project dependencies match ARCHITECTURE.md rules."
+                        "Assert declared project dependencies obey the umbrella, " +
+                            "public/impl and layering rules."
                     sourcePath.set(project.path)
                     stampFile.set(layout.buildDirectory.file("module-graph-assert/stamp.txt"))
                 }

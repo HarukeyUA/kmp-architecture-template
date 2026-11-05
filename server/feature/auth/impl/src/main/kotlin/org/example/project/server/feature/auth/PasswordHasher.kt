@@ -29,12 +29,12 @@ interface PasswordHasher {
 }
 
 /**
- * **Argon2id** password hashing — the baked-in, never-hand-rolled default (ADR-0009). Memory-hard
- * parameters follow current OWASP guidance (64 MiB, 3 iterations). The plaintext char array is
- * wiped after each operation so it doesn't linger on the heap.
+ * **Argon2id** password hashing — the baked-in, never-hand-rolled default. Memory-hard parameters
+ * follow current OWASP guidance (64 MiB, 3 iterations). The plaintext char array is wiped after
+ * each operation so it doesn't linger on the heap.
  *
- * Concurrency is bounded (ADR-0010 §11): each call costs [MEMORY_KIB] of native memory, so an
- * unbounded login flood is an OOM, not a slowdown. [hashDispatcher] caps concurrent hashes at
+ * Concurrency is bounded: each call costs [MEMORY_KIB] of native memory, so an unbounded login
+ * flood is an OOM, not a slowdown. [hashDispatcher] caps concurrent hashes at
  * [MAX_CONCURRENT_HASHES] (≤256 MiB worst case) and moves the work off the request coroutines;
  * excess logins queue as suspended coroutines (~free) instead of being shed — the strict per-IP
  * rate limit upstream already rejects the abusive case. A code constant, not config: raising it

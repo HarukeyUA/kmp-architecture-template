@@ -3,9 +3,9 @@ package org.example.project.server.storage
 import kotlin.time.Duration
 
 /**
- * Object storage behind one interface — **never local disk** (ADR-0010). Backed by any
- * S3-compatible store (MinIO locally, Railway Buckets / AWS S3 in prod); going multi-node is then a
- * config change, not a rewrite, because no blob ever lives on an instance's filesystem.
+ * Object storage behind one interface — **never local disk**. Backed by any S3-compatible store
+ * (MinIO locally, Railway Buckets / AWS S3 in prod); going multi-node is then a config change, not
+ * a rewrite, because no blob ever lives on an instance's filesystem.
  *
  * The transfer model is **presigned URLs**: the server signs a short-lived URL and the client
  * `PUT`s/`GET`s the bytes **directly** to object storage, so blob bytes never stream through the

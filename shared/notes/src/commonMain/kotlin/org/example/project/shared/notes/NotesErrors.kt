@@ -6,9 +6,9 @@ import kotlinx.serialization.Serializable
 import org.example.project.shared.common.ApiError
 
 /**
- * The notes domain's per-operation Declared-error lens (ADR-0011): [NotesCreateError] is the exact
- * set `notes.create` commits to returning, handled exhaustively by the client for that call. The
- * status lives on the variant; code and status are frozen by `NotesDeclaredErrorFreezeTest`.
+ * The notes domain's per-operation Declared-error lens: [NotesCreateError] is the exact set
+ * `notes.create` commits to returning, handled exhaustively by the client for that call. The status
+ * lives on the variant; code and status are frozen by `NotesDeclaredErrorFreezeTest`.
  *
  * [NotesQuotaExceeded] is a genuine domain rule (not a cross-cutting variant) — the per-account
  * character budget — so it carries its own `notes.*` code and rides the wire inside

@@ -5,6 +5,6 @@ dependencies {
     // infra.
     api(project(":shared:auth"))
     api(project(":server:core:auth:public"))
-    // The error channel is the web core's Failure wrapper (ADR-0011).
+    // The error channel is the web core's Failure wrapper.
     api(project(":server:core:web:public"))
 }

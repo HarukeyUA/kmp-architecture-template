@@ -9,18 +9,17 @@ import org.example.project.shared.auth.AuthRefreshError
 import org.example.project.shared.auth.AuthSignupError
 
 /**
- * The Credential module (ADR-0009, as amended): verifies an email+password credential and issues
- * [AuthTokens] — a JWT access token plus an opaque Session — via the invariant
+ * The Credential module: verifies an email+password credential and issues [AuthTokens] — a JWT
+ * access token plus an opaque Session — via the invariant
  * [org.example.project.server.auth.SessionStore] /
  * [org.example.project.server.auth.AccessTokenIssuer]. Swap this module to change *how you log in*
  * without touching token infra.
  *
  * Speaks **domain types** ([AuthTokens], [Account]) on the success channel and the two-arm
- * [Failure] on the error channel (ADR-0003 as amended; ADR-0005, ADR-0011): each operation's
- * `Failure<Err>` names the Declared errors that operation commits to, while cross-cutting failures
- * ride Ambiently. The route owns the Wire boundary, unpacking request DTOs into the parameters here
- * and mapping the returned domain models to response DTOs — so internal cross-domain callers never
- * touch wire compat concerns.
+ * [Failure] on the error channel: each operation's `Failure<Err>` names the Declared errors that
+ * operation commits to, while cross-cutting failures ride Ambiently. The route owns the Wire
+ * boundary, unpacking request DTOs into the parameters here and mapping the returned domain models
+ * to response DTOs — so internal cross-domain callers never touch wire compat concerns.
  */
 interface AuthService {
     suspend fun signup(
@@ -33,8 +32,9 @@ interface AuthService {
     /**
      * Mints a fresh [AccessToken] for a live session; a missing, expired, or revoked [refreshToken]
      * declares `auth.session_expired`. `refresh` presents a Session, not an Access token, so it
-     * declares its own credential failure rather than reusing the cross-cutting `Unauthorized`
-     * (ADR-0011). The session itself is untouched — no rotation (ADR-0009).
+     * declares its own credential failure rather than reusing the cross-cutting `Unauthorized`. The
+     * session itself is untouched: no rotation, because reuse detection is the error-prone part of
+     * DIY auth and a Session already has its own TTL and revocation.
      */
     suspend fun refresh(refreshToken: String): Either<Failure<AuthRefreshError>, AccessToken>
 

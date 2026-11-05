@@ -14,8 +14,8 @@ import org.example.project.server.lifecycle.ServerResource
 interface DatabaseProviders {
     /**
      * The single HikariCP pool, sized by config. `instances × maxPoolSize` must stay below Postgres
-     * `max_connections` when scaling out (ADR-0010); the pool is the only thing that holds
-     * connections, so the app itself stays stateless.
+     * `max_connections` when scaling out; the pool is the only thing that holds connections, so the
+     * app itself stays stateless.
      */
     @Provides
     @SingleIn(AppScope::class)

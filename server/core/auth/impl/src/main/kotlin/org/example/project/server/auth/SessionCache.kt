@@ -15,13 +15,12 @@ import kotlin.time.toJavaDuration
 /**
  * Per-instance cache in front of the session table so resolving a token digest on every
  * authenticated request isn't a DB round-trip. Behind an interface so a shared backing (Redis) can
- * replace it without touching call sites (ADR-0010).
+ * replace it without touching call sites.
  *
  * Freshness model: [invalidate] writes a tombstone, so a revoked session stops resolving
  * immediately on the current node — and because that write serializes with an in-flight
  * read-through publish, a concurrent load can't resurrect it (set-after-delete). Other nodes never
- * see the tombstone, so a session already cached there stays ≤TTL stale until its entry expires
- * (ADR-0010 bounded staleness).
+ * see the tombstone, so a session already cached there stays ≤TTL stale until its entry expires.
  */
 interface SessionCache {
     suspend fun resolve(tokenHash: String, loader: suspend (String) -> CachedSession?): Principal?

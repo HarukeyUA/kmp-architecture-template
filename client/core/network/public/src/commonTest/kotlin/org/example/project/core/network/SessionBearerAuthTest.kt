@@ -31,10 +31,9 @@ import org.example.project.shared.common.encodeApiError
 import org.example.project.shared.common.seamJson
 
 /**
- * Pins [sessionBearer]'s 401 coordination — the template's whole rejected-credential story
- * (ADR-0009 as amended). Witchy-notes handles this with a receive-pipeline reporter because its
- * device tokens have no refresh path (any bearer 401 is final there); here a bearer 401 is routine
- * token expiry, and the *refresh endpoint's* verdict is the only credential signal:
+ * Pins [sessionBearer]'s 401 coordination — the template's whole rejected-credential story. A
+ * bearer 401 is routine token expiry, and the *refresh endpoint's* verdict is the only credential
+ * signal:
  * - refresh mints → the original request retries and succeeds, session rotates in place;
  * - refresh declares `auth.session_expired` → the local session is purged (root nav → Login);
  * - refresh fails ambiently (5xx, network) → the session survives; a flaky network or a sleeping

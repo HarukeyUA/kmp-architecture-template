@@ -41,7 +41,7 @@ interface HttpClientGraph {
      * `ErrorEnvelope` parses into the typed `ApiError`); typed `@Resource` requests share the
      * seam's route definitions; [sessionBearer] attaches the stored access token, refreshes it
      * through the refresh endpoint on 401, and clears the session (→ Login) when the refresh itself
-     * is rejected (ADR-0009 as amended).
+     * is rejected.
      *
      * Wire logging rides Kermit under the `ktor` tag and exists only in [Environment.DEV] — the
      * plugin is never installed in PROD, so no request/response detail can reach a release log. The

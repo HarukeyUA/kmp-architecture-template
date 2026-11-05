@@ -21,7 +21,7 @@ import kotlinx.serialization.descriptors.PolymorphicKind
  * known-but-undeclared code (contract drift, version skew) fails that decode and falls to the
  * Ambient path — see [decodeDeclaredApiError]. Declared errors are always minted in the owning
  * domain's Contract module — cross-cutting errors can never be Declared (dependency direction) and
- * ride every operation Ambiently (see ADR-0011).
+ * ride every operation Ambiently.
  *
  * The unit that owns a body and a return is the *operation*, not the resource: a single `@Resource`
  * can back several endpoints (e.g. `GET` and `POST` on the same collection), so each is keyed by

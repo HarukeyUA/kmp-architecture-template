@@ -3,10 +3,10 @@ package org.example.project.core.error
 import org.example.project.shared.common.ApiError
 
 /**
- * The typed outcome of a failed [Endpoint][org.example.project.shared.common.Endpoint] call
- * (ADR-0011): the client-side counterpart to the server's failure channel. The three arms mirror
- * the three ways a call can fail, and the [E] parameter carries the operation's Declared-error set
- * so a feature can branch on it exhaustively.
+ * The typed outcome of a failed [Endpoint][org.example.project.shared.common.Endpoint] call: the
+ * client-side counterpart to the server's failure channel. The three arms mirror the three ways a
+ * call can fail, and the [E] parameter carries the operation's Declared-error set so a feature can
+ * branch on it exhaustively.
  *
  * - [Declared] holds an [E] the operation committed to (`is`-narrowed against the endpoint's
  *   `error` [kotlin.reflect.KClass]) — the feature handles these with an exhaustive `when`.

@@ -22,7 +22,8 @@ enum class LifecycleTestMainMode {
      * immediately after triggering them (e.g. checking a recorder right after invoking an event
      * sink). Note that eager dispatch lets snapshot-apply notifications run between adjacent
      * `MutableState` writes, so unwrapped multi-writes in a sink surface as separate (torn)
-     * emissions here — see the `withMutableSnapshot` rule in ARCHITECTURE.md.
+     * emissions here. A sink writing coupled state must wrap the writes in
+     * `Snapshot.withMutableSnapshot`, so they apply as one emission whatever the scheduling.
      */
     Eager,
 

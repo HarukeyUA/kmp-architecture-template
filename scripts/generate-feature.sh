@@ -85,7 +85,7 @@ MODULE_PACKAGE_PATH=$(echo "$MODULE_PATH" | tr '/-' '..')
 # Full package path
 PACKAGE_PATH="$BASE_PACKAGE.$SCOPE.$MODULE_PACKAGE_PATH"
 
-# Module paths (client modules live under the :client umbrella — see ARCHITECTURE.md)
+# Module paths (client modules live under the :client umbrella)
 MODULE_DIR="$PROJECT_ROOT/client/$SCOPE/$MODULE_PATH"
 PUBLIC_DIR="$MODULE_DIR/public"
 IMPL_DIR="$MODULE_DIR/impl"

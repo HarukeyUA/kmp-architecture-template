@@ -28,7 +28,7 @@ import org.example.project.shared.common.Unauthorized
 /**
  * Safety net for **unexpected** exceptions only: log the cause and return a generic [Internal]
  * `ApiError` (`500`), never leaking internals. Expected failures travel as typed `Either<ApiError,
- * T>` and are mapped by the route layer via `respondEither` (ADR-0005).
+ * T>` and are mapped by the route layer via `respondEither`.
  */
 @Inject
 @ContributesIntoSet(AppScope::class)

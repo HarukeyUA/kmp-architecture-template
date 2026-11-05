@@ -7,12 +7,12 @@ import org.example.project.core.error.CallFailure
 import org.example.project.core.ui.error.ErrorRenderer.ResourceResult
 
 /**
- * Renders the [CallFailure] arms that carry a cross-cutting wire error (ADR-0011).
- * [CallFailure.Ambient] — and, as a fallback, an unhandled [CallFailure.Declared] — maps through
- * [toResourceResult]; per-domain Declared errors return `null` here (the feature that owns them
- * renders them inline) and fall through to the generic message. [CallFailure.Transport] is skipped:
- * it is a `DelegatingError` whose [NetworkError][org.example.project.core.error.NetworkError] is
- * handled by [NetworkErrorRenderer] via `CompositeErrorRenderer`'s delegation.
+ * Renders the [CallFailure] arms that carry a cross-cutting wire error. [CallFailure.Ambient] —
+ * and, as a fallback, an unhandled [CallFailure.Declared] — maps through [toResourceResult];
+ * per-domain Declared errors return `null` here (the feature that owns them renders them inline)
+ * and fall through to the generic message. [CallFailure.Transport] is skipped: it is a
+ * `DelegatingError` whose [NetworkError][org.example.project.core.error.NetworkError] is handled by
+ * [NetworkErrorRenderer] via `CompositeErrorRenderer`'s delegation.
  */
 @Inject
 @ContributesIntoSet(AppScope::class)

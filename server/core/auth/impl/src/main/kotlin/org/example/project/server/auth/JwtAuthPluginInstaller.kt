@@ -14,10 +14,10 @@ import org.example.project.server.web.PluginInstaller
 import org.example.project.server.web.PluginOrder
 
 /**
- * Installs the `access-jwt` provider that backs [authenticatedRoutes] (ADR-0009 as amended): the
- * bearer access token is verified **statelessly** — HS256 signature, pinned issuer/audience, and
- * expiry — and its `sub` claim becomes the [Principal]. No session-store lookup happens here;
- * revocation bites on the refresh path, within [JwtConfig.accessTokenTtl].
+ * Installs the `access-jwt` provider that backs [authenticatedRoutes]: the bearer access token is
+ * verified **statelessly** — HS256 signature, pinned issuer/audience, and expiry — and its `sub`
+ * claim becomes the [Principal]. No session-store lookup happens here; revocation bites on the
+ * refresh path, within [JwtConfig.accessTokenTtl].
  */
 @Inject
 @ContributesIntoSet(AppScope::class)

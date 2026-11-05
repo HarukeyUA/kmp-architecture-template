@@ -7,9 +7,9 @@ import kotlinx.serialization.json.JsonObject
 /**
  * The single wire envelope every error response carries: the [error] (an [ApiError] encoded through
  * its sealed lens — see [encodeApiError] / [decodeDeclaredApiError]) plus the request correlation
- * id (the same id that appears in the server's structured logs, ADR-0005), so a user-facing failure
- * can be traced to its log line. The field is raw JSON rather than a typed [ApiError] because
- * narrowing needs the operation's lens, which only the call site holds.
+ * id (the same id that appears in the server's structured logs), so a user-facing failure can be
+ * traced to its log line. The field is raw JSON rather than a typed [ApiError] because narrowing
+ * needs the operation's lens, which only the call site holds.
  */
 @Serializable
 data class ErrorEnvelope(

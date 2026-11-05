@@ -18,8 +18,8 @@ import org.example.project.shared.common.Endpoint
  * `Either<Failure<Err>, Res>` to HTTP — sending [successStatus] with the [Res] body, or just the
  * status when the endpoint declares no response.
  *
- * The failure channel is [Failure] tied to the endpoint's declared [Err] (ADR-0011): a service can
- * only put a Declared error here if this very [Endpoint] declares it, and Ambient errors ride along
+ * The failure channel is [Failure] tied to the endpoint's declared [Err]: a service can only put a
+ * Declared error here if this very [Endpoint] declares it, and Ambient errors ride along
  * regardless. Because the body and return types are checked against the very [Endpoint] the client
  * calls, the two ends can't drift. A body-less endpoint (`Req` = [Unit]) selects the [serve]
  * overload with a one-argument handler, so "has a request body" is encoded in the type rather than

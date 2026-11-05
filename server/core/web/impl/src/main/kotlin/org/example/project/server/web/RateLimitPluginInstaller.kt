@@ -12,11 +12,11 @@ import io.ktor.server.plugins.ratelimit.RateLimitName
 import kotlin.time.Duration.Companion.minutes
 
 /**
- * Registers the strict per-client-IP tier for credential endpoints (ADR-0010 §11): pre-auth and
- * Argon2-expensive, they are the asymmetric-cost surface. There is deliberately **no** default tier
- * for other endpoints — they are cheap reads behind the session cache, and a per-node limit picked
- * without traffic data mostly punishes legitimate bursts. Per-node by design; a global limit needs
- * a shared backing (ADR-0010).
+ * Registers the strict per-client-IP tier for credential endpoints: pre-auth and Argon2-expensive,
+ * they are the asymmetric-cost surface. There is deliberately **no** default tier for other
+ * endpoints — they are cheap reads behind the session cache, and a per-node limit picked without
+ * traffic data mostly punishes legitimate bursts. Per-node by design; a global limit needs a shared
+ * backing.
  *
  * Exhaustion responds through the StatusPages 429 hook as a typed `RateLimited(retryAfterSeconds)`
  * envelope, never Ktor's bare 429.

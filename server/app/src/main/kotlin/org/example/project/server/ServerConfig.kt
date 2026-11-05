@@ -8,7 +8,7 @@ import org.example.project.server.storage.StorageConfig
 import org.example.project.server.web.WebLimitsConfig
 
 /**
- * The one typed, fail-fast configuration, loaded once at startup (ADR — § Local dev & config).
+ * The one typed, fail-fast configuration, loaded once at startup.
  *
  * Localhost defaults let the server run out of the box (`./gradlew :server:app:run` against the
  * compose Postgres + MinIO). In production (`APP_ENV=production`) the DB and object-storage secrets

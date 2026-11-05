@@ -16,7 +16,7 @@ dependencies {
 
     // Migration drift test: diff the aggregated Exposed schema (graph.tableSets) against a
     // Testcontainers Postgres with all migrations applied. Lives here because only the app graph
-    // assembles every domain's tables (ADR-0007).
+    // assembles every domain's tables.
     testImplementation(libs.exposed.migration.jdbc)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.postgresql)

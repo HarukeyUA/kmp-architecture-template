@@ -28,7 +28,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
  * Reads/writes notes, returning the domain [Note] (never a `ResultRow`) so the service is
  * unit-testable against a fake. Every query is scoped to the owning [AccountId] — that scoping *is*
  * the authorization boundary. Repository methods are transaction-safe: they open a transaction when
- * called alone and join the caller's transaction when one exists (ADR-0006).
+ * called alone and join the caller's transaction when one exists.
  */
 interface NoteRepository {
     suspend fun listFor(accountId: AccountId): List<Note>

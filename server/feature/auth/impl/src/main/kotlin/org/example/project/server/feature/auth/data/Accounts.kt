@@ -19,9 +19,9 @@ internal object Accounts : Table("accounts") {
 }
 
 /**
- * Proof-of-identity material for the login path (ADR-0009): the account's id paired with its
- * Argon2id hash. Stays inside this `:impl` (the module boundary is the encapsulation — only
- * `:server:app` depends on `:impl`); the cross-module account model is the hash-free
+ * Proof-of-identity material for the login path: the account's id paired with its Argon2id hash.
+ * Stays inside this `:impl` (the module boundary is the encapsulation — only `:server:app` depends
+ * on `:impl`); the cross-module account model is the hash-free
  * [org.example.project.server.feature.auth.Account] in `:public`, so the hash's entire lifetime is
  * `login`'s verify step.
  */

@@ -18,9 +18,9 @@ import org.slf4j.LoggerFactory
  *
  * The body is **status-only** (`{"status":"UP"|"DOWN"}`) on every connector: a probe needs nothing
  * but the status code, and per-check names/details on the public port would hand any prober the
- * infra composition. Diagnostics go where operators already look (§10 structured logging) — each
- * failing check is WARN-logged with its name and detail, so an outage under a periodic prober
- * produces a log heartbeat naming the culprit.
+ * infra composition. Diagnostics go where operators already look (structured logs) — each failing
+ * check is WARN-logged with its name and detail, so an outage under a periodic prober produces a
+ * log heartbeat naming the culprit.
  */
 @Inject
 @ContributesIntoSet(AppScope::class)

@@ -8,11 +8,11 @@ import io.ktor.server.application.install
 import io.ktor.server.plugins.bodylimit.RequestBodyLimit
 
 /**
- * Caps every request body at [WebLimitsConfig.maxRequestBodyBytes] (ADR-0010 §11). A declared
- * `Content-Length` over the limit is rejected before the body is read; a streaming body is cut off
- * at the limit mid-receive. Both surface as `PayloadTooLargeException`, which StatusPages maps to
- * the typed `PayloadTooLarge` envelope (413) — without that handler the exception would fall into
- * the `ContentTransformationException` path and lie to the client with a 400 "malformed_body".
+ * Caps every request body at [WebLimitsConfig.maxRequestBodyBytes]. A declared `Content-Length`
+ * over the limit is rejected before the body is read; a streaming body is cut off at the limit
+ * mid-receive. Both surface as `PayloadTooLargeException`, which StatusPages maps to the typed
+ * `PayloadTooLarge` envelope (413) — without that handler the exception would fall into the
+ * `ContentTransformationException` path and lie to the client with a 400 "malformed_body".
  */
 @Inject
 @ContributesIntoSet(AppScope::class)

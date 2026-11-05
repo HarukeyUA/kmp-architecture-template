@@ -23,11 +23,10 @@ import org.example.project.shared.auth.AuthApi
 import org.example.project.shared.auth.TokensResponse
 
 /**
- * Self-registering auth routes (ADR-0006). The route is dumb and owns the Wire boundary (ADR-0003):
- * each [serve] binds a typed [AuthApi] endpoint, unpacks the request DTO into the service's
- * parameters, maps the returned domain model to the response DTO, and folds `Either<ApiError, T>`
- * to HTTP. `logout`/`me` sit under [authenticatedRoutes], so the JWT middleware 401s before the
- * handler runs.
+ * Self-registering auth routes. The route is dumb and owns the Wire boundary: each [serve] binds a
+ * typed [AuthApi] endpoint, unpacks the request DTO into the service's parameters, maps the
+ * returned domain model to the response DTO, and folds `Either<ApiError, T>` to HTTP. `logout`/`me`
+ * sit under [authenticatedRoutes], so the JWT middleware 401s before the handler runs.
  */
 @Inject
 @ContributesIntoSet(AppScope::class)
@@ -35,7 +34,7 @@ class AuthRoutes(private val service: AuthService) : RouteRegistrar {
     override fun Application.register() {
         routing {
             // The pre-auth, Argon2-expensive surface opts into the strict per-IP tier registered
-            // by the web core's rate-limit installer (ADR-0010 §11).
+            // by the web core's rate-limit installer.
             rateLimit(RateLimitName(CREDENTIAL_RATE_LIMIT_NAME)) {
                 serve(AuthApi.signup, HttpStatusCode.Created) { _, body ->
                     service.signup(body.email, body.password).map { it.toResponse() }

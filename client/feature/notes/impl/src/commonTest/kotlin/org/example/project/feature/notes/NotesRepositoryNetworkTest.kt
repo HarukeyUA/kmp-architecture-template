@@ -32,10 +32,10 @@ import org.example.project.shared.notes.NotesQuotaExceeded
 
 /**
  * The client side of the notes domain, against a `MockEngine` server: it exercises the real
- * request-building (shared `@Resource`), the `toModel()` mapping, and — crucially for Phase 5 — the
- * decode-based narrowing through the endpoint's sealed lens, so a 4xx [NotesQuotaExceeded] parses
- * back into the *typed* error rather than degrading to `UnknownApiError`. That proves the
- * sealed-lens error path works on the client end for a second domain too.
+ * request-building (shared `@Resource`), the `toModel()` mapping, and the decode-based narrowing
+ * through the endpoint's sealed lens, so a 4xx [NotesQuotaExceeded] parses back into the *typed*
+ * error rather than degrading to `UnknownApiError`. That proves the sealed-lens error path works on
+ * the client end for a second domain too.
  */
 class NotesRepositoryNetworkTest {
     private val json = seamJson

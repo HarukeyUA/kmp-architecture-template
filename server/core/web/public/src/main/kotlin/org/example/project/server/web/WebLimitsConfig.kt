@@ -1,8 +1,8 @@
 package org.example.project.server.web
 
 /**
- * App-layer DoS limits (ADR-0010 §11): platform L4 protection does not cover the application layer,
- * so the app caps what a request may cost before any handler runs.
+ * App-layer DoS limits: platform L4 protection does not cover the application layer, so the app
+ * caps what a request may cost before any handler runs.
  *
  * @property maxRequestBodyBytes Upper bound for any request body; over-limit requests answer with
  *   the typed `PayloadTooLarge` envelope (413). Blobs bypass the app via presigned URLs, so nothing
@@ -13,8 +13,8 @@ package org.example.project.server.web
  *   deployment-specific; a missing header falls back to the socket address rather than collapsing
  *   all clients into one shared bucket.
  * @property credentialRateLimit Requests per minute per client IP for the credential endpoints
- *   (signup/login — the pre-auth, Argon2-expensive surface). Per-node by design (ADR-0010); no
- *   default tier exists for other endpoints.
+ *   (signup/login — the pre-auth, Argon2-expensive surface). Per-node by design; no default tier
+ *   exists for other endpoints.
  */
 data class WebLimitsConfig(
     val maxRequestBodyBytes: Long,

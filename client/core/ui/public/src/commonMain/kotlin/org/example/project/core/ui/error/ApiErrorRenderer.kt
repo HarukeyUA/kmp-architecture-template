@@ -26,7 +26,7 @@ import org.example.project.shared.common.Validation
  * This matches the known cross-cutting variants and lets everything else — [Internal],
  * [UnknownApiError], and per-domain Declared errors — return `null`, i.e. fall through to the
  * generic fallback in `CompositeErrorRenderer`. Per-domain Declared errors are rendered inline by
- * the feature that reacts to them (ADR-0011), not here.
+ * the feature that reacts to them, not here.
  */
 fun ApiError.toResourceResult(): ResourceResult? =
     when (this) {
