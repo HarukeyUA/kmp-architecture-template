@@ -17,6 +17,7 @@ suspend fun <E : Any, T> TransactionRunner.runTransactionally(
         val value = runInTransaction { block().getOrElse { throw TransactionAbortException(it) } }
         Either.Right(value)
     } catch (e: TransactionAbortException) {
+        // An exception cannot carry E, but only this frame's block can have thrown this one.
         @Suppress("UNCHECKED_CAST") Either.Left(e.error as E)
     }
 

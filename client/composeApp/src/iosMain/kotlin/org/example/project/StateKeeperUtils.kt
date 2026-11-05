@@ -14,6 +14,7 @@ private const val STATE_KEY = "org.example.project.state"
 
 private val json = Json { allowStructuredMapKeys = true }
 
+// Called from iOSApp.swift.
 @Suppress("unused")
 fun save(coder: NSCoder, state: SerializableContainer) {
     coder.encodeObject(
@@ -22,6 +23,7 @@ fun save(coder: NSCoder, state: SerializableContainer) {
     )
 }
 
+// Called from iOSApp.swift.
 @Suppress("unused")
 @OptIn(ExperimentalForeignApi::class, BetaInteropApi::class)
 fun restore(coder: NSCoder): SerializableContainer? =

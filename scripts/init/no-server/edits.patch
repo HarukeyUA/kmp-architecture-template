@@ -193,6 +193,36 @@ index 43cdb32..948b875 100644
 +            // Plain-JVM modules (`:client:desktopApp`) declare deps on the standard non-test main
              // configurations rather than KMP source sets.
              pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+diff --git a/build-logic/convention/src/main/kotlin/RoomConventionPlugin.kt b/build-logic/convention/src/main/kotlin/RoomConventionPlugin.kt
+index 0e8071f..d8bdc63 100644
+--- a/build-logic/convention/src/main/kotlin/RoomConventionPlugin.kt
++++ b/build-logic/convention/src/main/kotlin/RoomConventionPlugin.kt
+@@ -7,14 +7,8 @@ import org.gradle.kotlin.dsl.configure
+ import org.gradle.kotlin.dsl.invoke
+ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+-import org.jetbrains.kotlin.konan.target.HostManager
+-import org.jetbrains.kotlin.konan.target.TargetSupportException
+ 
+ class RoomConventionPlugin : Plugin<Project> {
+     override fun apply(target: Project) {
+         with(target) {
+-            // KSP's iOS tasks throw when created on a host Kotlin/Native does not support, and a
+-            // linux/arm64 server image configures this module without ever building it.
+-            if (!isKotlinNativeHost()) return
+-
+             with(pluginManager) {
+                 apply("com.google.devtools.ksp")
+@@ -40,10 +34,2 @@ class RoomConventionPlugin : Plugin<Project> {
+     }
+ }
+-
+-private fun isKotlinNativeHost(): Boolean =
+-    try {
+-        HostManager.host
+-        true
+-    } catch (_: TargetSupportException) {
+-        false
+-    }
 diff --git a/build-logic/convention/src/main/kotlin/org/example/project/AssertModuleDependenciesTask.kt b/build-logic/convention/src/main/kotlin/org/example/project/AssertModuleDependenciesTask.kt
 index c61abad..5433221 100644
 --- a/build-logic/convention/src/main/kotlin/org/example/project/AssertModuleDependenciesTask.kt

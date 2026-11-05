@@ -47,6 +47,7 @@ abstract class ScreenshotTest {
         beforeCapture: () -> Unit = {},
         content: @Composable () -> Unit,
     ) {
+        // CompositeErrorRenderer treats a renderer handed the wrong error type as declining it.
         @Suppress("UNCHECKED_CAST")
         val errorRenderer =
             CompositeErrorRenderer(

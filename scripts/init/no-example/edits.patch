@@ -111,7 +111,7 @@ index af5e02c..651126a 100755
      }
  
 diff --git a/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/AppDatabase.kt b/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/AppDatabase.kt
-index 8275e37..1032d46 100644
+index f912f61..ecc1d1a 100644
 --- a/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/AppDatabase.kt
 +++ b/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/AppDatabase.kt
 @@ -5,12 +5,9 @@ import androidx.room3.Database
@@ -129,7 +129,7 @@ index 8275e37..1032d46 100644
 -}
 +abstract class AppDatabase : RoomDatabase()
  
- @Suppress("NO_ACTUAL_FOR_EXPECT")
+ // Room's KSP processor generates the actual for each target.
 diff --git a/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/di/DatabaseGraph.kt b/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/di/DatabaseGraph.kt
 index 889487a..5c5472b 100644
 --- a/client/core/database/impl/src/commonMain/kotlin/org/example/project/core/database/di/DatabaseGraph.kt

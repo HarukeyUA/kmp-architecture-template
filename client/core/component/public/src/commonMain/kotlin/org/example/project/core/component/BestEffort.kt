@@ -20,6 +20,7 @@ suspend fun <A> bestEffort(log: Logger, what: String, step: suspend () -> A): Ei
  * never this caller being cancelled) and a fatal error alike, since a step skipped past would leave
  * what the sequence exists to take away.
  */
+// Whatever the step throws, fatal errors included, becomes the answer.
 @Suppress("TooGenericExceptionCaught")
 suspend fun <A> bestEffortUninterruptible(
     log: Logger,

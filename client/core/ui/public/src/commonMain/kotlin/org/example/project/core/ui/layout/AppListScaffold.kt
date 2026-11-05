@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
@@ -47,6 +48,7 @@ fun AppListScaffold(
     lazyListState: LazyListState = rememberLazyListState(),
     contentPadding: PaddingValues = PaddingValues(top = 8.dp, bottom = 16.dp),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(16.dp),
+    windowInsets: WindowInsets = WindowInsets.safeDrawing,
     content: LazyListScope.() -> Unit,
 ) {
     val scrollBehavior = rememberAppExitUntilCollapsedScrollBehavior()
@@ -63,8 +65,14 @@ fun AppListScaffold(
                 scrollBehavior = scrollBehavior,
             )
         },
-        floatingActionButton = floatingActionButton,
-        contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal),
+        floatingActionButton = {
+            // Scaffold offsets the button by contentWindowInsets, which leave the bottom out so the
+            // list can run behind the nav bar. A bottom bar above this has consumed that inset.
+            Box(Modifier.windowInsetsPadding(windowInsets.only(WindowInsetsSides.Bottom))) {
+                floatingActionButton()
+            }
+        },
+        contentWindowInsets = windowInsets.only(WindowInsetsSides.Horizontal),
     ) { padding ->
         Box(
             modifier = Modifier.fillMaxSize().padding(padding),
@@ -81,7 +89,7 @@ fun AppListScaffold(
                 item {
                     Spacer(
                         Modifier.windowInsetsBottomHeight(
-                            WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom),
+                            windowInsets.only(WindowInsetsSides.Bottom),
                         ),
                     )
                 }

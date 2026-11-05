@@ -71,6 +71,7 @@ class AdvisoryLockScheduler(
         }
     }
 
+    // A job can throw anything, and one failed run must not kill the loop.
     @Suppress("TooGenericExceptionCaught")
     private suspend fun runTick(job: ScheduledJob) {
         try {
@@ -78,7 +79,6 @@ class AdvisoryLockScheduler(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // One failed run must not kill the loop — log and try again next interval.
             logger.error("Scheduled job '{}' failed", job.name, e)
         }
     }
