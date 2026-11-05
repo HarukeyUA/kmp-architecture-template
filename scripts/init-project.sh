@@ -68,13 +68,12 @@ done
 [[ -n "$DISPLAY_NAME" ]] || die "--display-name is required"
 
 [[ "$NAME" =~ ^[A-Z][A-Za-z0-9]+$ ]] || die "--name must be PascalCase, such as DemoApp"
-[[ "$NAME" != "$OLD_NAME" ]] || die "--name must not be $OLD_NAME"
+[[ "$NAME" != *"$OLD_NAME"* ]] || die "--name must not contain $OLD_NAME"
 
 # No underscores: Apple bundle ids do not allow them.
 [[ "$PACKAGE" =~ ^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$ ]] ||
     die "--package must be lowercase dot-separated letters and digits, such as com.example.demoapp"
-[[ "$PACKAGE" != "$OLD_PACKAGE" && "$PACKAGE" != "$OLD_PACKAGE".* ]] ||
-    die "--package must not be $OLD_PACKAGE or inside it"
+[[ "$PACKAGE" != *"$OLD_PACKAGE"* ]] || die "--package must not contain $OLD_PACKAGE"
 IFS='.' read -r -a package_segments <<<"$PACKAGE"
 for segment in "${package_segments[@]}"; do
     [[ "$KOTLIN_KEYWORDS" != *[[:space:]]"$segment"[[:space:]]* ]] ||
@@ -87,6 +86,13 @@ case "$DISPLAY_NAME" in
         die "--display-name must not contain any of: \" ' \\ \$ \` / < > | & ; * ? %"
         ;;
 esac
+
+# The leftover check runs after the tree is rewritten, so anything it would flag is refused here.
+[[ ! "$DISPLAY_NAME" =~ (^|[^[:alnum:]_])"$OLD_NAME"([^[:alnum:]_]|$) ]] ||
+    die "--display-name must not contain the word $OLD_NAME"
+for reserved in "$OLD_PACKAGE" TemplateApplication kmp-template init-project init-variants; do
+    [[ "$DISPLAY_NAME" != *"$reserved"* ]] || die "--display-name must not contain $reserved"
+done
 
 if git rev-parse --is-inside-work-tree >/dev/null 2>&1 && [[ -n "$(git status --porcelain)" ]]; then
     die "the working tree has changes; run this on a fresh clone"
