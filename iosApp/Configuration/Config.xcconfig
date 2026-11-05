@@ -1,7 +1,9 @@
+// Your Apple Developer team id, needed to sign a device build.
 TEAM_ID=
 
-PRODUCT_NAME=KotlinProject
-PRODUCT_BUNDLE_IDENTIFIER=org.example.project.KotlinProject$(TEAM_ID)
+PRODUCT_NAME=Template
+DISPLAY_NAME=Template
+PRODUCT_BUNDLE_IDENTIFIER=org.example.project
 
 CURRENT_PROJECT_VERSION=1
 MARKETING_VERSION=1.0

@@ -142,7 +142,7 @@ if [ "$MODE" = "lan" ]; then
 
  Without the variable, Android auto-detects a LAN IP and iOS bakes its Bonjour
  name. The host is a build-time snapshot — rebuild and reinstall to change it
- (the template has no runtime server override).
+ (there is no runtime server override).
 
  First LAN run: macOS will ask to allow incoming connections for "java".
  Deny it and devices time out with no useful error.

@@ -142,7 +142,7 @@ jobs:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
       # assembleDevDebugAndroidTest compiles the E2E suite APK (robots + flows) without a
       # device; the suite itself runs locally via scripts/e2e-android.sh.
-      - run: ./gradlew :client:androidApp:assembleDebug :client:androidApp:assembleDevDebugAndroidTest
+      - run: ./gradlew :client:androidApp:assembleDebug :client:androidApp:assembleProdRelease :client:androidApp:assembleDevDebugAndroidTest
 
   build-jvm:
     name: Build JVM
@@ -177,3 +177,41 @@ jobs:
           -scheme iosApp
           -destination 'generic/platform=iOS Simulator'
           CODE_SIGNING_ALLOWED=NO
+
+  init-variants:
+    # Runs init-project.sh on a copy of the tree, then builds and tests what it leaves behind. The
+    # script itself fails on any leftover template identity.
+    name: Init (${{ matrix.variant }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: default
+            flag: ""
+          - variant: no-example
+            flag: --no-example
+          - variant: no-server
+            flag: --no-server
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      - name: Init on a copy
+        run: |
+          cp -R "$GITHUB_WORKSPACE" "$RUNNER_TEMP/variant"
+          cd "$RUNNER_TEMP/variant"
+          ./scripts/init-project.sh --name DemoApp --package com.example.demoapp --display-name "Demo App" ${{ matrix.flag }}
+      - name: Build and test the result
+        working-directory: ${{ runner.temp }}/variant
+        run: >-
+          ./gradlew spotlessCheck detekt jvmTest test verifyRoborazziAndroidHostTest
+          :client:androidApp:assembleDevDebug
+          :client:androidApp:assembleDevDebugAndroidTest
+          :client:composeApp:jvmJar
+          :client:desktopApp:jar

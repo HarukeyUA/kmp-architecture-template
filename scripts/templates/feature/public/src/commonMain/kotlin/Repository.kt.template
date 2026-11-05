@@ -1,0 +1,9 @@
+package {{PACKAGE_PATH}}
+
+import kotlinx.coroutines.flow.Flow
+
+interface {{FEATURE_NAME}}Repository {
+    fun observeCount(): Flow<Int>
+
+    suspend fun increment()
+}

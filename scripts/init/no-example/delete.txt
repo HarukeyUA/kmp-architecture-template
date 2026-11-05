@@ -1,0 +1,13 @@
+client/androidApp/src/androidTest/java/org/example/project/e2e/TasksRoundTripTest.kt
+client/core/database/impl/src/jvmTest/kotlin/org/example/project/core/database/TaskDaoTest.kt
+client/core/database/public/src/commonMain/kotlin/org/example/project/core/database/dao
+client/core/database/public/src/commonMain/kotlin/org/example/project/core/database/entity/TaskEntity.kt
+client/core/database/testing/src/commonMain/kotlin/org/example/project/core/database/testing/FakeTaskDao.kt
+client/e2e/src/commonMain/kotlin/org/example/project/e2e/journeys/TasksJourney.kt
+client/feature/main
+client/feature/settings
+client/feature/tasks
+integration/client-server/src/test/kotlin/org/example/project/integration/TasksRepositoryIntegrationTest.kt
+server/app/src/test/kotlin/org/example/project/server/TasksIntegrationTest.kt
+server/feature/tasks
+shared/tasks

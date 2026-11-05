@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
-    <style name="NightAdjusted.Theme.MyApplication" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="NightAdjusted.Theme.Template" parent="android:Theme.Material.Light.NoActionBar" />
 
-    <style name="Theme.MyApplication" parent="NightAdjusted.Theme.MyApplication">
+    <style name="Theme.Template" parent="NightAdjusted.Theme.Template">
         <item name="android:forceDarkAllowed" tools:targetApi="29">false</item>
     </style>
 
@@ -12,7 +12,7 @@
         <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
     </style>
 
-    <style name="Theme.MyApplication.Splash" parent="NightAdjusted.Theme.Splash">
-        <item name="postSplashScreenTheme">@style/Theme.MyApplication</item>
+    <style name="Theme.Template.Splash" parent="NightAdjusted.Theme.Splash">
+        <item name="postSplashScreenTheme">@style/Theme.Template</item>
     </style>
 </resources>

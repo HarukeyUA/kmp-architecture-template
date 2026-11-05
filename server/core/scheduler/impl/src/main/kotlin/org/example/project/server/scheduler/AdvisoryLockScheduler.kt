@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory
  *
  * Connection accounting: a job holds one pooled connection (for the lock) for the whole time it
  * runs, plus whatever its own transactions borrow. Keep the few scheduled jobs in mind against
- * `instances × maxPoolSize ≤ Postgres max_connections` — for the handful of light jobs a template
- * has, the headroom is ample.
+ * `instances × maxPoolSize ≤ Postgres max_connections` — for a handful of light jobs the headroom
+ * is ample.
  */
 @Inject
 @SingleIn(AppScope::class)

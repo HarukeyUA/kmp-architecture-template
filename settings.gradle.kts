@@ -36,7 +36,7 @@ plugins {
     id("convention.module-structure-assert.settings")
 }
 
-rootProject.name = "MyApplication"
+rootProject.name = "Template"
 
 implAggregator {
     aggregator(":client:composeApp")

@@ -8,8 +8,8 @@ import org.testcontainers.containers.wait.strategy.Wait
  * `docker-compose.yml`). Buckets are not pre-provisioned; callers create theirs.
  */
 class RustFsContainer : GenericContainer<RustFsContainer>(IMAGE) {
-    val accessKey = "template"
-    val secretKey = "template12345"
+    val accessKey = "test-access-key"
+    val secretKey = "test-secret-key"
 
     init {
         withExposedPorts(S3_PORT)

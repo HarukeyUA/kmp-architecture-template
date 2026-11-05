@@ -31,10 +31,10 @@ class ResolveApiConfigTest {
     fun `injected build-machine host becomes the dev default`() {
         val built =
             devApiConfigDefaults(
-                injectedDevHost = "polinas-mac.local",
+                injectedDevHost = "dev-mac.local",
                 fallbackDevBaseUrl = "http://10.0.2.2:8080",
             )
-        assertThat(built.devBaseUrl).isEqualTo("http://polinas-mac.local:8080")
+        assertThat(built.devBaseUrl).isEqualTo("http://dev-mac.local:8080")
         assertThat(built.prodBaseUrl).isEqualTo(PROD_SERVER_BASE_URL)
     }
 

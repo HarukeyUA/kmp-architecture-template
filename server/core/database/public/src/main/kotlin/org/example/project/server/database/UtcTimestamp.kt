@@ -9,7 +9,7 @@ import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.datetime.timestampWithTimeZone
 
 /**
- * An [Instant] column backed by `TIMESTAMPTZ` — the template's only timestamp column type.
+ * An [Instant] column backed by `TIMESTAMPTZ` — the only timestamp column type here.
  *
  * Exposed's plain `timestamp()` converts through `TimeZone.currentSystemDefault()` and stores
  * wall-clock digits in `TIMESTAMP WITHOUT TIME ZONE`, so two nodes in different timezones disagree

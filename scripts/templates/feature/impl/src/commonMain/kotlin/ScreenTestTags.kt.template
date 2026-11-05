@@ -1,0 +1,6 @@
+package {{PACKAGE_PATH}}
+
+/** Semantics tags for the screen, consumed by the sibling `:robots` module. */
+object {{FEATURE_NAME}}ScreenTestTags {
+    const val COUNT_BUTTON = "{{FEATURE_NAME_LOWER}}_count_button"
+}

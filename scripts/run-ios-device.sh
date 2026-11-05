@@ -21,12 +21,12 @@ case "${1:-dev}" in
     dev)
         SCHEME=iosApp-dev
         CONFIGURATION=Debug-dev
-        BUNDLE_ID=org.rainy.project.KotlinProject.dev
+        BUNDLE_ID=org.example.project.dev
         ;;
     prod)
         SCHEME=iosApp
         CONFIGURATION=Debug
-        BUNDLE_ID=org.rainy.project.KotlinProject
+        BUNDLE_ID=org.example.project
         ;;
     *)
         echo "usage: $0 [dev|prod]" >&2
@@ -58,7 +58,7 @@ EOF
 fi
 
 DERIVED_DATA="$REPO_ROOT/iosApp/build/DerivedData"
-APP="$DERIVED_DATA/Build/Products/$CONFIGURATION-iphoneos/KotlinProject.app"
+APP="$DERIVED_DATA/Build/Products/$CONFIGURATION-iphoneos/Template.app"
 
 xcodebuild -project iosApp/iosApp.xcodeproj -scheme "$SCHEME" -configuration "$CONFIGURATION" \
     -destination "id=$IOS_DEVICE_ID" -destination-timeout 15 -derivedDataPath "$DERIVED_DATA" build

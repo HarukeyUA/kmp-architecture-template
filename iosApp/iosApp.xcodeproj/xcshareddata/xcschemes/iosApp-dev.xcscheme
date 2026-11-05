@@ -15,7 +15,7 @@
                   <BuildableReference
                      BuildableIdentifier = "primary"
                      BlueprintIdentifier = "9D0BDE071862C8A854AB9364"
-                     BuildableName = "KotlinProject.app"
+                     BuildableName = "Template.app"
                      BlueprintName = "iosApp"
                      ReferencedContainer = "container:iosApp.xcodeproj">
                   </BuildableReference>
@@ -33,7 +33,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "9D0BDE071862C8A854AB9364"
-               BuildableName = "KotlinProject.app"
+               BuildableName = "Template.app"
                BlueprintName = "iosApp"
                ReferencedContainer = "container:iosApp.xcodeproj">
             </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "9D0BDE071862C8A854AB9364"
-            BuildableName = "KotlinProject.app"
+            BuildableName = "Template.app"
             BlueprintName = "iosApp"
             ReferencedContainer = "container:iosApp.xcodeproj">
          </BuildableReference>

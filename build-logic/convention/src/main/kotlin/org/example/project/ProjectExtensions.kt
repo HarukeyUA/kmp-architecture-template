@@ -70,8 +70,8 @@ fun KotlinMultiplatformExtension.androidLibrary(
 
 /**
  * Determines the sibling `:public` module path from an `:impl` or `:testing` module. For example,
- * `:client:feature:auth:impl` and `:client:feature:auth:testing` both resolve to
- * `:client:feature:auth:public`.
+ * `:client:feature:foo:impl` and `:client:feature:foo:testing` both resolve to
+ * `:client:feature:foo:public`.
  */
 fun Project.siblingPublicModule(): String {
     val path = project.path
@@ -84,8 +84,8 @@ fun Project.siblingPublicModule(): String {
 }
 
 /**
- * Determines the sibling :impl module path from a :robots module. e.g., :client:feature:auth:robots
- * -> :client:feature:auth:impl
+ * Determines the sibling :impl module path from a :robots module. e.g., :client:feature:foo:robots
+ * -> :client:feature:foo:impl
  */
 fun Project.siblingImplModule(): String {
     val path = project.path

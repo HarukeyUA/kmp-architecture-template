@@ -1,0 +1,15 @@
+package {{PACKAGE_PATH}}
+
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+
+class Fake{{FEATURE_NAME}}Repository(initialCount: Int = 0) : {{FEATURE_NAME}}Repository {
+    private val count = MutableStateFlow(initialCount)
+
+    override fun observeCount(): Flow<Int> = count
+
+    override suspend fun increment() {
+        count.update { it + 1 }
+    }
+}

@@ -17,7 +17,7 @@ import org.example.project.server.storage.StorageConfig
  * TestRustFs.environment())` boots the graph with its `BlobStore`/S3 client pointed here.
  */
 object TestRustFs {
-    private const val BUCKET_NAME = "template-integration"
+    private const val BUCKET_NAME = "integration-test"
     private const val REGION = "us-east-1"
 
     private val container: RustFsContainer by lazy {

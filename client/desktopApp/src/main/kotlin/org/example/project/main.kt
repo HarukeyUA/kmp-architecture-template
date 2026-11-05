@@ -189,7 +189,7 @@ private fun String.escapedForAppleScript(): String = replace("\\", "\\\\").repla
 
 private fun String.escapedForPowerShell(): String = replace("'", "''")
 
-private const val WINDOW_TITLE = "KotlinProject"
+private const val WINDOW_TITLE = "Template"
 private val DEFAULT_WINDOW_SIZE = DpSize(1100.dp, 720.dp)
 // Logical pixels; `MaterialDecoratedWindow` applies the floor natively and handles HiDPI scaling.
 private val MIN_WINDOW_SIZE = DpSize(720.dp, 480.dp)

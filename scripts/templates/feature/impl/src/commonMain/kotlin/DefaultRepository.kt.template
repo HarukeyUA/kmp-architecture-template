@@ -1,0 +1,22 @@
+package {{PACKAGE_PATH}}
+
+import dev.zacsweers.metro.AppScope
+import dev.zacsweers.metro.ContributesBinding
+import dev.zacsweers.metro.Inject
+import dev.zacsweers.metro.SingleIn
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
+
+@Inject
+@SingleIn(AppScope::class)
+@ContributesBinding(AppScope::class)
+class Default{{FEATURE_NAME}}Repository : {{FEATURE_NAME}}Repository {
+    private val count = MutableStateFlow(0)
+
+    override fun observeCount(): Flow<Int> = count
+
+    override suspend fun increment() {
+        count.update { it + 1 }
+    }
+}

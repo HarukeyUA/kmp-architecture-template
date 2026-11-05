@@ -59,7 +59,7 @@ val jpackageJdkHome: String? =
 // the bundle id, name, Linux package, data directory and single-instance lock all change.
 val isDevDesktop = providers.gradleProperty("appEnv").orNull == "dev"
 val desktopAppId = if (isDevDesktop) "org.example.project.dev" else "org.example.project"
-val desktopPackageName = if (isDevDesktop) "KotlinProject Dev" else "KotlinProject"
+val desktopPackageName = if (isDevDesktop) "Template Dev" else "Template"
 
 nucleus.application {
     mainClass = "org.example.project.MainKt"

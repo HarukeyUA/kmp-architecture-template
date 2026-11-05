@@ -1,26 +1,40 @@
 package {{PACKAGE_PATH}}
 
-import app.cash.turbine.test
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlin.test.Test
+import kotlinx.coroutines.test.runCurrent
 import {{BASE_PACKAGE}}.core.testing.runLifecycleTest
 import {{BASE_PACKAGE}}.core.testing.testComponentContext
 
 class Default{{FEATURE_NAME}}ComponentTest {
+    private val repository = Fake{{FEATURE_NAME}}Repository(initialCount = 2)
+
     @Test
-    fun `initial state has expected placeholder`() = runLifecycleTest { lifecycle ->
-        val component = createComponent(lifecycle = lifecycle)
+    fun `the stored count shows`() = runLifecycleTest { lifecycle ->
+        val component = component(lifecycle)
+        runCurrent()
 
-        component.state.test { assertThat(awaitItem().placeholder).isEqualTo("{{FEATURE_NAME}}") }
+        assertThat(component.state.value.count).isEqualTo(2)
     }
 
-    private fun createComponent(
-        lifecycle: LifecycleRegistry = LifecycleRegistry()
-    ): {{FEATURE_NAME}}Component {
-        val context = testComponentContext(lifecycle = lifecycle)
+    @Test
+    fun `a click goes through the repository and back into the state`() =
+        runLifecycleTest { lifecycle ->
+            val component = component(lifecycle)
+            runCurrent()
 
-        return Default{{FEATURE_NAME}}Component(componentContext = context)
-    }
+            component.state.value.eventSink({{FEATURE_NAME}}Component.Event.CountClicked)
+            runCurrent()
+
+            assertThat(component.state.value.count).isEqualTo(3)
+        }
+
+    private fun component(lifecycle: LifecycleRegistry): {{FEATURE_NAME}}Component =
+        Default{{FEATURE_NAME}}Component(
+                componentContext = testComponentContext(lifecycle = lifecycle),
+                repository = repository,
+            )
+            .apply { state }
 }

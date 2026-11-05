@@ -2,30 +2,33 @@ package {{PACKAGE_PATH}}
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesBinding
+import kotlinx.coroutines.launch
 import {{BASE_PACKAGE}}.core.component.AppComponentContext
 import {{BASE_PACKAGE}}.core.component.MoleculeComponent
 
 @AssistedInject
-class Default{{FEATURE_NAME}}Component(@Assisted componentContext: AppComponentContext) :
-    {{FEATURE_NAME}}Component,
-    MoleculeComponent<{{FEATURE_NAME}}Component.State>(componentContext) {
+class Default{{FEATURE_NAME}}Component(
+    @Assisted componentContext: AppComponentContext,
+    private val repository: {{FEATURE_NAME}}Repository,
+) : {{FEATURE_NAME}}Component, MoleculeComponent<{{FEATURE_NAME}}Component.State>(componentContext) {
 
     @Composable
     override fun produceState(): {{FEATURE_NAME}}Component.State {
-        val placeholder by rememberSaveable { mutableStateOf("{{FEATURE_NAME}}") }
+        val count by remember { repository.observeCount() }.collectAsStateWithLifecycle(0)
 
         return {{FEATURE_NAME}}Component.State(
-            placeholder = placeholder,
+            count = count,
             eventSink = { event ->
                 when (event) {
-                    {{FEATURE_NAME}}Component.Event.PlaceholderClicked -> Unit
+                    {{FEATURE_NAME}}Component.Event.CountClicked ->
+                        scope.launch { repository.increment() }
                 }
             },
         )

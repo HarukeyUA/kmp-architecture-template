@@ -13,8 +13,8 @@ import kotlin.test.Test
 class ServerOriginTest {
     @Test
     fun `canonicalizes a valid origin with explicit port and lowercased host`() {
-        assertThat(normalizeOriginOrNull("http://Polinas-Mac.local:8080"))
-            .isEqualTo("http://polinas-mac.local:8080")
+        assertThat(normalizeOriginOrNull("http://Dev-Mac.local:8080"))
+            .isEqualTo("http://dev-mac.local:8080")
     }
 
     @Test
