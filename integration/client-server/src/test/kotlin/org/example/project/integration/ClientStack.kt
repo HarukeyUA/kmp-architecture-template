@@ -8,8 +8,6 @@ import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.testing.ApplicationTestBuilder
 import org.example.project.feature.auth.AuthRepository
 import org.example.project.feature.auth.data.AuthRepositoryImpl
-import org.example.project.feature.notes.NotesRepository
-import org.example.project.feature.notes.data.NotesRepositoryImpl
 import org.example.project.feature.session.FakeSessionRepository
 import org.example.project.feature.session.sessionBearer
 import org.example.project.server.testing.seamJson
@@ -23,7 +21,6 @@ import org.example.project.server.testing.seamJson
  */
 class ClientStack(val http: HttpClient, val sessions: FakeSessionRepository) {
     val auth: AuthRepository = AuthRepositoryImpl(http, sessions)
-    val notes: NotesRepository = NotesRepositoryImpl(http)
 }
 
 /** Builds a fresh [ClientStack] — one signed-out "device" — inside a `serverTest` block. */

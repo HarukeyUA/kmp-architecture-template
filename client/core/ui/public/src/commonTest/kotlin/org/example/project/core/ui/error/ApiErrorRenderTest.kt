@@ -22,7 +22,7 @@ class ApiErrorRenderTest {
     fun `known variants map to their localized resource`() {
         assertThat(Unauthorized.toResourceResult()?.resource)
             .isEqualTo(Res.string.error_unauthorized)
-        assertThat(NotFound("note").toResourceResult()?.resource)
+        assertThat(NotFound("item").toResourceResult()?.resource)
             .isEqualTo(Res.string.error_not_found)
     }
 

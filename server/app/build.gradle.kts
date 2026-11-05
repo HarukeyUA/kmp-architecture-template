@@ -77,7 +77,7 @@ tasks.register<JavaExec>("generateMigrationDraft") {
             migrationOutputDir != null -> args("--output-dir", migrationOutputDir)
             else ->
                 error(
-                    "Pass -PmigrationModule=:server:feature:notes:impl " +
+                    "Pass -PmigrationModule=:server:feature:widgets:impl " +
                         "or -PmigrationOutput=/path/to/V...__description.sql",
                 )
         }

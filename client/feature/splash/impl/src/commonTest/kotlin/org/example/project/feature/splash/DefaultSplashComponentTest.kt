@@ -20,13 +20,13 @@ class DefaultSplashComponentTest {
     private val readFailure = SessionRepositoryError.Storage(IllegalStateException("disk gone"))
 
     @Test
-    fun `a stored session routes to main`() = runLifecycleTest { lifecycle ->
+    fun `a stored session routes to home`() = runLifecycleTest { lifecycle ->
         val sessions = FakeSessionRepository(ClientSession("access", "refresh"))
 
         createComponent(lifecycle, sessions).state
         runCurrent()
 
-        assertThat(routes).isEqualTo(listOf("main"))
+        assertThat(routes).isEqualTo(listOf("home"))
     }
 
     @Test
@@ -66,7 +66,7 @@ class DefaultSplashComponentTest {
             .eventSink(SplashComponent.Event.RetryClicked)
         runCurrent()
 
-        assertThat(routes).isEqualTo(listOf("main"))
+        assertThat(routes).isEqualTo(listOf("home"))
     }
 
     @Test
@@ -128,7 +128,7 @@ class DefaultSplashComponentTest {
     ): SplashComponent =
         DefaultSplashComponent(
             componentContext = testComponentContext(lifecycle = lifecycle),
-            onNavigateToMain = { routes += "main" },
+            onNavigateToHome = { routes += "home" },
             onNavigateToLogin = { routes += "login" },
             sessions = sessions,
         )

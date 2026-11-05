@@ -1,3 +1,4 @@
 <resources>
-    <string name="home_detail_message">Message</string>
+    <string name="home_title">Home</string>
+    <string name="home_log_out">Log out</string>
 </resources>

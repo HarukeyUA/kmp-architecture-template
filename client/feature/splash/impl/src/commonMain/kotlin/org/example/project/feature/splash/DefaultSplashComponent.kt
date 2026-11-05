@@ -25,7 +25,7 @@ import org.example.project.feature.splash.presentation.SplashComponent
 @AssistedInject
 class DefaultSplashComponent(
     @Assisted componentContext: AppComponentContext,
-    @Assisted private val onNavigateToMain: () -> Unit,
+    @Assisted private val onNavigateToHome: () -> Unit,
     @Assisted private val onNavigateToLogin: () -> Unit,
     private val sessions: SessionRepository,
 ) : SplashComponent, MoleculeComponent<SplashComponent.State>(componentContext) {
@@ -38,7 +38,7 @@ class DefaultSplashComponent(
 
         LaunchedEffect(attempt) {
             when (sessions.stateOrNull(log)) {
-                is SessionState.Bound -> onNavigateToMain()
+                is SessionState.Bound -> onNavigateToHome()
                 SessionState.Unbound -> onNavigateToLogin()
                 // Login here would read as signed out while a session may still be on disk.
                 null -> unreadable = true
@@ -77,7 +77,7 @@ class DefaultSplashComponent(
     fun interface Factory : SplashComponent.Factory {
         override fun create(
             componentContext: AppComponentContext,
-            onNavigateToMain: () -> Unit,
+            onNavigateToHome: () -> Unit,
             onNavigateToLogin: () -> Unit,
         ): DefaultSplashComponent
     }

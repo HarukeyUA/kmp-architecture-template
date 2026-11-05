@@ -88,29 +88,15 @@ include(":client:feature:auth:impl")
 
 include(":client:feature:auth:robots")
 
-include(":client:feature:main:public")
-
-include(":client:feature:main:impl")
-
-include(":client:feature:main:robots")
-
 include(":client:feature:home:public")
 
 include(":client:feature:home:impl")
 
-include(":client:feature:notes:public")
-
-include(":client:feature:notes:impl")
-
-include(":client:feature:notes:robots")
+include(":client:feature:home:robots")
 
 include(":client:feature:splash:public")
 
 include(":client:feature:splash:impl")
-
-include(":client:feature:profile:public")
-
-include(":client:feature:profile:impl")
 
 include(":client:feature:session:public")
 
@@ -126,8 +112,6 @@ include(":client:core:screenshot-testing:public")
 include(":shared:common")
 
 include(":shared:auth")
-
-include(":shared:notes")
 
 // ===================== :integration umbrella (client↔server tests) =====================
 // May depend on everything; nothing depends on it — both worlds meet only here.
@@ -173,7 +157,3 @@ include(":server:core:scheduler:impl")
 include(":server:feature:auth:public")
 
 include(":server:feature:auth:impl")
-
-include(":server:feature:notes:public")
-
-include(":server:feature:notes:impl")

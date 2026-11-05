@@ -22,7 +22,7 @@ import org.example.project.core.component.snackbar.SnackbarHostState
 import org.example.project.core.component.snackbar.snackbarHost
 import org.example.project.core.navigation.StackComponent
 import org.example.project.feature.auth.LoginComponent
-import org.example.project.feature.main.presentation.MainComponent
+import org.example.project.feature.home.HomeComponent
 import org.example.project.feature.session.SessionState
 import org.example.project.feature.session.SessionStatus
 import org.example.project.feature.splash.presentation.SplashComponent
@@ -36,7 +36,7 @@ interface RootComponent : StackComponent<Any, RootComponent.Child> {
 
         data class Login(val component: LoginComponent) : Child()
 
-        data class Main(val component: MainComponent) : Child()
+        data class Home(val component: HomeComponent) : Child()
     }
 
     fun interface Factory {
@@ -49,7 +49,7 @@ class DefaultRootComponent(
     @Assisted componentContext: AppComponentContext,
     private val splashComponentFactory: SplashComponent.Factory,
     private val loginComponentFactory: LoginComponent.Factory,
-    private val mainComponentFactory: MainComponent.Factory,
+    private val homeComponentFactory: HomeComponent.Factory,
     private val sessionStatus: SessionStatus,
 ) : RootComponent, AppComponentContext by componentContext {
     private val scope = lifecycleAwareScope()
@@ -97,7 +97,7 @@ class DefaultRootComponent(
                 RootComponent.Child.Splash(
                     splashComponentFactory.create(
                         componentContext = componentContext,
-                        onNavigateToMain = ::navigateToMain,
+                        onNavigateToHome = ::navigateToHome,
                         onNavigateToLogin = ::navigateToLogin,
                     ),
                 )
@@ -106,21 +106,21 @@ class DefaultRootComponent(
                 RootComponent.Child.Login(
                     loginComponentFactory.create(
                         componentContext = componentContext,
-                        onAuthenticated = ::navigateToMain,
+                        onAuthenticated = ::navigateToHome,
                     ),
                 )
 
-            is Config.Main ->
-                RootComponent.Child.Main(
-                    mainComponentFactory.create(
+            Config.Home ->
+                RootComponent.Child.Home(
+                    homeComponentFactory.create(
                         componentContext = componentContext,
                         onLogout = ::navigateToLogin,
                     ),
                 )
         }
 
-    private fun navigateToMain() {
-        navigation.replaceAll(Config.Main)
+    private fun navigateToHome() {
+        navigation.replaceAll(Config.Home)
     }
 
     private fun navigateToLogin() {
@@ -133,7 +133,7 @@ class DefaultRootComponent(
 
         @Serializable data object Login : Config
 
-        @Serializable data object Main : Config
+        @Serializable data object Home : Config
     }
 
     @AssistedFactory

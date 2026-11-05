@@ -41,7 +41,7 @@ class ApiErrorWireTest {
                 Unauthorized,
                 Forbidden,
                 BadRequest("malformed_body"),
-                NotFound("note"),
+                NotFound("item"),
                 Conflict("already exists"),
                 Validation(listOf(FieldError("email", "format"))),
                 RateLimited(retryAfterSeconds = 30),
@@ -101,7 +101,7 @@ class ApiErrorWireTest {
     fun `envelope round-trips a lens-encoded error with its request id`() {
         val envelope =
             ErrorEnvelope(
-                error = encodeApiError(commonApiErrorSerializer, NotFound("note")),
+                error = encodeApiError(commonApiErrorSerializer, NotFound("item")),
                 requestId = "req-42",
             )
 
@@ -110,7 +110,7 @@ class ApiErrorWireTest {
         assertThat(decoded).isEqualTo(envelope)
         assertThat(decoded.error["type"]).isEqualTo(JsonPrimitive("common.not_found"))
         assertThat(decodeAmbientApiError(decoded.error, status = HttpStatusCode.NotFound))
-            .isEqualTo(NotFound("note") as ApiError)
+            .isEqualTo(NotFound("item") as ApiError)
     }
 
     @Test

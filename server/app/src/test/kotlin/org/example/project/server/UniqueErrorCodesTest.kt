@@ -8,7 +8,6 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import org.example.project.shared.auth.AuthApi
 import org.example.project.shared.common.ApiError
 import org.example.project.shared.common.commonApiErrorSerializer
-import org.example.project.shared.notes.NotesApi
 
 /**
  * Every wire error code must belong to exactly one error class across all domains and the common
@@ -29,7 +28,6 @@ class UniqueErrorCodesTest {
                 AuthApi.signup.error,
                 AuthApi.login.error,
                 AuthApi.refresh.error,
-                NotesApi.create.error,
             )
 
         val descriptorsPerCode = mutableMapOf<String, MutableSet<SerialDescriptor>>()

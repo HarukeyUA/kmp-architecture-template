@@ -25,7 +25,7 @@ import org.example.project.core.ui.navigation.defaultStackAnimator
 import org.example.project.core.ui.theme.AppTheme
 import org.example.project.core.ui.theme.rememberIsSystemInDarkMode
 import org.example.project.feature.auth.LoginScreen
-import org.example.project.feature.main.presentation.MainScreen
+import org.example.project.feature.home.HomeScreen
 import org.example.project.feature.splash.presentation.SplashScreen
 
 @ContributesBinding(AppScope::class)
@@ -33,7 +33,7 @@ import org.example.project.feature.splash.presentation.SplashScreen
 class DefaultRootScreen(
     private val splashScreen: SplashScreen,
     private val loginScreen: LoginScreen,
-    private val mainScreen: MainScreen,
+    private val homeScreen: HomeScreen,
     private val errorRenderer: CompositeErrorRenderer,
 ) : RootScreen {
 
@@ -75,7 +75,7 @@ class DefaultRootScreen(
                                 is RootComponent.Child.Splash ->
                                     splashScreen.Content(child.component)
                                 is RootComponent.Child.Login -> loginScreen.Content(child.component)
-                                is RootComponent.Child.Main -> mainScreen.Content(child.component)
+                                is RootComponent.Child.Home -> homeScreen.Content(child.component)
                             }
                         }
 

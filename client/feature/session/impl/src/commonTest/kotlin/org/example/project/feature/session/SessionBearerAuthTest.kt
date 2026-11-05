@@ -32,7 +32,7 @@ class SessionBearerAuthTest {
         val store = FakeSessionRepository(ClientSession(EXPIRED_ACCESS, REFRESH))
         val client = client(store, refreshResponse = RefreshResponse.Mints(MINTED_ACCESS))
 
-        val response = client.get("http://test/v1/notes")
+        val response = client.get("http://test/v1/resource")
 
         assertThat(response.status).isEqualTo(HttpStatusCode.OK)
         assertThat(store.current)
@@ -44,7 +44,7 @@ class SessionBearerAuthTest {
         val store = FakeSessionRepository(ClientSession(EXPIRED_ACCESS, REFRESH))
         val client = client(store, refreshResponse = RefreshResponse.SessionExpired)
 
-        val response = client.get("http://test/v1/notes")
+        val response = client.get("http://test/v1/resource")
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Unauthorized)
         assertThat(store.current).isEqualTo(SessionState.Unbound)
@@ -55,7 +55,7 @@ class SessionBearerAuthTest {
         val store = FakeSessionRepository(ClientSession(EXPIRED_ACCESS, REFRESH))
         val client = client(store, refreshResponse = RefreshResponse.ServerError)
 
-        val response = client.get("http://test/v1/notes")
+        val response = client.get("http://test/v1/resource")
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Unauthorized)
         assertThat(store.current)
@@ -68,7 +68,7 @@ class SessionBearerAuthTest {
         store.nextSnapshotError = SessionRepositoryError.Storage(IllegalStateException("io"))
         val client = client(store, refreshResponse = RefreshResponse.SessionExpired)
 
-        val response = client.get("http://test/v1/notes")
+        val response = client.get("http://test/v1/resource")
 
         assertThat(response.status).isEqualTo(HttpStatusCode.Unauthorized)
         assertThat(store.clearCalls).isEqualTo(0)
@@ -88,7 +88,7 @@ class SessionBearerAuthTest {
                 SessionBearerConfigurer(store).configure(this)
             }
 
-        assertThat(client.get("http://test/v1/notes").status).isEqualTo(HttpStatusCode.OK)
+        assertThat(client.get("http://test/v1/resource").status).isEqualTo(HttpStatusCode.OK)
     }
 
     /**

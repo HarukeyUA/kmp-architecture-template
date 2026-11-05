@@ -4,8 +4,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import com.rainy.myapplication.MainActivity
 import org.example.project.core.robots.Wait
 import org.example.project.feature.auth.robots.LoginRobot
-import org.example.project.feature.main.robots.MainRobot
-import org.example.project.feature.notes.robots.NotesRobot
+import org.example.project.feature.home.robots.HomeRobot
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.rules.RuleChain
@@ -34,20 +33,19 @@ abstract class E2eTest {
     }
 
     protected val login = LoginRobot(compose, wait)
-    protected val main = MainRobot(compose, wait)
-    protected val notes = NotesRobot(compose, wait)
+    protected val home = HomeRobot(compose, wait)
 
     /**
      * Shared flow preamble: signs up a fresh account through the real UI (the splash screen routes
-     * a sessionless launch to login) and waits for the signed-in main screen. Ends on the Home tab.
+     * a sessionless launch to login) and waits for the signed-in home screen.
      */
-    protected fun signUpAndAwaitMain(email: String, password: String) {
+    protected fun signUpAndAwaitHome(email: String, password: String) {
         login.awaitShown()
         login.typeEmail(email)
         login.typePassword(password)
         login.createAccount()
 
-        main.awaitShown()
+        home.awaitShown()
     }
 
     companion object {

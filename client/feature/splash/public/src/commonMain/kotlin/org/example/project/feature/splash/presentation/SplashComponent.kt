@@ -25,7 +25,7 @@ interface SplashComponent : StatefulComponent<SplashComponent.State> {
     fun interface Factory {
         fun create(
             componentContext: AppComponentContext,
-            onNavigateToMain: () -> Unit,
+            onNavigateToHome: () -> Unit,
             onNavigateToLogin: () -> Unit,
         ): SplashComponent
     }
