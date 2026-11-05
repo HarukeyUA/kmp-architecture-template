@@ -52,6 +52,7 @@ sqlite = "2.7.1"
 ksp = "2.3.13"
 
 # Instrumented E2E suite (client/androidApp androidTest)
+androidx-test-core = "1.7.0"
 androidx-test-runner = "1.7.0"
 androidx-test-rules = "1.7.0"
 androidx-test-espresso = "3.7.0"
@@ -87,6 +88,7 @@ spotless-gradlePlugin = { module = "com.diffplug.spotless:spotless-plugin-gradle
 
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activityCompose" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidx-splash-splash-screen" }
 
@@ -212,6 +214,7 @@ robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectr
 junit = { module = "junit:junit", version.ref = "junit" }
 compose-ui-test-junit4 = { module = "org.jetbrains.compose.ui:ui-test-junit4", version.ref = "composeMultiplatform" }
 compose-ui-test = { module = "org.jetbrains.compose.ui:ui-test", version.ref = "composeMultiplatform" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
 androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-test-rules" }
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "androidx-test-espresso" }
@@ -249,6 +252,7 @@ convention-kmp-compose-feature-public = { id = "convention.kmp.compose.feature.p
 convention-kmp-feature-impl = { id = "convention.kmp.feature.impl" }
 convention-kmp-feature-testing = { id = "convention.kmp.feature.testing" }
 convention-kmp-feature-robots = { id = "convention.kmp.feature.robots" }
+convention-kmp-e2e = { id = "convention.kmp.e2e" }
 convention-server-testing = { id = "convention.server.testing" }
 convention-robots-aggregator = { id = "convention.robots-aggregator" }
 convention-kmp-compose-feature-impl = { id = "convention.kmp.compose.feature.impl" }

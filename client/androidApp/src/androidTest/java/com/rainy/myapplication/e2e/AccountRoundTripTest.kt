@@ -1,30 +1,18 @@
 package com.rainy.myapplication.e2e
 
-import kotlin.random.Random
+import org.example.project.e2e.journeys.AccountJourney
 import org.junit.Test
 
 /** Signs up, logs out and logs back in through the real UI against the real dev server. */
 class AccountRoundTripTest : E2eTest() {
+    private val account by journey<AccountJourney>()
 
     @Test
-    fun signupLogoutAndLoginRoundTripTheServer() {
-        // The Orchestrator clears app data between tests, but the dev server's database persists.
-        val email = "e2e-${Random.nextLong(Long.MAX_VALUE)}@example.com"
-        signUpAndAwaitMain(email, PASSWORD)
+    fun signUpLogOutAndLogInRoundTripTheServer() {
+        val email = freshEmail()
 
-        main.openSettingsTab()
-        settings.awaitShown()
-        settings.logOut()
-
-        login.awaitShown()
-        login.typeEmail(email)
-        login.typePassword(PASSWORD)
-        login.logIn()
-
-        main.awaitShown()
-    }
-
-    private companion object {
-        const val PASSWORD = "correct-horse-battery-staple"
+        account.signUp(email, PASSWORD)
+        account.logOut()
+        account.logIn(email, PASSWORD)
     }
 }

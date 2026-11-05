@@ -43,8 +43,8 @@ implAggregator {
     aggregator(":server:app")
 }
 
-// Wires every :client:*:robots module into the E2E host's androidTest configuration.
-robotsAggregator { aggregator(":client:androidApp") }
+// Wires every :client:*:robots module into the E2E driver module.
+robotsAggregator { aggregator(":client:e2e") }
 
 // ===================== :client umbrella (Compose Multiplatform app) =====================
 // App modules
@@ -53,6 +53,8 @@ include(":client:androidApp")
 include(":client:desktopApp")
 
 include(":client:composeApp")
+
+include(":client:e2e")
 
 // Core modules
 include(":client:core:component:public")

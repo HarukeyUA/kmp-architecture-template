@@ -7,17 +7,28 @@ import org.example.project.core.buildinfo.BuildType
 import org.example.project.core.buildinfo.Environment
 import org.example.project.createAndroidAppGraph
 
-class MyApplication : Application() {
-    // The flavor picked at install time (`installDevDebug` vs `installProdDebug`) decides which
-    // server this install talks to. DEV_SERVER_HOST is the build machine's LAN IP, baked into the
-    // dev flavor's BuildConfig (empty in the prod flavor and on off-network builds).
-    val appGraph: AndroidAppGraph by lazy {
+open class MyApplication : Application() {
+    val appGraph: AndroidAppGraph by lazy { buildAppGraph() }
+
+    /**
+     * The one seam the instrumented E2E runner replaces: it installs an Application subclass that
+     * builds a graph subtype carrying accessors only the flow tests need, which keeps those
+     * accessors out of every shipped build.
+     */
+    protected open fun buildAppGraph(): AndroidAppGraph =
         createAndroidAppGraph(
             applicationContext = this,
-            environment = if (BuildConfig.FLAVOR == "dev") Environment.DEV else Environment.PROD,
-            devServerHost = BuildConfig.DEV_SERVER_HOST.takeIf { it.isNotEmpty() },
+            environment = environment,
+            devServerHost = devServerHost,
         )
-    }
+
+    /** The flavor picked at install time decides which server this install talks to. */
+    protected val environment: Environment
+        get() = if (BuildConfig.FLAVOR == "dev") Environment.DEV else Environment.PROD
+
+    /** The build machine's LAN IP, baked into the dev flavor; null in prod and offline builds. */
+    protected val devServerHost: String?
+        get() = BuildConfig.DEV_SERVER_HOST.takeIf { it.isNotEmpty() }
 
     override fun onCreate() {
         super.onCreate()

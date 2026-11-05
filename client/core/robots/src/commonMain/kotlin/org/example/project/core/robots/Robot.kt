@@ -17,11 +17,15 @@ fun interface Wait {
     operator fun invoke(description: String, timeoutMillis: Long, condition: () -> Boolean)
 }
 
+/** [Wait] with the standard robot budget, [Robot.DEFAULT_TIMEOUT_MILLIS]. */
+fun Wait.await(description: String, condition: () -> Boolean) {
+    this(description, Robot.DEFAULT_TIMEOUT_MILLIS, condition)
+}
+
 /**
- * Base for per-feature screen robots: drives one screen through its semantics tags. Written against
- * [SemanticsNodeInteractionsProvider] plus the injected [Wait] primitive (rather than a concrete
- * rule type) so robots stay host-agnostic. Robots never wait for another feature's screen, since a
- * robot sees only its sibling `:impl` and this module; cross-screen waits compose in the flow test.
+ * Base for per-feature screen robots: drives one screen through its semantics tags, host-agnostic
+ * by depending only on [SemanticsNodeInteractionsProvider] and [Wait]. A robot never waits for
+ * another feature's screen and never injects another robot; journeys do both.
  */
 @Suppress("AbstractClassCanBeConcreteClass") // A base for robots, never a robot itself.
 abstract class Robot(
@@ -30,7 +34,7 @@ abstract class Robot(
 ) {
     /** Waits up to [DEFAULT_TIMEOUT_MILLIS] for [condition]; [description] names the failure. */
     protected fun await(description: String, condition: () -> Boolean) {
-        wait(description, DEFAULT_TIMEOUT_MILLIS, condition)
+        wait.await(description, condition)
     }
 
     protected fun tagExists(tag: String): Boolean =

@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.metro)
-    alias(libs.plugins.convention.robots.aggregator)
     alias(libs.plugins.convention.spotless)
     alias(libs.plugins.convention.detekt)
 }
@@ -84,18 +83,22 @@ val releaseStorePassword = signingValue("storePassword", "ANDROID_KEYSTORE_PASSW
 val releaseKeyAlias = signingValue("keyAlias", "ANDROID_KEY_ALIAS")
 val releaseKeyPassword = signingValue("keyPassword", "ANDROID_KEY_PASSWORD")
 
+val appId: String = providers.gradleProperty("app.applicationId").get()
+
 android {
-    namespace = "com.rainy.myapplication"
+    namespace = appId
     compileSdk { version = release(libs.versions.android.compileSdk.get().toInt()) }
 
     defaultConfig {
-        applicationId = "com.rainy.myapplication"
+        applicationId = appId
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = gitCommitCount()
         versionName = versionNameFromFile()
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // The E2E runner substitutes an Application that builds `E2eAppGraph`, so the flow tests'
+        // graph accessors live in `androidTest` and never in a shipped build.
+        testInstrumentationRunner = "$appId.e2e.E2eTestRunner"
         // Orchestrator isolation: every E2E test method gets a fresh process and cleared app data,
         // so each test starts at the login screen and creates its own account.
         // `useTestStorageService` routes failure screenshots through androidx.test.services
@@ -205,11 +208,11 @@ dependencies {
     implementation(project(":client:core:buildinfo:public"))
     implementation(project(":client:composeApp"))
 
-    // E2E suite (androidTest, dev flavor only — see `beforeVariants` above). Robots drive the UI
-    // through test tags; run via `scripts/e2e-android.sh` against a running `scripts/dev-stack.sh`.
-    // Every `:robots` module is wired in automatically by convention.robots-aggregator.
+    // E2E suite (androidTest, dev flavor only, see `beforeVariants` above). Robots and journeys
+    // drive the UI through test tags; run via `scripts/e2e-android.sh` against a running
+    // `scripts/dev-stack.sh`. `:client:e2e` carries every `:robots` module and the driver graph.
+    androidTestImplementation(project(":client:e2e"))
     androidTestImplementation(libs.compose.ui.test.junit4)
-    androidTestImplementation(libs.compose.ui.test)
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.rules)

@@ -8,7 +8,7 @@ import org.gradle.kotlin.dsl.getByType
 
 /** DSL extension for configuring robots-module aggregators from `settings.gradle.kts`. */
 abstract class RobotsAggregatorSettingsExtension {
-    /** Full Gradle paths of the aggregator projects (e.g. `:client:androidApp`). */
+    /** Full Gradle paths of the aggregator projects (e.g. `:client:e2e`). */
     abstract val aggregatorProjectPaths: SetProperty<String>
 
     /**
@@ -20,9 +20,7 @@ abstract class RobotsAggregatorSettingsExtension {
     }
 }
 
-/**
- * Entry point for `settings.gradle.kts`: `robotsAggregator { aggregator(":client:androidApp") }`.
- */
+/** Entry point for `settings.gradle.kts`: `robotsAggregator { aggregator(":client:e2e") }`. */
 fun Settings.robotsAggregator(action: RobotsAggregatorSettingsExtension.() -> Unit) {
     extensions.getByType<RobotsAggregatorSettingsExtension>().action()
 }

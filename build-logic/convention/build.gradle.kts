@@ -85,6 +85,10 @@ gradlePlugin {
             id = "convention.kmp.feature.robots"
             implementationClass = "KmpFeatureRobotsConventionPlugin"
         }
+        register("kmpE2e") {
+            id = "convention.kmp.e2e"
+            implementationClass = "KmpE2eConventionPlugin"
+        }
         register("robotsAggregator") {
             id = "convention.robots-aggregator"
             implementationClass = "RobotsAggregatorConventionPlugin"

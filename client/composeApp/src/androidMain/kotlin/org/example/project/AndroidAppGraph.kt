@@ -8,32 +8,38 @@ import dev.zacsweers.metro.createGraphFactory
 import org.example.project.core.buildinfo.Environment
 import org.example.project.core.network.ApiConfigDefaults
 
+/**
+ * What the Android app pulls out of DI. Not a graph itself: Metro forbids one `@DependencyGraph`
+ * extending another, so the shipped graph and `E2eAppGraph` (in `:client:androidApp`'s
+ * `androidTest`) are siblings under this contract.
+ */
+interface AndroidAppGraph : AppGraph
+
+/** The graph a shipped build runs on; reachable only through [createAndroidAppGraph]. */
 @DependencyGraph(AppScope::class)
-interface AndroidAppGraph : AppGraph {
+internal interface ProdAndroidAppGraph : AndroidAppGraph {
     @DependencyGraph.Factory
     fun interface Factory {
         fun create(
             @Provides applicationContext: Context,
             @Provides environment: Environment,
             @Provides apiConfigDefaults: ApiConfigDefaults,
-        ): AndroidAppGraph
+        ): ProdAndroidAppGraph
     }
 }
 
-/**
- * [devServerHost] is the build machine's LAN IP, resolved while assembling the dev flavor and
- * carried in its `BuildConfig` — a freshly installed dev build on a physical device (or the
- * emulator, which can also reach the host's LAN IP) finds the local server with zero setup. Null or
- * unusable falls back to `10.0.2.2`, the emulator's NAT alias for the host's loopback.
- */
 fun createAndroidAppGraph(
     applicationContext: Context,
     environment: Environment,
     devServerHost: String?,
 ): AndroidAppGraph =
-    createGraphFactory<AndroidAppGraph.Factory>()
-        .create(
-            applicationContext,
-            environment,
-            devApiConfigDefaults(devServerHost, fallbackDevBaseUrl = "http://10.0.2.2:8080"),
-        )
+    createGraphFactory<ProdAndroidAppGraph.Factory>()
+        .create(applicationContext, environment, androidApiConfigDefaults(devServerHost))
+
+/**
+ * The base URLs an Android build talks to. [devServerHost] is the build machine's LAN IP, baked
+ * into the dev flavor's `BuildConfig`; null or unusable falls back to 10.0.2.2, the emulator's NAT
+ * alias for the host loopback. Public so the E2E runner's own graph reaches the same server.
+ */
+fun androidApiConfigDefaults(devServerHost: String?): ApiConfigDefaults =
+    devApiConfigDefaults(devServerHost, fallbackDevBaseUrl = "http://10.0.2.2:8080")

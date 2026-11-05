@@ -2,16 +2,17 @@
 # Runs the Android E2E suite against a locally running dev stack.
 #
 #   scripts/dev-stack.sh          # first, in another terminal (localhost mode is enough)
-#   scripts/e2e-android.sh        # then this: health check, run
+#   scripts/e2e-android.sh        # then this: health check, adb reverse, run
 #
 # With several devices attached, select one with ANDROID_SERIAL=<serial>.
 #
 # What it does:
 #  - checks http://localhost:8080/health so a dead stack fails here, not 15s into a test
-#  - runs the suite with DEV_SERVER_HOST=10.0.2.2 (the emulator's native NAT alias for the
-#    host's loopback) so the baked base URL is deterministic. For a physical device, start the
-#    stack with `scripts/dev-stack.sh --lan` and export DEV_SERVER_HOST=<LAN IP> first — an
-#    explicit value is respected.
+#  - applies `adb reverse tcp:9000 tcp:9000` so localhost:9000 presigned blob URLs resolve on the
+#    emulator (SigV4 signs the host; API traffic needs no reverse, 10.0.2.2 is native NAT)
+#  - runs the suite with DEV_SERVER_HOST=10.0.2.2 so the baked base URL is deterministic. For a
+#    physical device, start the stack with `scripts/dev-stack.sh --lan` and export
+#    DEV_SERVER_HOST=<LAN IP> first; an explicit value is respected.
 #
 # Animations (the top instrumented-flakiness source) need no manual step: `animationsDisabled`
 # in androidApp's testOptions has `am instrument` zero all three scales for the run and restore
@@ -38,4 +39,18 @@ if ! adb get-state >/dev/null 2>&1; then
     exit 1
 fi
 
-DEV_SERVER_HOST="${DEV_SERVER_HOST:-10.0.2.2}" ./gradlew :client:androidApp:connectedDevDebugAndroidTest
+adb reverse tcp:9000 tcp:9000
+
+export DEV_SERVER_HOST="${DEV_SERVER_HOST:-10.0.2.2}"
+
+# Android 17+ (API 37) gates all LAN traffic, 10.0.2.2 included, behind the runtime
+# ACCESS_LOCAL_NETWORK permission; without it API calls hang as plain timeouts. The grant must be
+# reapplied every run (connectedAndroidTest uninstalls the app afterwards) and needs the app
+# installed first, so install up front; the connected task's own `install -r` keeps the grant.
+if [ "$(adb shell getprop ro.build.version.sdk | tr -d '[:space:]')" -ge 37 ]; then
+    APP_ID=$(sed -n 's/^app\.applicationId=//p' gradle.properties)
+    ./gradlew :client:androidApp:installDevDebug
+    adb shell pm grant "$APP_ID.dev.debug" android.permission.ACCESS_LOCAL_NETWORK
+fi
+
+./gradlew :client:androidApp:connectedDevDebugAndroidTest

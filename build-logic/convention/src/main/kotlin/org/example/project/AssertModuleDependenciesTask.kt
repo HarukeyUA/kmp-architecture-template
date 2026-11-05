@@ -25,6 +25,7 @@ import org.gradle.api.tasks.TaskAction
  * - `:testing` may depend only on its sibling `:public`.
  * - `:robots` may depend only on its sibling `:impl` (test tags) or `:client:core:robots` (the
  *   `Robot`/`Wait` base).
+ * - `:e2e` may depend only on `:robots`, `:public` or a `:shared` contract.
  * - No `:client:core:*` module may depend on a `:client:feature:*` module (layering rule).
  * - A `:shared:*` module's **external** dependency surface is rationed to [ALLOWED_SHARED_EXTERNAL]
  *   so the Seam can't rot into a god module.
@@ -58,8 +59,9 @@ abstract class AssertModuleDependenciesTask : DefaultTask() {
                     append(
                         "Rules: :client and :server meet only through :shared; :public and :impl " +
                             "depend only on :public or :shared; :testing only on its sibling " +
-                            ":public; :robots only on its sibling :impl or $CORE_ROBOTS_PATH; " +
-                            ":client:core never on :client:feature.",
+                            ":public; :robots only on its sibling :impl or $CORE_ROBOTS_MODULE; " +
+                            ":e2e only on :robots, :public or :shared; :client:core never on " +
+                            ":client:feature.",
                     )
                 },
             )
@@ -99,19 +101,26 @@ private fun violation(sourcePath: String, targetPath: String): String? {
             } else null
         }
         // Robots drive one screen through the test tags declared next to it in the sibling :impl,
-        // and extend the shared Robot/Wait base. Nothing else — cross-feature journeys compose in
-        // the E2E flow layer (:client:androidApp androidTest), not in robots.
+        // and extend the shared Robot/Wait base. Nothing else: cross-feature journeys compose in
+        // :client:e2e, not in robots.
         ModuleType.ROBOTS -> {
             val sibling = sourcePath.removeSuffix(":robots") + ":impl"
-            if (targetPath != sibling && targetPath != CORE_ROBOTS_PATH) {
+            if (targetPath != sibling && targetPath != CORE_ROBOTS_MODULE) {
                 "'$targetPath' not allowed — :robots may only depend on its sibling '$sibling' " +
-                    "or '$CORE_ROBOTS_PATH'"
+                    "or '$CORE_ROBOTS_MODULE'"
             } else null
         }
+        ModuleType.E2E ->
+            if (
+                targetType != ModuleType.ROBOTS &&
+                    targetType != ModuleType.PUBLIC &&
+                    !targetIsContract
+            ) {
+                "'$targetPath' not allowed — :e2e may only depend on :robots, :public or a " +
+                    ":shared contract"
+            } else null
     }
 }
-
-private const val CORE_ROBOTS_PATH = ":client:core:robots"
 
 private fun umbrellaViolation(sourcePath: String, targetPath: String): String? {
     val source = umbrellaOf(sourcePath) ?: return null

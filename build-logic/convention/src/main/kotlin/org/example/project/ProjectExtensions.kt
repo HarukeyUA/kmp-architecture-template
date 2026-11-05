@@ -8,6 +8,7 @@ import org.gradle.api.plugins.BasePluginExtension
 import org.gradle.api.project.IsolatedProject
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.invoke
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
@@ -113,6 +114,7 @@ enum class ModuleType {
     IMPL,
     TESTING,
     ROBOTS,
+    E2E,
     UNKNOWN,
 }
 
@@ -122,6 +124,7 @@ fun moduleTypeOf(path: String): ModuleType =
         "impl" -> ModuleType.IMPL
         "testing" -> ModuleType.TESTING
         "robots" -> ModuleType.ROBOTS
+        "e2e" -> ModuleType.E2E
         else -> ModuleType.UNKNOWN
     }
 
@@ -131,3 +134,41 @@ val Project.moduleType: ModuleType
 fun Project.isImplModule(): Boolean = moduleType == ModuleType.IMPL
 
 fun Project.isPublicModule(): Boolean = moduleType == ModuleType.PUBLIC
+
+/** The shared robot base module, the one UI-test driver module that does not depend on it. */
+const val CORE_ROBOTS_MODULE = ":client:core:robots"
+
+/**
+ * Shared shape of the UI-test driver modules (`:robots`, `:client:e2e`): Android + JVM only (jvm
+ * keeps a desktop suite possible), Metro so each driver contributes itself to `E2eScope`, and
+ * `compose-ui-test` + `:client:core:robots` as `api`, every driver's constructor surface.
+ */
+fun Project.configureKmpUiTestDriver() {
+    with(pluginManager) {
+        apply("org.jetbrains.kotlin.multiplatform")
+        apply("com.android.kotlin.multiplatform.library")
+        apply("convention.spotless")
+        apply("convention.detekt")
+        apply("convention.module-graph-assert")
+        apply("convention.metro")
+    }
+
+    extensions.configure<KotlinMultiplatformExtension> {
+        jvm { compilerOptions { jvmTarget.set(jdkJvmTarget()) } }
+
+        androidLibrary {
+            compileSdk = libs.version("android-compileSdk").toInt()
+            minSdk = libs.version("android-minSdk").toInt()
+            namespace = namespace()
+
+            compilerOptions { jvmTarget.set(jdkJvmTarget()) }
+        }
+
+        sourceSets {
+            commonMain.dependencies {
+                api(libs.library("compose-ui-test"))
+                if (path != CORE_ROBOTS_MODULE) api(project(CORE_ROBOTS_MODULE))
+            }
+        }
+    }
+}

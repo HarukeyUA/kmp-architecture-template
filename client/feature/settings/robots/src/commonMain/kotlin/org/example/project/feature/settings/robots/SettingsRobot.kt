@@ -3,12 +3,19 @@ package org.example.project.feature.settings.robots
 import androidx.compose.ui.test.SemanticsNodeInteractionsProvider
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.isSelected
+import dev.zacsweers.metro.ClassKey
+import dev.zacsweers.metro.ContributesIntoMap
+import dev.zacsweers.metro.Inject
 import org.example.project.core.local.storage.model.ThemeMode
+import org.example.project.core.robots.E2eScope
 import org.example.project.core.robots.Robot
 import org.example.project.core.robots.Wait
 import org.example.project.feature.settings.SettingsScreenTestTags
 
 /** Drives the settings screen through its semantics tags. */
+@Inject
+@ClassKey
+@ContributesIntoMap(E2eScope::class)
 class SettingsRobot(nodes: SemanticsNodeInteractionsProvider, wait: Wait) : Robot(nodes, wait) {
     fun awaitShown() {
         awaitTag("settings screen", SettingsScreenTestTags.LOG_OUT)

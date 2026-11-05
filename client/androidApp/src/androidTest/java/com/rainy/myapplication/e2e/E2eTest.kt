@@ -1,24 +1,26 @@
 package com.rainy.myapplication.e2e
 
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.test.platform.app.InstrumentationRegistry
 import com.rainy.myapplication.MainActivity
+import dev.zacsweers.metro.createGraphFactory
+import kotlin.random.Random
+import org.example.project.core.robots.Robot
 import org.example.project.core.robots.Wait
-import org.example.project.feature.auth.robots.LoginRobot
-import org.example.project.feature.main.robots.MainRobot
-import org.example.project.feature.settings.robots.SettingsRobot
+import org.example.project.core.robots.await
+import org.example.project.e2e.AndroidE2eGraph
+import org.example.project.e2e.AndroidHost
+import org.example.project.e2e.Journey
+import org.example.project.e2e.journey
+import org.example.project.e2e.robot
 import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.rules.RuleChain
 
 /**
- * Base for the local E2E flows: hosts [MainActivity] against the real dev server and owns the rule
- * chain, one robot per screen, and the cross-screen journeys the flows share. Requires
- * `scripts/dev-stack.sh` running; use `scripts/e2e-android.sh` to run the suite. The Orchestrator
- * clears app data before each test, so every flow starts at the login screen and creates its own
- * account (isolation by account-per-test).
- *
- * Cross-screen waits live here in the flow layer, never in the robots — robots would otherwise need
- * cross-feature deps mirroring the nav graph.
+ * Base for the E2E flows, run by `scripts/e2e-android.sh` against the dev server. A flow declares
+ * its drivers as lazy delegates (`by robot<TasksRobot>()`, `by journey<AccountJourney>()`) and
+ * reads what it needs from below the UI off [e2eGraph]; nothing is wired here.
  */
 abstract class E2eTest {
 
@@ -29,28 +31,45 @@ abstract class E2eTest {
     @get:Rule
     val rules: RuleChain = RuleChain.outerRule(compose).around(FailureScreenshotRule(compose))
 
-    protected val wait = Wait { description, timeoutMillis, condition ->
+    private val wait = Wait { description, timeoutMillis, condition ->
         compose.waitUntil(description, timeoutMillis, condition)
     }
 
-    protected val login = LoginRobot(compose, wait)
-    protected val main = MainRobot(compose, wait)
-    protected val settings = SettingsRobot(compose, wait)
-
-    /**
-     * Shared flow preamble: signs up a fresh account through the real UI (the splash screen routes
-     * a sessionless launch to login) and waits for the signed-in main screen.
-     */
-    protected fun signUpAndAwaitMain(email: String, password: String) {
-        login.awaitShown()
-        login.typeEmail(email)
-        login.typePassword(password)
-        login.createAccount()
-
-        main.awaitShown()
+    /** Built on first use, once the rule has launched the Activity the host levers need. */
+    protected val drivers: AndroidE2eGraph by lazy {
+        createGraphFactory<AndroidE2eGraph.Factory>()
+            .create(nodes = compose, wait = wait, scenario = compose.activityRule.scenario)
     }
 
+    protected inline fun <reified T : Robot> robot(): Lazy<T> = lazy { drivers.robot<T>() }
+
+    protected inline fun <reified T : Journey> journey(): Lazy<T> = lazy { drivers.journey<T>() }
+
+    /** The Activity and task levers: system back, recreation. */
+    protected val host: AndroidHost
+        get() = drivers.host
+
+    /** The app under test, which [E2eTestRunner] installed in place of the shipped Application. */
+    protected val app: TestMyApplication
+        get() =
+            InstrumentationRegistry.getInstrumentation().targetContext.applicationContext
+                as TestMyApplication
+
+    /** The running app's own graph, widened to the accessors described on [E2eAppGraph]. */
+    protected val e2eGraph: E2eAppGraph
+        get() = app.appGraph as E2eAppGraph
+
+    /** Waits up to the standard robot timeout for a flow-level [condition]. */
+    protected fun await(description: String, condition: () -> Boolean) {
+        wait.await(description, condition)
+    }
+
+    /** Every run needs a fresh account: the Orchestrator clears app data, not the dev database. */
+    protected fun freshEmail(): String = "e2e-${Random.nextLong(Long.MAX_VALUE)}@example.com"
+
     companion object {
+        const val PASSWORD = "correct-horse-battery-staple"
+
         @JvmField @ClassRule val devServer: DevServerHealthRule = DevServerHealthRule()
     }
 }

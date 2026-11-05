@@ -5,18 +5,10 @@ import org.gradle.kotlin.dsl.dependencies
 import org.gradle.kotlin.dsl.project
 
 /**
- * Applied to the E2E host module (`:client:androidApp`). Reads the robots module list that
- * `convention.robots-aggregator.settings` wrote into this project's build directory at settings
- * time and wires each as an `androidTestImplementation` dependency, so a new `:robots` module joins
- * the instrumented suite the moment it is included in settings.gradle.kts.
- *
- * The file is resolved via `layout.projectDirectory`, which is scoped to this project, so no
- * cross-project access occurs. `providers.fileContents` registers the file as a configuration cache
- * input, so changes to the module list invalidate the cache correctly.
- *
- * The path must stay in sync with `RobotsAggregatorSettingsPlugin.AGGREGATOR_OUTPUT_REL_PATH` in
- * the `:build-logic:settings` subproject. Kept separate to avoid a classpath dependency between the
- * settings and convention subprojects.
+ * Applied to the E2E driver module (`:client:e2e`). Adds every `:robots` module that
+ * `convention.robots-aggregator.settings` listed as a `commonMain` `api` dependency, so a test host
+ * depending on `:client:e2e` sees every robot type. [AGGREGATOR_OUTPUT_REL_PATH] must match the
+ * settings plugin's copy; the two share no classpath.
  */
 class RobotsAggregatorConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -28,12 +20,12 @@ class RobotsAggregatorConventionPlugin : Plugin<Project> {
                     text.lines().map(String::trim).filter(String::isNotEmpty)
                 }
 
-            // Gate on AGP so the `androidTestImplementation` configuration exists before we add to
-            // it, regardless of plugin application order in the consuming script.
-            plugins.withId("com.android.application") {
+            // Gate on KMP so the `commonMainApi` configuration exists before we add to it,
+            // regardless of plugin application order in the consuming script.
+            plugins.withId("org.jetbrains.kotlin.multiplatform") {
                 dependencies {
                     aggregatedModules(modulesProvider).forEach { path ->
-                        add("androidTestImplementation", project(path))
+                        add("commonMainApi", project(path))
                     }
                 }
             }

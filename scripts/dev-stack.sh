@@ -119,6 +119,10 @@ set +a
 # quieter session is useful; production does not use this script and logback defaults to INFO.
 export LOG_LEVEL="${LOG_LEVEL:-DEBUG}"
 
+# Every E2E flow signs in again from this one address, so two runs in a minute would exhaust the
+# deployed default of 10 credential calls and fail on 429s. A value in .env still wins.
+export CREDENTIAL_RATE_LIMIT_PER_MINUTE="${CREDENTIAL_RATE_LIMIT_PER_MINUTE:-600}"
+
 if [ "$MODE" = "lan" ]; then
     # Must be exported before the server starts: every presigned URL it mints embeds this host.
     export S3_ENDPOINT="http://$LAN_HOST:9000"

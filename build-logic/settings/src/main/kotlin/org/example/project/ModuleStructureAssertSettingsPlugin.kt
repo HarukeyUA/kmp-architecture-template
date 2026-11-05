@@ -67,6 +67,7 @@ class ModuleStructureAssertSettingsPlugin : Plugin<Settings> {
                 "impl",
                 "testing",
                 "robots",
+                "e2e",
                 "composeApp",
                 "androidApp",
                 "desktopApp",
