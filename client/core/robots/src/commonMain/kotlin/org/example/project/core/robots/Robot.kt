@@ -23,6 +23,7 @@ fun interface Wait {
  * rule type) so robots stay host-agnostic. Robots never wait for another feature's screen, since a
  * robot sees only its sibling `:impl` and this module; cross-screen waits compose in the flow test.
  */
+@Suppress("AbstractClassCanBeConcreteClass") // A base for robots, never a robot itself.
 abstract class Robot(
     protected val nodes: SemanticsNodeInteractionsProvider,
     private val wait: Wait,

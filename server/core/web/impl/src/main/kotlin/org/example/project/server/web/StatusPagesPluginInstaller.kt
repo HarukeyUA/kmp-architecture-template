@@ -80,13 +80,8 @@ class StatusPagesPluginInstaller : PluginInstaller {
         }
     }
 
-    /**
-     * A malformed request body is a client fault (`400`), so the client gets only the opaque
-     * [MALFORMED_BODY] reason. The cause is logged at DEBUG for diagnosis — its *type* and the
-     * request route only, never its message, which can echo the offending body (e.g. a password on
-     * `POST /auth/login`). It stays at DEBUG, not ERROR: a client sending garbage is not a server
-     * fault and must not pollute error telemetry.
-     */
+    // A malformed body is a client fault, so the reason stays opaque. The DEBUG log records the
+    // cause's type and route but never its message, which can echo the offending body.
     private suspend fun ApplicationCall.rejectMalformedBody(cause: Throwable) {
         application.log.debug(
             "Rejected malformed request body on {} {} ({}): {}",

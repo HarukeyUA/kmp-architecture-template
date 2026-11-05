@@ -34,7 +34,7 @@ interface PasswordHasher {
  * each operation so it doesn't linger on the heap.
  *
  * Concurrency is bounded: each call costs [MEMORY_KIB] of native memory, so an unbounded login
- * flood is an OOM, not a slowdown. [hashDispatcher] caps concurrent hashes at
+ * flood is an OOM, not a slowdown. A dedicated dispatcher caps concurrent hashes at
  * [MAX_CONCURRENT_HASHES] (≤256 MiB worst case) and moves the work off the request coroutines;
  * excess logins queue as suspended coroutines (~free) instead of being shed — the strict per-IP
  * rate limit upstream already rejects the abusive case. A code constant, not config: raising it
@@ -45,12 +45,12 @@ interface PasswordHasher {
 @ContributesBinding(AppScope::class)
 class Argon2PasswordHasher : PasswordHasher {
     private val argon2 = Argon2Factory.create(Argon2Factory.Argon2Types.ARGON2id)
+
+    @Suppress("InjectDispatcher") // Server has no dispatcher injection seam.
     private val hashDispatcher = Dispatchers.Default.limitedParallelism(MAX_CONCURRENT_HASHES)
 
-    /**
-     * [verifyDummy]'s target, computed once at startup with the live parameters — a hardcoded hash
-     * string would silently stop being cost-identical the day [ITERATIONS]/[MEMORY_KIB] change.
-     */
+    // Computed with the live parameters: a hardcoded hash would silently stop being cost-identical
+    // the day ITERATIONS or MEMORY_KIB change.
     private val dummyHash: String =
         argon2.hash(ITERATIONS, MEMORY_KIB, PARALLELISM, "dummy".toCharArray())
 

@@ -14,7 +14,9 @@ fun interface ServerResource {
  * Closes every [ServerResource], preserving the first failure and attaching later failures as
  * suppressed exceptions.
  */
-@Suppress("TooGenericExceptionCaught")
+// A cancellation from one close must not skip the remaining resources: it is kept as the failure
+// and rethrown once every resource has had its turn.
+@Suppress("TooGenericExceptionCaught", "SuspendFunSwallowedCancellation")
 suspend fun Iterable<ServerResource>.closeAll() {
     var failure: Throwable? = null
     for (resource in this) {

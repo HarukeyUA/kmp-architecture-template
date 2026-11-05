@@ -31,12 +31,12 @@ interface RootComponent : StackComponent<Any, RootComponent.Child> {
 
     val snackbarHostState: SnackbarHostState
 
-    sealed class Child {
-        data class Splash(val component: SplashComponent) : Child()
+    sealed interface Child {
+        data class Splash(val component: SplashComponent) : Child
 
-        data class Login(val component: LoginComponent) : Child()
+        data class Login(val component: LoginComponent) : Child
 
-        data class Home(val component: HomeComponent) : Child()
+        data class Home(val component: HomeComponent) : Child
     }
 
     fun interface Factory {

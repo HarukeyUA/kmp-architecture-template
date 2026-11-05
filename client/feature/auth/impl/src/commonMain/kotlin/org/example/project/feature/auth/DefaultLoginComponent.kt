@@ -54,7 +54,8 @@ class DefaultLoginComponent(
                         ifLeft = { failure ->
                             when (failure) {
                                 is CallFailure.Declared -> formError = declaredForm(failure.error)
-                                else -> error = failure
+                                is CallFailure.Ambient,
+                                is CallFailure.Transport -> error = failure
                             }
                             isSubmitting = false
                         },

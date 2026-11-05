@@ -31,9 +31,9 @@ interface SessionCache {
 data class CachedSession(val principal: Principal, val expiresAt: Instant)
 
 /**
- * Two Caffeine caches split by **trust level**: [cache] holds only entries tied to real sessions
+ * Two Caffeine caches split by **trust level**: `cache` holds only entries tied to real sessions
  * ([Lookup.Present] and [Lookup.Revoked] tombstones — both bounded by legitimate activity), while
- * unknown-token misses go to the separate, smaller [absent] cache. Unauthenticated input must never
+ * unknown-token misses go to the separate, smaller `absent` cache. Unauthenticated input must never
  * compete with authenticated state for cache space: with a shared cache, an attacker spraying
  * fabricated bearer tokens could evict every live session and turn each real request into a DB
  * round-trip.

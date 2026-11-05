@@ -53,6 +53,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+      # The convention plugin chains the type-resolved per-compilation tasks behind this task.
       - run: ./gradlew detekt
       - name: Upload detekt reports
         if: failure()

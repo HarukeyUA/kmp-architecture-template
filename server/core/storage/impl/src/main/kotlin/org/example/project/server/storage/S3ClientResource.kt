@@ -13,7 +13,9 @@ import org.example.project.server.lifecycle.ServerResource
  */
 @Inject
 @SingleIn(AppScope::class)
-class S3ClientResource(private val config: Lazy<StorageConfig>) : ServerResource {
+class S3ClientResource(config: Lazy<StorageConfig>) : ServerResource {
+    // The client outlives its construction: [close] releases it at shutdown.
+    @Suppress("MissingUseCall")
     private val client: Lazy<S3Client> = lazy { buildS3Client(config.value) }
 
     fun get(): S3Client = client.value

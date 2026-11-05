@@ -6,7 +6,8 @@ import java.net.URISyntaxException
 /** A JDBC url plus any credentials lifted out of it. Null creds ride inside [jdbcUrl] itself. */
 data class PostgresUrlParts(val jdbcUrl: String, val user: String?, val password: String?) {
     // Redact the password so it can't leak into a log line or crash report.
-    override fun toString(): String = "PostgresUrlParts(jdbcUrl=$jdbcUrl, user=$user, password=***)"
+    override fun toString(): String =
+        "PostgresUrlParts(jdbcUrl=$jdbcUrl, user=${user ?: "<from url>"}, password=***)"
 }
 
 /**

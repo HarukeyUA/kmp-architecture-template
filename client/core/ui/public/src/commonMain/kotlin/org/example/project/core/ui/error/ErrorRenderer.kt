@@ -14,6 +14,8 @@ import org.jetbrains.compose.resources.stringResource
  *
  * Each module contributes its own [ErrorRenderer] via DI multibindings.
  */
+// SpreadOperator: the compose-resources formatters take a vararg and have no array overload.
+@Suppress("SpreadOperator")
 @OptIn(ExperimentalMetroApi::class)
 @DefaultBinding<ErrorRenderer<AppError>>
 interface ErrorRenderer<T : AppError> {

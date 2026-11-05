@@ -39,9 +39,11 @@ class Endpoint<R : Any, Req : Any, Res : Any, Err : ApiError>(
         // A lens missing @Serializable silently resolves to an OPEN polymorphic serializer, which
         // would make every Declared error ride Ambient. Failing here surfaces it at `*Api`
         // class-load, i.e. in any test that touches the endpoint.
-        require(error == null || error.descriptor.kind == PolymorphicKind.SEALED) {
-            "Endpoint error lens must be a @Serializable sealed interface " +
-                "(got kind ${error?.descriptor?.kind} for ${error?.descriptor?.serialName})"
+        if (error != null) {
+            require(error.descriptor.kind == PolymorphicKind.SEALED) {
+                "Endpoint error lens must be a @Serializable sealed interface " +
+                    "(got kind ${error.descriptor.kind} for ${error.descriptor.serialName})"
+            }
         }
     }
 }

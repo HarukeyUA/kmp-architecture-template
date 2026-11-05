@@ -36,12 +36,8 @@ class RateLimitPluginInstaller(private val limits: WebLimitsConfig) : PluginInst
     }
 }
 
-/**
- * The rate-limit key: the configured trusted proxy header when present, otherwise the socket
- * address. The fallback matters — keying a proxied deployment on the socket would collapse every
- * client into the proxy's one bucket, and trusting a header on a directly-exposed box would let a
- * client mint a fresh bucket per request.
- */
+// Keying a proxied deployment on the socket would collapse every client into the proxy's one
+// bucket; trusting a header on a directly-exposed box would let a client mint a bucket per request.
 private fun ApplicationCall.clientIp(clientIpHeader: String?): String =
     clientIpHeader?.let { request.headers[it] }?.takeIf { it.isNotBlank() }
         ?: request.origin.remoteHost

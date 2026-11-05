@@ -95,7 +95,6 @@ class DefaultAuthService(
             session = sessionStore.issue(accountId),
         )
 
-    /** Shape-validates both fields and accumulates the failures into one [Validation]. */
     private fun validateCredentials(email: String, password: String): Either<ApiError, Email> =
         Either.zipOrAccumulate(Email.of(email), Password.of(password)) { validEmail, _ ->
                 validEmail

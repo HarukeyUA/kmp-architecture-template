@@ -98,30 +98,6 @@ class AuthIntegrationTest {
                 }
             assertThat(login.status).isEqualTo(HttpStatusCode.OK)
 
-            // Wrong password → the service declares InvalidCredentials, so the route already
-            // envelopes the 401 (unlike the body-less auth *challenge* above, which stays a
-            // cross-cutting Unauthorized). The StatusPages 401 hook must leave this enveloped
-            // response alone rather than rebuilding/clobbering it.
-            val wrongPassword =
-                client.post(AuthResource.Login()) {
-                    contentType(ContentType.Application.Json)
-                    setBody(LoginRequest("alice@example.com", "wrongpassword99"))
-                }
-            assertThat(wrongPassword.status).isEqualTo(HttpStatusCode.Unauthorized)
-            assertThat(wrongPassword.decodedError()).isEqualTo(InvalidCredentials)
-
-            // Unknown email → byte-identical envelope to wrong-password: the collapse to the
-            // single InvalidCredentials is the information-disclosure boundary, and
-            // the service burns a dummy Argon2 verify on this path so timing doesn't pierce it
-            // either (the dummy-verify contract itself is pinned in DefaultAuthServiceTest).
-            val unknownEmail =
-                client.post(AuthResource.Login()) {
-                    contentType(ContentType.Application.Json)
-                    setBody(LoginRequest("nobody@example.com", "hunter2hunter2"))
-                }
-            assertThat(unknownEmail.status).isEqualTo(HttpStatusCode.Unauthorized)
-            assertThat(unknownEmail.decodedError()).isEqualTo(InvalidCredentials)
-
             // Refresh: the opaque token mints a fresh access token (the one place the session
             // store is consulted per request cycle); the minted JWT works immediately.
             val refreshed =
@@ -166,26 +142,73 @@ class AuthIntegrationTest {
             // Revoking a Session only cuts off minting, so staleness is bounded by that TTL.
             assertThat(client.get(AuthResource.Me()) { bearerAuth(tokens.accessToken) }.status)
                 .isEqualTo(HttpStatusCode.OK)
+        }
 
-            // Signing up the same email again → the typed domain error round-trips back.
-            val duplicate =
+    @Test
+    fun `wrong password and unknown email both answer the declared InvalidCredentials`() =
+        serverTest { client ->
+            val credentials = SignupRequest("alice@example.com", "hunter2hunter2")
+            val signup =
                 client.post(AuthResource.Signup()) {
                     contentType(ContentType.Application.Json)
                     setBody(credentials)
                 }
-            assertThat(duplicate.status).isEqualTo(HttpStatusCode.Conflict)
-            assertThat(duplicate.decodedError()).isEqualTo(EmailTaken)
+            assertThat(signup.status).isEqualTo(HttpStatusCode.Created)
 
-            // Malformed JSON is a typed 400, not a leaked 500 from the catch-all StatusPages
-            // hook.
-            val malformed =
-                client.post(AuthResource.Signup()) {
+            // Wrong password → the service declares InvalidCredentials, so the route already
+            // envelopes the 401 (unlike the body-less auth *challenge*, which stays a
+            // cross-cutting Unauthorized). The StatusPages 401 hook must leave this enveloped
+            // response alone rather than rebuilding/clobbering it.
+            val wrongPassword =
+                client.post(AuthResource.Login()) {
                     contentType(ContentType.Application.Json)
-                    setBody("""{"email":""")
+                    setBody(LoginRequest("alice@example.com", "wrongpassword99"))
                 }
-            assertThat(malformed.status).isEqualTo(HttpStatusCode.BadRequest)
-            assertThat(malformed.decodedError()).isEqualTo(BadRequest("malformed_body"))
+            assertThat(wrongPassword.status).isEqualTo(HttpStatusCode.Unauthorized)
+            assertThat(wrongPassword.decodedError()).isEqualTo(InvalidCredentials)
+
+            // Unknown email → byte-identical envelope to wrong-password: the collapse to the
+            // single InvalidCredentials is the information-disclosure boundary, and
+            // the service burns a dummy Argon2 verify on this path so timing doesn't pierce it
+            // either (the dummy-verify contract itself is pinned in DefaultAuthServiceTest).
+            val unknownEmail =
+                client.post(AuthResource.Login()) {
+                    contentType(ContentType.Application.Json)
+                    setBody(LoginRequest("nobody@example.com", "hunter2hunter2"))
+                }
+            assertThat(unknownEmail.status).isEqualTo(HttpStatusCode.Unauthorized)
+            assertThat(unknownEmail.decodedError()).isEqualTo(InvalidCredentials)
         }
+
+    @Test
+    fun `a taken email and malformed JSON are typed errors`() = serverTest { client ->
+        val credentials = SignupRequest("alice@example.com", "hunter2hunter2")
+        val signup =
+            client.post(AuthResource.Signup()) {
+                contentType(ContentType.Application.Json)
+                setBody(credentials)
+            }
+        assertThat(signup.status).isEqualTo(HttpStatusCode.Created)
+
+        // Signing up the same email again → the typed domain error round-trips back.
+        val duplicate =
+            client.post(AuthResource.Signup()) {
+                contentType(ContentType.Application.Json)
+                setBody(credentials)
+            }
+        assertThat(duplicate.status).isEqualTo(HttpStatusCode.Conflict)
+        assertThat(duplicate.decodedError()).isEqualTo(EmailTaken)
+
+        // Malformed JSON is a typed 400, not a leaked 500 from the catch-all StatusPages
+        // hook.
+        val malformed =
+            client.post(AuthResource.Signup()) {
+                contentType(ContentType.Application.Json)
+                setBody("""{"email":""")
+            }
+        assertThat(malformed.status).isEqualTo(HttpStatusCode.BadRequest)
+        assertThat(malformed.decodedError()).isEqualTo(BadRequest("malformed_body"))
+    }
 
     @Test
     fun `revokeAllFor kills every session for the account immediately, including cached ones`() =

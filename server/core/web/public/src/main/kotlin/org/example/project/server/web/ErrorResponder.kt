@@ -47,19 +47,15 @@ private suspend fun <Err : ApiError> ApplicationCall.respondFailure(
         is Failure.Declared ->
             if (lens != null) respondEncoded(failure.error, encodeApiError(lens, failure.error))
             else respondUnencodable(failure.error)
-        is Failure.Ambient ->
-            when (val error = failure.error) {
-                is CommonApiError -> respondError(error)
-                else -> respondUnencodable(error)
-            }
+        is Failure.Ambient -> {
+            val error = failure.error
+            if (error is CommonApiError) respondError(error) else respondUnencodable(error)
+        }
     }
 }
 
-/**
- * An error that reached HTTP without a lens that can encode it — unanticipated by construction, so
- * it answers `500` (a server fault, not `400`) and is logged so the misrouted error is
- * discoverable.
- */
+// An error reaching HTTP without a lens that can encode it is unanticipated by construction, so it
+// answers 500 as a server fault rather than 400, and is logged to make the misroute visible.
 private suspend fun ApplicationCall.respondUnencodable(error: ApiError) {
     application.log.warn(
         "ApiError {} is neither this endpoint's Declared error nor a CommonApiError; " +

@@ -13,5 +13,6 @@ data class DatabaseConfig(
     // Redact the password so it can't leak into a log line or crash report via the data-class
     // default.
     override fun toString(): String =
-        "DatabaseConfig(jdbcUrl=$jdbcUrl, username=$username, password=***, maxPoolSize=$maxPoolSize)"
+        "DatabaseConfig(jdbcUrl=$jdbcUrl, username=${username ?: "<from url>"}, " +
+            "password=***, maxPoolSize=$maxPoolSize)"
 }

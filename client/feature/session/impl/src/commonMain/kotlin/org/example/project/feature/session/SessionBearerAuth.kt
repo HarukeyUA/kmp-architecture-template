@@ -60,26 +60,23 @@ fun AuthConfig.sessionBearer(sessions: SessionRepository) {
                     contentType(ContentType.Application.Json)
                     setBody(RefreshRequest(refreshToken))
                 }
-            when {
-                response.status.isSuccess() -> {
-                    val minted = response.body<AccessTokenResponse>()
-                    val session = ClientSession(minted.accessToken, refreshToken)
-                    // The retry can still use the minted token when it could not be stored.
-                    sessions.persist(session).onLeft { log.w { "minted token not stored: $it" } }
-                    BearerTokens(session.accessToken, session.refreshToken)
+            if (response.status.isSuccess()) {
+                val minted = response.body<AccessTokenResponse>()
+                val session = ClientSession(minted.accessToken, refreshToken)
+                // The retry can still use the minted token when it could not be stored.
+                sessions.persist(session).onLeft { log.w { "minted token not stored: $it" } }
+                BearerTokens(session.accessToken, session.refreshToken)
+            } else {
+                if (response.isSessionExpired()) {
+                    sessions.clear().onLeft { log.w { "expired session not cleared: $it" } }
                 }
-                else -> {
-                    if (response.isSessionExpired()) {
-                        sessions.clear().onLeft { log.w { "expired session not cleared: $it" } }
-                    }
-                    null
-                }
+                null
             }
         }
     }
 }
 
-/** Parsing is best-effort: a non-envelope body (5xx page, truncated response) is not an expiry. */
+// Parsing is best-effort: a non-envelope body (5xx page, truncated response) is not an expiry.
 private suspend fun HttpResponse.isSessionExpired(): Boolean =
     catch(
         {

@@ -102,9 +102,7 @@ class AdvisoryLockSchedulerTest {
         }
     }
 
-    /**
-     * A [ScheduledJob] that counts its runs and then awaits [body] (a barrier for the lock window).
-     */
+    // Awaiting [body] after counting gives the test a barrier inside the lock window.
     private fun countingJob(counter: AtomicInteger, body: suspend () -> Unit): ScheduledJob =
         object : ScheduledJob {
             override val name: String = "test-counting-job"
@@ -128,9 +126,7 @@ class AdvisoryLockSchedulerTest {
             },
         )
 
-    /**
-     * A [DataSource] for tests that validate before touching the DB — every method is unreachable.
-     */
+    // For tests that validate before touching the DB: every method is unreachable.
     private val unusedDataSource =
         object : DataSource {
             override fun getConnection() = error("unused")

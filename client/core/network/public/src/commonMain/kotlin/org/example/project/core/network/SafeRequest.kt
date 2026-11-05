@@ -25,9 +25,6 @@ import org.example.project.shared.common.decodeDeclaredApiError
  * Executes a Ktor HTTP request safely, catching exceptions and mapping failures to [NetworkError].
  * The non-[Endpoint] escape hatch: a raw request has no Declared-error contract, so every non-2xx
  * is a [NetworkError.Http]. Endpoint calls use [call], which narrows the wire error instead.
- *
- * @param block produces the HTTP response
- * @param transform extracts the desired value from a successful response
  */
 suspend inline fun <T> executeSafe(
     crossinline block: suspend () -> HttpResponse,

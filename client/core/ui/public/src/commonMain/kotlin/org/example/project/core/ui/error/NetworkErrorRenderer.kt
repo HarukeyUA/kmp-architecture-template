@@ -16,15 +16,14 @@ import org.example.project.core.ui.error.ErrorRenderer.ResourceResult
 class NetworkErrorRenderer : ErrorRenderer<NetworkError> {
     override fun resolveResource(error: NetworkError): ResourceResult? =
         when (error) {
-            is NetworkError.Http ->
-                if (error.message != null) {
-                    ResourceResult(
-                        Res.string.error_network_http_with_message,
-                        arrayOf(error.message as Any),
-                    )
+            is NetworkError.Http -> {
+                val message = error.message
+                if (message != null) {
+                    ResourceResult(Res.string.error_network_http_with_message, arrayOf(message))
                 } else {
-                    ResourceResult(Res.string.error_network_http, arrayOf(error.code))
+                    ResourceResult(Res.string.error_network_http, arrayOf<Any>(error.code))
                 }
+            }
 
             is NetworkError.Connection -> ResourceResult(Res.string.error_network_connection)
             is NetworkError.Serialization -> ResourceResult(Res.string.error_network_serialization)

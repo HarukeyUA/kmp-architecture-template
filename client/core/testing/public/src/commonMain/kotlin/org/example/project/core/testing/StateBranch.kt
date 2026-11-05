@@ -10,5 +10,5 @@ inline fun <reified B : Any> Any?.asBranch(): B =
             "Expected " +
                 B::class.simpleName +
                 " but was " +
-                (this?.let { "${it::class.simpleName}: $it" } ?: "null"),
+                (this?.let { "${it::class.simpleName ?: "anonymous"}: $it" } ?: "null"),
         )

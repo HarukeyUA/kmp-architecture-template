@@ -23,6 +23,8 @@ interface DatabaseProviders {
      * `max_connections` when scaling out; the pool is the only thing that holds connections, so the
      * app itself stays stateless.
      */
+    // The pool outlives this call: `dataSourceResource` below closes it at shutdown.
+    @Suppress("MissingUseCall")
     @Provides
     @SingleIn(AppScope::class)
     fun provideDataSource(config: DatabaseConfig): DataSource =

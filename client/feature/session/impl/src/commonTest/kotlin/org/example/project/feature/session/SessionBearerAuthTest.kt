@@ -91,11 +91,8 @@ class SessionBearerAuthTest {
         assertThat(client.get("http://test/v1/resource").status).isEqualTo(HttpStatusCode.OK)
     }
 
-    /**
-     * A mock server whose protected route accepts only [MINTED_ACCESS] and whose refresh endpoint
-     * behaves per [refreshResponse]. The 401 challenge carries `WWW-Authenticate: Bearer`, matching
-     * the real server's JWT guard, which is what arms Ktor's bearer refresh hook.
-     */
+    // The mock's protected route accepts only MINTED_ACCESS. Its 401 challenge carries
+    // `WWW-Authenticate: Bearer`, as the real JWT guard does, since that arms Ktor's refresh hook.
     private fun client(store: SessionRepository, refreshResponse: RefreshResponse): HttpClient {
         val engine = MockEngine { request ->
             when {

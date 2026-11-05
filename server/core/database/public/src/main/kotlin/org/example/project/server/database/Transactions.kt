@@ -21,6 +21,8 @@ import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
  * higher-level unit of work can still make multiple repository/store calls atomic when a use case
  * needs that.
  */
+// Server has no dispatcher injection seam.
+@Suppress("InjectDispatcher")
 suspend inline fun <T> dbTransaction(noinline block: suspend JdbcTransaction.() -> T): T =
     withContext(Dispatchers.IO) { suspendTransaction(statement = block) }
 

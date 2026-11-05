@@ -28,6 +28,8 @@ interface StorageProviders {
             secretKey = environment.required("S3_SECRET_KEY"),
         )
 
+    // The client is owned by [S3ClientResource], which closes it at shutdown.
+    @Suppress("MissingUseCall")
     @Provides
     @SingleIn(AppScope::class)
     fun provideS3Client(resource: S3ClientResource): S3Client = resource.get()

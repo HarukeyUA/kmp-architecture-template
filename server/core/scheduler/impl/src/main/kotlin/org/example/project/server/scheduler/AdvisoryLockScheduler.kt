@@ -53,13 +53,8 @@ class AdvisoryLockScheduler(
         }
     }
 
-    /**
-     * Enforces the [ScheduledJob] invariants the type can't: a positive
-     * [interval][ScheduledJob.interval], and a distinct advisory-lock key per job. The lock key is
-     * a hash of the name, so this catches both duplicate names *and* the rarer hash collision the
-     * doc warns about — either would silently serialize two unrelated jobs cluster-wide, so we
-     * refuse to start instead.
-     */
+    // The lock key is a hash of the job name, so this catches duplicate names and the rarer hash
+    // collision — either would silently serialize two unrelated jobs cluster-wide.
     private fun validate() {
         val byKey = HashMap<Int, ScheduledJob>()
         jobs.forEach { job ->
@@ -67,9 +62,11 @@ class AdvisoryLockScheduler(
                 "ScheduledJob '${job.name}' has a non-positive interval: ${job.interval}"
             }
             val clash = byKey.put(lockKey(job), job)
-            check(clash == null) {
-                "ScheduledJob lock-key collision: '${job.name}' and '${clash?.name}' map to the " +
-                    "same advisory lock — rename one (job names must be unique)."
+            if (clash != null) {
+                error(
+                    "ScheduledJob lock-key collision: '${job.name}' and '${clash.name}' map to " +
+                        "the same advisory lock — rename one (job names must be unique).",
+                )
             }
         }
     }
@@ -91,6 +88,7 @@ class AdvisoryLockScheduler(
      * a single dedicated connection from acquisition until the job finishes, then released in a
      * `finally` so it can never leak onto a pooled connection. Visible for the multi-instance test.
      */
+    @Suppress("InjectDispatcher") // Server has no dispatcher injection seam.
     suspend fun runExclusively(job: ScheduledJob): Boolean =
         withContext(Dispatchers.IO) {
             val key = lockKey(job)
@@ -120,7 +118,6 @@ class AdvisoryLockScheduler(
         }
     }
 
-    /** The job name's hash is the second lock key; the namespace constant scopes it to this app. */
     private fun lockKey(job: ScheduledJob): Int = job.name.hashCode()
 
     private companion object {

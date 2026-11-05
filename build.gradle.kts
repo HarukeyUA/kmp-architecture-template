@@ -11,7 +11,7 @@ plugins {
     alias(libs.plugins.kotlinJvm) apply false
     alias(libs.plugins.nucleus) apply false
     alias(libs.plugins.convention.spotless)
-    alias(libs.plugins.detekt)
+    alias(libs.plugins.detekt) apply false
 }
 
 tasks.register<Exec>("checkMigrationOrder") {
